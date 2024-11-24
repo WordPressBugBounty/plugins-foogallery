@@ -2072,7 +2072,12 @@ function foogallery_local_url_to_path(  $url  ) {
 function foogallery_sanitize_code(  $text  ) {
     if ( !empty( $text ) ) {
         $text = wp_check_invalid_utf8( $text, true );
-        $text = htmlentities( $text );
+        $text = htmlentities(
+            $text,
+            ENT_NOQUOTES,
+            'UTF-8',
+            false
+        );
         return apply_filters( 'foogallery_sanitize_code', $text );
     }
     return false;
@@ -2202,16 +2207,12 @@ function foogallery_get_roles_and_higher(  $role  ) {
         'administrator',
         'super_admin'
     );
-    // Check if the input role is valid
-    if ( !in_array( $role, $roles_hierarchy ) ) {
-        return array();
-        // Return an empty array if the role is not valid
-    }
     // Find the index of the input role
     $role_index = array_search( $role, $roles_hierarchy );
     // If the input role is not found, return the input role.
     if ( $role_index === false ) {
-        return $role;
+        // Return the input role, and also admin, as we always want admins to be able to create galleries, when custom roles are set.
+        return array($role, 'administrator', 'super_admin');
     }
     // Get the roles with the same or higher privileges
     return array_slice( $roles_hierarchy, $role_index );
