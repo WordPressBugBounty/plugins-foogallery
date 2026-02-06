@@ -137,7 +137,7 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 		 */
 		function echo_section_desc( $arg ) {
 			$section =  $this->_settings_sections[ $arg['id'] ];
-			echo $section['desc'];
+			echo wp_kses_post( $section['desc'] );
 		}
 
 		/**
@@ -279,6 +279,8 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 
 			$options = get_option( $this->plugin_slug );
 
+			$has_options = $options !== false;
+
 			if ( function_exists( 'is_multisite' ) && is_multisite() ) {
 				// If we are in the network settings, use site options directly.
 				if ( is_network_admin() ) {
@@ -295,8 +297,6 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
                 $options = array();
             }
 
-			$has_options = $options !== false;
-
 			if ( !isset( $options[$id]) && $type != 'checkbox' ) {
 				$options[$id] = $default;
 			}
@@ -310,6 +310,7 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 
 			do_action( $this->plugin_slug . '_admin_settings_before_render_setting', $args );
 
+			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Form field generation with internal settings
 			switch ( $type ) {
 
 				case 'heading':
@@ -423,6 +424,7 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 			if ( $type != 'checkbox' && $type != 'heading' && $type != 'html' && $desc != '' ) {
 				echo '<br /><small>' . $desc . '</small>';
 			}
+		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 
 		/**

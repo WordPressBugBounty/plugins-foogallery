@@ -26,6 +26,12 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 
 			//build up the arguments needed for rendering this template
 			add_filter( 'foogallery_gallery_template_arguments-thumbnail', array( $this, 'build_gallery_template_arguments' ) );
+
+			// Add specific caption fields
+			add_filter( 'foogallery_override_gallery_template_fields-thumbnail', array( $this, 'add_caption_fields' ), 999, 2 );
+
+			// Adjust the default settings for this layout
+			add_filter( 'foogallery_override_gallery_template_fields_defaults-thumbnail', array( $this, 'field_defaults' ), 10, 1 );
         }
 
 		/**
@@ -89,9 +95,9 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 		 * @return array
 		 */
 		function add_template( $gallery_templates ) {
-			$gallery_templates[] = array(
-                'slug'        => 'thumbnail',
-                'name'        => __( 'Single Thumbnail Gallery', 'foogallery' ),
+			$gallery_templates[self::template_id] = array(
+                'slug'        => self::template_id,
+                'name'        => __( 'Single Thumbnail', 'foogallery' ),
 				'preview_support' => true,
 				'common_fields_support' => true,
                 'lazyload_support' => true,
@@ -99,13 +105,19 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 				'thumbnail_dimensions' => true,
                 'paging_support' => false,
                 'enqueue_core' => true,
+				'icon' => '<svg viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="14"/>
+        <polyline points="6,15 10,12 14,16 18,12"/>
+        <circle cx="9" cy="9" r="1.5"/>
+      </svg>',
                 'fields'	  => array(
                     array(
                         'id'	  => 'help',
                         'type'	  => 'html',
                         'section' => __( 'General', 'foogallery' ),
                         'help'	  => true,
-                        'desc'	  => __( 'This gallery template only shows a single thumbnail, but the true power shines through when the thumbnail is clicked, because then the lightbox takes over and the user can view all the images in the gallery.', 'foogallery' ),
+						'title'   => __( 'Single Thumbnail Layout', 'foogallery' ),
+                        'desc'	  => __( 'This gallery layout only shows a single thumbnail, but the true power shines through when the thumbnail is clicked, because then the lightbox takes over and the user can view all the images in the gallery.', 'foogallery' ),
                     ),
                     array(
                         'id'      => 'thumbnail_dimensions',
@@ -114,8 +126,8 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
                         'section' => __( 'General', 'foogallery' ),
                         'type'    => 'thumb_size_no_crop',
                         'default' => array(
-                            'width' => 250,
-                            'height' => 200
+                            'width' => 350,
+                            'height' => 250
                         ),
 						'row_data'=> array(
 							'data-foogallery-change-selector' => 'input',
@@ -140,6 +152,23 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 							'data-foogallery-change-selector' => 'select',
 							'data-foogallery-preview' => 'shortcode'
 						)
+                    ),
+					array(
+                        'id'      => 'show_as_stack',
+                        'title'   => __( 'Stacked Effect', 'foogallery' ),
+                        'section' => __( 'General', 'foogallery' ),
+                        'default' => 'fg-stacked',
+                        'type'    => 'radio',
+                        'desc'	  => __( 'Show the thumbnails as a stack or pile of images.', 'foogallery' ),
+                        'choices' => array(
+                            '' => __( 'None', 'foogallery' ),
+                            'fg-stacked' => __( 'Stacked', 'foogallery' )
+                        ),
+                        'row_data'=> array(
+	                        'data-foogallery-change-selector' => 'input',
+	                        'data-foogallery-preview' => 'shortcode',
+	                        'data-foogallery-value-selector' => 'input:checked',
+                        )
                     ),
                     array(
                         'id'      => 'link_custom_url',
@@ -174,33 +203,59 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 			                'data-foogallery-preview'                  => 'shortcode',
 			                'data-foogallery-value-selector'           => 'input:checked',
 		                )
-	                ),
-                    array(
-                        'id'      => 'caption_title',
-                        'title'   => __('Override Title', 'foogallery'),
-						'section' => __( 'Captions', 'foogallery' ),
-                        'desc'    => __('Leave blank if you do not want a caption title.', 'foogallery'),
-                        'type'    => 'text',
-						'row_data'=> array(
-							'data-foogallery-change-selector' => 'input',
-							'data-foogallery-preview' => 'shortcode'
-						)
-                    ),
-                    array(
-                        'id'      => 'caption_description',
-                        'title'   => __('Override Description', 'foogallery'),
-						'section' => __( 'Captions', 'foogallery' ),
-                        'desc'    => __('Leave blank if you do not want a caption description.', 'foogallery'),
-                        'type'    => 'textarea',
-						'row_data'=> array(
-							'data-foogallery-change-selector' => 'textarea',
-							'data-foogallery-preview' => 'shortcode'
-						)
-                    )
+	                )
                 )
 			);
 
 			return $gallery_templates;
+		}
+
+		/**
+		 * Add caption fields to the gallery template if supported
+		 *
+		 * @param $fields
+		 * @param $template
+		 *
+		 * @return array
+		 */
+		function add_caption_fields( $fields, $template ) {
+
+			$new_fields[] = array(
+				'id'      => 'caption_override_help',
+				'title'   => __( 'Caption Override Help', 'foogallery' ),
+				'desc'    => __( 'You can include dynamic placeholders in the override title and description, eg. <code>{{gallery-count}}</code> and <code>{{gallery-title}}</code>.', 'foogallery' ),
+				'section' => __( 'Captions', 'foogallery' ),
+				'type'    => 'help'
+			);
+
+			$new_fields[] = array(
+				'id'      => 'caption_title',
+				'title'   => __('Override Title', 'foogallery'),
+				'section' => __( 'Captions', 'foogallery' ),
+				'desc'    => __('Leave blank if you do not want a caption title.', 'foogallery'),
+				'type'    => 'text',
+				'row_data'=> array(
+					'data-foogallery-change-selector' => 'input',
+					'data-foogallery-preview' => 'shortcode'
+				)
+			);
+			$new_fields[] = array(
+				'id'      => 'caption_description',
+				'title'   => __('Override Description', 'foogallery'),
+				'section' => __( 'Captions', 'foogallery' ),
+				'desc'    => __('Leave blank if you do not want a caption description.', 'foogallery'),
+				'type'    => 'textarea',
+				'row_data'=> array(
+					'data-foogallery-change-selector' => 'textarea',
+					'data-foogallery-preview' => 'shortcode'
+				)
+			);
+
+			$field_index = foogallery_admin_fields_find_index_of_field( $fields, 'caption_alignment' );
+
+			array_splice( $fields, $field_index + 1, 0, $new_fields );
+
+			return $fields;
 		}
 
 		/**
@@ -240,6 +295,33 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 			    $dimensions['crop'] = true;
             }
 			return $dimensions;
+		}
+
+		/**
+		 * Return an array of field defaults for the template
+		 *
+		 * @param $field_defaults
+		 *
+		 * @return string[]
+		 */
+		function field_defaults( $field_defaults ) {
+			return array_merge( $field_defaults, array(
+				'theme' => 'fg-light',
+				'hover_effect_caption_visibility' => 'fg-caption-always',
+				'caption_visibility_no_hover_effect' => 'fg-caption-always',
+				'border_size' => 'fg-border-medium',
+				'drop_shadow' => 'fg-shadow-small',
+				'rounded_corners' => 'fg-round-small',
+				'inner_shadow' => 'fg-shadow-inset-medium',
+				'hover_effect_type' => 'normal',
+				'hover_effect_scale' => 'fg-hover-semi-zoomed',
+				'hover_effect_icon' => 'fg-hover-zoom4',
+				'caption_title' => '{{gallery-title}}',
+				'caption_description' => '{{gallery-count}} Images',
+				'caption_alignment' => 'fg-c-c',
+				'show_as_stack' => 'fg-stacked',
+				'loaded_effect' => ''
+			) );
 		}
 	}
 }

@@ -31,13 +31,15 @@ class FooGallery_Template_Loader {
 
 		if ( false === $current_foogallery ) {
 			//we could not find the gallery!
-			_e( 'The gallery was not found!', 'foogallery' );
+			esc_html_e( 'The gallery was not found!', 'foogallery' );
+			$current_foogallery = null;
 			return;
 		}
 
-		//check if the gallery is password protected
+		// check if the gallery is password protected
 		if ( post_password_required( $current_foogallery->_post ) ) {
-			echo get_the_password_form( $current_foogallery->_post );
+			echo get_the_password_form( $current_foogallery->_post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			$current_foogallery = null;
 			return;
 		}
 
@@ -131,6 +133,7 @@ class FooGallery_Template_Loader {
 				//finally include the actual php template!
 				if ( $template_location ) {
 					do_action( 'foogallery_loaded_template_before', $current_foogallery );
+					$this->add_style_block( $current_foogallery, $current_foogallery_template );
 					$this->load_gallery_template( $current_foogallery, $template_location['path'] );
 					do_action( 'foogallery_loaded_template_after', $current_foogallery );
 				}
@@ -146,7 +149,7 @@ class FooGallery_Template_Loader {
 				do_action( "foogallery_loaded_template-($current_foogallery_template)", $current_foogallery );
 			} else {
 				//we could not find a template!
-				_e( 'No gallery template found!', 'foogallery' );
+				esc_html_e( 'No gallery layout found!', 'foogallery' );
 			}
 		}
 
@@ -307,5 +310,26 @@ class FooGallery_Template_Loader {
 		}
 
 		return $args[ $key ];
+	}
+
+	/**
+	 * Add a style block just before the gallery based on the template
+	 *
+	 * @param $gallery FooGallery
+	 * @param $template string
+	 */
+	function add_style_block( $gallery, $template ) {
+		$css = array();
+		$css = apply_filters( "foogallery_template_style_block-{$template}", $css, $gallery );
+
+		if ( !empty( $css ) ) {
+			// @formatter:off
+			?>
+<style type="text/css">
+<?php echo implode( "\n", $css ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+</style>
+			<?php
+			// @formatter:on
+		}
 	}
 }

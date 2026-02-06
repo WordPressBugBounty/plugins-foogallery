@@ -32,8 +32,14 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 
 			add_filter( 'foogallery_build_class_attribute', array( $this, 'override_class_attributes' ), 99, 2 );
 
-			//add a style block for the gallery based on the field settings for gutter, align and columnWidth
-			add_action( 'foogallery_loaded_template_before', array( $this, 'add_style_block' ), 10, 1 );
+			//remove preset choices from simple portfolio
+            add_filter( 'foogallery_override_gallery_template_fields-simple_portfolio', array( $this, 'remove_preset_choices_for_simple_portfolio' ), 10, 2 );
+
+			// Adjust the default settings for this layout
+			add_filter( 'foogallery_override_gallery_template_fields_defaults-simple_portfolio', array( $this, 'field_defaults' ), 10, 1 );
+
+			// add a style block for the gallery based on the field settings.
+			add_action( 'foogallery_template_style_block-simple_portfolio', array( $this, 'add_css' ), 10, 2 );
         }
 
 		/**
@@ -54,9 +60,9 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 		 * @return array
 		 */
 		function add_template( $gallery_templates ) {
-			$gallery_templates[] = array(
+			$gallery_templates[self::template_id] = array(
                 'slug'        => self::template_id,
-                'name'        => __( 'Simple Portfolio', 'foogallery' ),
+                'name'        => __( 'Portfolio', 'foogallery' ),
 				'preview_support' => true,
 				'common_fields_support' => true,
                 'lazyload_support' => true,
@@ -65,6 +71,20 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 				'thumbnail_dimensions' => true,
 				'filtering_support' => true,
                 'enqueue_core' => true,
+				'icon' => '<svg viewBox="0 0 24 24">
+        <!-- top row -->
+        <rect x="3" y="3" width="8" height="5"/>
+        <rect x="13" y="3" width="8" height="5"/>
+        <!-- captions -->
+        <rect x="3" y="8" width="8" height="2"/>
+        <rect x="13" y="8" width="8" height="2"/>
+        <!-- bottom row -->
+        <rect x="3" y="13" width="8" height="5"/>
+        <rect x="13" y="13" width="8" height="5"/>
+        <!-- captions -->
+        <rect x="3" y="18" width="8" height="2"/>
+        <rect x="13" y="18" width="8" height="2"/>
+      </svg>',
                 'fields'	  => array(
                     array(
                         'id'	  => 'help',
@@ -102,17 +122,16 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                     ),
                     array(
                         'id'      => 'gutter',
-                        'title'   => __( 'Gutter', 'foogallery' ),
-                        'desc'    => __( 'The spacing between each thumbnail in the gallery.', 'foogallery' ),
+                        'title'   => __( 'Thumbnail Gap', 'foogallery' ),
+                        'desc'    => __( 'The spacing or gap between each thumbnail in the gallery.', 'foogallery' ),
 						'section' => __( 'General', 'foogallery' ),
-                        'type'    => 'number',
-                        'class'   => 'small-text',
+                        'type'    => 'slider',
                         'default' => 5,
-                        'step'    => '1',
-                        'min'     => '0',
+                        'step'    => 1,
+                        'min'     => 0,
+                        'max'     => 100,
 						'row_data'=> array(
-							'data-foogallery-change-selector' => 'input',
-							'data-foogallery-value-selector' => 'input',
+							'data-foogallery-change-selector' => 'range-input',
 							'data-foogallery-preview' => 'shortcode',
 						)
                     ),
@@ -122,7 +141,6 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                         'desc'    => __( 'The horizontal alignment of the thumbnails inside the gallery.', 'foogallery' ),
                         'section' => __( 'General', 'foogallery' ),
                         'type'    => 'radio',
-                        'spacer'  => '<span class="spacer"></span>',
                         'default' => 'center',
                         'choices' => array(
                             'left' => __( 'Left', 'foogallery' ),
@@ -158,7 +176,6 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 				'section' => __( 'Captions', 'foogallery' ),
 				'default' => '',
 				'type'    => 'radio',
-				'spacer'  => '<span class="spacer"></span>',
 				'choices' => array(
 					'' => __( 'Below', 'foogallery' ),
 					'fg-captions-top' => __( 'Above', 'foogallery' )
@@ -184,8 +201,8 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 
 				$index++;
 
-				if ( 'hover_effect_caption_visibility' === $field['id'] ) {
-					$field['default'] = 'fg-caption-always';
+				if ( 'hover_effect_caption_visibility' === $field['id'] 
+					|| 'caption_visibility_no_hover_effect' === $field['id'] ) {
 					$field['choices'] = array(
 						'fg-caption-always' => __( 'Always Visible', 'foogallery' ),
 					);
@@ -200,7 +217,6 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 						'data-foogallery-hidden' => true
 					);
 				} else if ( 'theme' === $field['id'] ) {
-					$field['default'] = 'fg-dark';
 					$field['choices'] = array(
 						'fg-light'  => __( 'Light', 'foogallery' ),
 						'fg-dark'   => __( 'Dark', 'foogallery' ),
@@ -334,16 +350,11 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 		}
 
 		/**
-		 * Add a style block based on the field settings
+		 * Add css to the page for the gallery
 		 *
 		 * @param $gallery FooGallery
 		 */
-		function add_style_block( $gallery ) {
-			//check if the template is a "Simple Portfolio" clone
-			if ( !$this->is_simple_portfolio_gallery_template( $gallery ) ) {
-				return;
-			}
-
+		function add_css( $css, $gallery ) {
 			$id = $gallery->container_id();
 			$gutter = intval( foogallery_gallery_template_setting( 'gutter', 5 ) );
 			$alignment = foogallery_gallery_template_setting( 'align', 'center' );
@@ -357,17 +368,60 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 			if ( array_key_exists( 'width', $thumbnail_dimensions ) ) {
 				$thumb_width = intval( $thumbnail_dimensions['width'] );
 			}
-			?>
-			<style>
-                #<?php echo $id; ?>.fg-simple_portfolio {
-                    justify-content: <?php echo $alignment; ?>;
+			$css[] = '#' . $id . '.fg-simple_portfolio { justify-content: ' . $alignment . '; --fg-gutter: ' . $gutter . 'px; }';
+			$css[] = '#' . $id . '.fg-simple_portfolio .fg-item { flex-basis: ' . $thumb_width . 'px; }';
+			return $css;
+		}
+
+		/**
+         * Remove the preset choices from the simple portfolio template
+         *
+         * @uses "foogallery_override_gallery_template_fields"
+         * @param $fields
+         * @param $template
+         *
+         * @return array
+         */
+        function remove_preset_choices_for_simple_portfolio( $fields, $template ) {
+            foreach ($fields as &$field) {
+                if ( 'hover_effect_type' === $field['id'] ) {
+                    $new_choices = $field['choices'];
+                    foreach ($field['choices'] as $choice => $choice_name) {
+                        if ( 'preset' === $choice ) {
+                            unset( $new_choices[$choice] );
+                        }
+                    }
+                    $field['choices'] = $new_choices;
                 }
-                #<?php echo $id; ?>.fg-simple_portfolio .fg-item {
-                    flex-basis: <?php echo $thumb_width; ?>px;
-                    margin: <?php echo $gutter; ?>px;
-                }
-			</style>
-			<?php
+            }
+
+            return $fields;
+        }
+
+		/**
+		 * Return an array of field defaults for the template
+		 *
+		 * @param $field_defaults
+		 *
+		 * @return string[]
+		 */
+		function field_defaults( $field_defaults ) {
+			return array_merge( $field_defaults, array(
+				'theme' => 'fg-dark',
+				'hover_effect_caption_visibility' => 'fg-caption-always',
+				'caption_visibility_no_hover_effect' => 'fg-caption-always',
+				'border_size' => 'fg-border-medium',
+				'rounded_corners' => '',
+				'drop_shadow' => '',
+				'inner_shadow' => '',
+				'loaded_effect' => 'fg-loaded-swing-down',
+				'hover_effect_icon' => 'fg-hover-plus3',
+				'hover_effect_scale' => '',
+				'hover_effect_transition' => 'fg-hover-slide-down',
+				'captions_limit_length' => 'clamp',
+				'caption_title_clamp' => '2',
+				'caption_desc_clamp' => '2',
+			) );
 		}
 	}
 }

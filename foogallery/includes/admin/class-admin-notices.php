@@ -12,16 +12,10 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 			add_action( 'admin_notices', array( $this, 'display_rating_notice' ) );
 
 			add_action( 'foogallery_thumbnail_generation_test', array( $this, 'save_test_results' ) );
-			add_action( 'wp_ajax_foogallery_admin_rating_notice_dismiss', array(
-				$this,
-				'admin_rating_notice_dismiss',
-			) );
+			add_action( 'wp_ajax_foogallery_admin_rating_notice_dismiss', array( $this, 'admin_rating_notice_dismiss' ) );
 
 			add_action( 'admin_notices', array( $this, 'display_foobar_notice' ) );
-			add_action( 'wp_ajax_foogallery_admin_foobar_notice_dismiss', array(
-				$this,
-				'admin_foobar_notice_dismiss',
-			) );
+			add_action( 'wp_ajax_foogallery_admin_foobar_notice_dismiss', array( $this, 'admin_foobar_notice_dismiss' ) );
 		}
 
 		function should_run_tests() {
@@ -154,8 +148,8 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 									e.preventDefault();
 									$.post( ajaxurl, {
 										action: 'foogallery_admin_rating_notice_dismiss',
-										url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-										_wpnonce: '<?php echo wp_create_nonce( 'foogallery_admin_rating_notice_dismiss' ); ?>'
+										url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
+										_wpnonce: "<?php echo esc_attr( wp_create_nonce( 'foogallery_admin_rating_notice_dismiss' )); ?>"
 									} );
 								} );
 						} );
@@ -172,12 +166,12 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 				</style>
 				<div class="foogallery-rating-notice notice notice-success is-dismissible">
 					<p>
-						<strong><?php _e( 'Thanks for using FooGallery' ) ?> <span class="dashicons dashicons-heart"></span></strong>
+						<strong><?php esc_html_e( 'Thanks for using FooGallery', 'foogallery' ) ?> <span class="dashicons dashicons-heart"></span></strong>
 						<br/>
-						<?php _e( 'We noticed you have created 5 galleries in FooGallery. If you love FooGallery, please consider giving it a 5 star rating. Your positive ratings help spread the word and help us grow.', 'foogallery' ); ?>
+						<?php esc_html_e( 'We noticed you have created 5 galleries in FooGallery. If you love FooGallery, please consider giving it a 5 star rating. Your positive ratings help spread the word and help us grow.', 'foogallery' ); ?>
 						<br/>
 						<br/>
-						<a class="button button-primary button-large" target="_blank" href="<?php echo $url; ?>"><?php _e( 'Rate FooGallery', 'foogallery' ); ?></a>
+						<a class="button button-primary button-large" target="_blank" href="<?php echo esc_url( $url ); ?>"><?php esc_html_e( 'Rate FooGallery', 'foogallery' ); ?></a>
 					</p>
 				</div>
 				<?php
@@ -185,8 +179,13 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 		}
 
 		function display_thumb_test_notice() {
-			//check if we are on specific admin pages
-			if ( FOOGALLERY_CPT_GALLERY === foo_current_screen_post_type() ) {
+			$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+			if ( ! is_object( $screen ) ) {
+				return;
+			}
+
+			// Only run on the galleries list page, not other FooGallery admin screens.
+			if ( 'edit-foogallery' === $screen->id ) {
 
 				if ( $this->should_run_tests() ) {
 					$thumbs = new FooGallery_Thumbnails();
@@ -197,13 +196,13 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 					?>
 					<div class="notice error">
 						<p>
-							<strong><?php _e( 'Thumbnail Generation Alert!', 'foogallery' ); ?></strong><br/>
-							<?php _e( 'There is a problem generating thumbnails for your galleries. There could be a number of reasons which could cause this problem.', 'foogallery' ); ?>
+							<strong><?php esc_html_e( 'Thumbnail Generation Alert!', 'foogallery' ); ?></strong><br/>
+							<?php esc_html_e( 'There is a problem generating thumbnails for your galleries. There could be a number of reasons which could cause this problem.', 'foogallery' ); ?>
 							<br/>
-							<?php _e( 'If thumbnails cannot be generated, then full-sized, uncropped images will be used instead. This will result in slow page load times, and thumbnails that do not look correct.', 'foogallery' ); ?>
+							<?php esc_html_e( 'If thumbnails cannot be generated, then full-sized, uncropped images will be used instead. This will result in slow page load times, and thumbnails that do not look correct.', 'foogallery' ); ?>
 							<br/>
 							<a target="_blank"
-							   href="https://fooplugins.com/documentation/foogallery/troubleshooting-foogallery/thumbnail-generation-alert-help/"><?php _e( 'View Troubleshooting Documentation', 'foogallery' ); ?></a>
+							   href="https://fooplugins.com/documentation/foogallery/troubleshooting-foogallery/thumbnail-generation-alert-help/"><?php esc_html_e( 'View Troubleshooting Documentation', 'foogallery' ); ?></a>
 							<br/>
 						</p>
 					</div>
@@ -228,8 +227,8 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 									e.preventDefault();
 									$.post( ajaxurl, {
 										action: 'foogallery_admin_foobar_notice_dismiss',
-										url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-										_wpnonce: '<?php echo wp_create_nonce( 'foogallery_admin_foobar_notice_dismiss' ); ?>'
+										url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
+										_wpnonce: "<?php echo esc_attr( wp_create_nonce( 'foogallery_admin_foobar_notice_dismiss' )); ?>"
 									} );
 								} );
 						} );
@@ -246,17 +245,15 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 				</style>
 				<div class="foogallery-foobar-notice notice notice-success is-dismissible">
 					<p>
-						<strong><span class="dashicons dashicons-megaphone"></span> Do you want to grow your
-							business?</strong>
+						<strong><span class="dashicons dashicons-megaphone"></span> Do you want to grow your business?</strong>
 						FooBar can help!
 						<br/>
 						FooBar is a free plugin to help grow your business by showing sticky notification bars with
-						call-to-actions. Add unlimited notifications to your site to increase visitor engagement and get
-						your message across!
+						call-to-actions. Add unlimited notifications to your site to increase visitor engagement and get your message across!
 						<br/>
 						<br/>
 						<a class="button button-primary button-large" target="_blank"
-						   href="<?php echo $install_foobar; ?>">Install FooBar</a>
+						   href="<?php echo wp_kses_post( $install_foobar ); ?>">Install FooBar</a>
 						<a class="button" target="_blank"
 						   href="https://wordpress.org/plugins/foobar-notifications-lite/">View Details</a>
 					</p>
@@ -334,5 +331,4 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 			}
 		}
 	}
-
 }

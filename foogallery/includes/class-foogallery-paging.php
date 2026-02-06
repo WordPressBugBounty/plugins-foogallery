@@ -32,8 +32,43 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
             add_action( 'foogallery_loaded_template_after', array( $this, 'output_paging_script_block' ), 90, 1 );
 
             add_filter( 'foogallery_attachment_html_item_classes', array( $this, 'hide_item_for_html_output' ), 10, 3 );
+
+            add_filter( 'foogallery_attachment_get_posts_args', array( $this, 'add_paging_query_args' ), 10, 3 );
         }
 
+        /**
+         * Add paging query args to the attachment query
+         *
+         * @param $args
+         *
+         * @return mixed
+         */
+        function add_paging_query_args( $args ) {
+            global $current_foogallery_arguments;
+            global $current_foogallery;
+
+            if ( isset( $current_foogallery_arguments['page'] ) ) {
+                $args['page'] = $args['paged'] = intval( $current_foogallery_arguments['page'] );
+            }
+
+            if ( isset( $current_foogallery_arguments['posts_per_page'] ) ) {
+                $args['posts_per_page'] = intval( $current_foogallery_arguments['posts_per_page'] );
+            }
+
+            $posts_per_page = isset( $args['posts_per_page'] ) ? intval( $args['posts_per_page'] ) : 0;
+
+            //check if no posts per page is set
+            if ( isset( $current_foogallery_arguments['page'] ) && $posts_per_page <= 0 ) {
+                $this->determine_paging( $current_foogallery );
+                if ( foogallery_current_gallery_has_cached_value('paging' ) ) {
+                    $paging_options = foogallery_current_gallery_get_cached_value( 'paging' );
+                    $page_size = intval( $paging_options['size'] );
+                    $args['posts_per_page'] = $page_size;
+                }
+            }
+
+            return $args;
+        }
 
 		function hide_item_for_html_output( $classes, $foogallery_attachment, $args ) {
 			if ( isset( $foogallery_attachment->class ) ) {
@@ -55,7 +90,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 
 				if ( '' !== $paging ) {
 					$paging_position = foogallery_gallery_template_setting( 'paging_position', 'both' );
-					$paging_theme    = foogallery_gallery_template_setting( 'paging_theme', 'fg-light' );
+					$paging_theme    = foogallery_gallery_template_setting( 'paging_theme', '' );
 					$paging_size     = intval( foogallery_gallery_template_setting( 'paging_size', 20 ) );
 					$paging_scroll   = foogallery_gallery_template_setting( 'paging_scroll', 'true' ) === 'true';
 					$paging_output   = foogallery_gallery_template_setting( 'paging_output', '' );
@@ -67,12 +102,15 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 
 					$paging_options = array(
 						'type'        => $paging,
-						'theme'       => $paging_theme,
 						'size'        => $paging_size,
 						'position'    => $paging_position,
 						'scrollToTop' => $paging_scroll,
 						'output'      => $paging_output
 					);
+
+					if ( !empty( $paging_theme ) ) {
+						$paging_options['theme'] = $paging_theme;
+					}
 
 					if ( 'pagination' === $paging ) {
 						$paging_options['limit'] = intval( foogallery_gallery_template_setting( 'paging_limit', 5 ) );
@@ -128,7 +166,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						if ( in_array( $paging_type, $paging_types_that_require_placeholders ) ) {
 							$paging_type = apply_filters( 'foogallery_pagination_format_type_for_placeholder', $paging_type );
 
-							echo '<nav id="' . $foogallery->container_id() . '_paging-' . $position . '" class="fg-paging-container fg-ph-' . $paging_type . '"></nav>';
+							echo '<nav id="' . esc_attr( $foogallery->container_id() ) . '_paging-' . esc_attr( $position ) . '" class="fg-paging-container fg-ph-' . esc_attr( $paging_type ) . '"></nav>';
 						}
 					}
 				}
@@ -157,7 +195,6 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'desc'    => __( 'Add paging to a large gallery.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
                     'section_order' => 5,
-					'spacer'  => '<span class="spacer"></span>',
 					'type'    => 'radio',
 					'default' => '',
 					'choices' => apply_filters( 'foogallery_gallery_template_paging_type_choices', array(
@@ -168,6 +205,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'data-foogallery-change-selector' => 'input',
 						'data-foogallery-preview'         => 'shortcode',
 						'data-foogallery-value-selector'  => 'input:checked',
+						'data-foogallery-persist'         => true
 					)
 				);
 
@@ -182,12 +220,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'step'    => '1',
 					'min'     => '0',
 					'row_data'=> array(
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode',
+						'data-foogallery-change-selector' 		   => 'input',
+						'data-foogallery-preview'				   => 'shortcode',
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field'          => 'paging_type',
 						'data-foogallery-show-when-field-operator' => 'regex',
 						'data-foogallery-show-when-field-value'    => 'dots|pagination|infinite|loadMore',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -196,7 +235,6 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'title'   => __( 'Position', 'foogallery' ),
 					'desc'    => __( 'The position of the paging for either dots or pagination.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
-					'spacer'  => '<span class="spacer"></span>',
 					'type'    => 'radio',
 					'default' => 'bottom',
 					'choices' => apply_filters( 'foogallery_gallery_template_paging_position_choices', array(
@@ -206,35 +244,37 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'both'   => __( 'Both', 'foogallery' )
 					) ),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
+						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field-operator' => 'regex',
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'dots|pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'dots|pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
 				$fields[] = array(
 					'id'      => 'paging_theme',
 					'title'   => __( 'Theme', 'foogallery' ),
-					'desc'    => __( 'The theme used for pagination.', 'foogallery' ),
+					'desc'    => __( 'The theme used for pagination. Default uses the theme of the gallery.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
-					'spacer'  => '<span class="spacer"></span>',
 					'type'    => 'radio',
-					'default' => 'fg-light',
+					'default' => '',
 					'choices' => apply_filters( 'foogallery_gallery_template_paging_theme_choices', array(
+						'' 			=> __( 'Default', 'foogallery' ),
 						'fg-light'  => __( 'Light', 'foogallery' ),
 						'fg-dark'   => __( 'Dark', 'foogallery' ),
 						'fg-custom' => __( 'Custom', 'foogallery' ),
 					) ),
 					'row_data'=> array(
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field'          => 'paging_type',
 						'data-foogallery-show-when-field-operator' => 'regex',
 						'data-foogallery-show-when-field-value'    => 'dots|pagination|loadMore',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -244,19 +284,19 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'desc'    => __( 'Whether or not it should scroll to the top of the gallery when paging is changed.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
 					'type'    => 'radio',
-					'spacer'  => '<span class="spacer"></span>',
 					'default' => 'false',
 					'choices' => array(
 						'true'  => __( 'Yes', 'foogallery' ),
 						'false'  => __( 'No', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
+						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field-operator' => 'regex',
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'dots|pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'dots|pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -271,11 +311,13 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'step'    => '1',
 					'min'     => '0',
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -285,18 +327,19 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'desc'    => __( 'Whether or not to show the first &amp; last buttons for numbered pagination.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
 					'type'    => 'radio',
-					'spacer'  => '<span class="spacer"></span>',
 					'default' => 'true',
 					'choices' => array(
 						'true'  => __( 'Show', 'foogallery' ),
 						'false'  => __( 'Hide', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -306,18 +349,19 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'desc'    => __( 'Whether or not to show the previous &amp; next buttons for numbered pagination.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
 					'type'    => 'radio',
-					'spacer'  => '<span class="spacer"></span>',
 					'default' => 'true',
 					'choices' => array(
 						'true'  => __( 'Show', 'foogallery' ),
 						'false'  => __( 'Hide', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -327,18 +371,19 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'desc'    => __( 'Whether or not to show the previous &amp; next more buttons for numbered pagination.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
 					'type'    => 'radio',
-					'spacer'  => '<span class="spacer"></span>',
 					'default' => 'true',
 					'choices' => array(
 						'true'  => __( 'Show', 'foogallery' ),
 						'false'  => __( 'Hide', 'foogallery' ),
 					),
 					'row_data'=> array(
-						'data-foogallery-hidden' => true,
-						'data-foogallery-show-when-field' => 'paging_type',
-						'data-foogallery-show-when-field-value' => 'pagination',
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode'
+						'data-foogallery-hidden'                   => true,
+						'data-foogallery-show-when-field-operator' => '===',
+						'data-foogallery-show-when-field'          => 'paging_type',
+						'data-foogallery-show-when-field-value'    => 'pagination',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-persist'                  => true
 					)
 				);
 
@@ -347,7 +392,6 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'title'   => __( 'Paging Output', 'foogallery' ),
 					'desc'    => __( 'How the paging items are output. We recommend that very large galleries output as JSON.', 'foogallery' ),
 					'section' => __( 'Paging', 'foogallery' ),
-					'spacer'  => '<span class="spacer"></span>',
 					'type'    => 'radio',
 					'default' => '',
 					'choices' => array(
@@ -355,13 +399,14 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 						'html'   => __( 'Legacy (HTML)', 'foogallery' )
 					),
 					'row_data'=> array(
-						'data-foogallery-change-selector' => 'input',
-						'data-foogallery-preview' => 'shortcode',
-						'data-foogallery-value-selector' => 'input:checked',
+						'data-foogallery-change-selector'          => 'input',
+						'data-foogallery-preview'                  => 'shortcode',
+						'data-foogallery-value-selector'           => 'input:checked',
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field'          => 'paging_type',
 						'data-foogallery-show-when-field-operator' => '!==',
 						'data-foogallery-show-when-field-value'    => '',
+						'data-foogallery-persist'                  => true
 					)
 				);
 			}

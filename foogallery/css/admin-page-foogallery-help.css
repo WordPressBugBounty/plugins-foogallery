@@ -256,18 +256,10 @@ body {
     padding-right: 32px;
     padding-left: 0;
 }
-
-.fgah-feature > div > ol {
-
-}
 .fgah-feature > div > ol > li {
     list-style-type: decimal;
     margin: 0 2em;
     padding: 0;
-}
-
-.fgah-feature > div > dl {
-
 }
 .fgah-feature > div > dl > dt {
     font-size: large;
@@ -450,6 +442,17 @@ span.fgah-plan-commerce {
     cursor: pointer;
     transition: background-color .1s ease-in-out;
 }
+
+    .foogallery-admin-help-button .dashicons {
+        margin-left: 5px;
+        width: 10px;
+        height: 10px;
+        font-size: 15px;
+    }
+
+    .foogallery-admin-help-button:hover {
+        background-color: #184eff;
+    }
 
 .foogallery-admin-help-button-active {
     background-color: #1897ff;

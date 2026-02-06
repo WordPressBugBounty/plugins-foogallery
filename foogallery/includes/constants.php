@@ -21,6 +21,7 @@ define( 'FOOGALLERY_META_THUMB_DIMENSIONS', 'foogallery_thumb_dimensions' );
 define( 'FOOGALLERY_META_FORCE_ORIGINAL_THUMBS', 'foogallery_force_original_thumbs' );
 define( 'FOOGALLERY_META_BLUEPRINT_ENABLED', '_foogallery_master_enabled' );
 define( 'FOOGALLERY_META_BLUEPRINT_SET', '_foogallery_master_set' );
+define( 'FOOGALLERY_META_NOTICE', '_foogallery_notice' );
 
 define( 'FOOGALLERY_ADMIN_MENU_PARENT_SLUG', 'edit.php?post_type=foogallery' );
 define( 'FOOGALLERY_FOOBOX_PRO_EXTENSION_SLUG', 'foobox' );
@@ -32,12 +33,14 @@ define( 'FOOGALLERY_OPTION_THUMB_TEST', 'foogallery-thumb-test' );
 define( 'FOOGALLERY_OPTION_CUSTOM_ASSETS', 'foogallery-custom-assets' );
 define( 'FOOGALLERY_OPTION_DEMO_CONTENT_ATTACHMENTS', 'foogallery_demo_content_attachments' );
 define( 'FOOGALLERY_OPTION_DEMO_CONTENT_GALLERIES', 'foogallery_demo_content_galleries' );
+define( 'FOOGALLERY_OPTION_CUSTOM_CSS', 'foogallery-custom-css-update' );
 
 define( 'FOOGALLERY_ADMIN_MENU_HELP_SLUG', 'foogallery-help' );
 define( 'FOOGALLERY_ADMIN_MENU_SETTINGS_SLUG', 'foogallery-settings' );
 define( 'FOOGALLERY_ADMIN_MENU_FEATURES_SLUG', 'foogallery-features' );
 define( 'FOOGALLERY_ADMIN_MENU_SYSTEMINFO_SLUG', 'foogallery-systeminfo' );
 define( 'FOOGALLERY_ADMIN_MENU_PRICING_SLUG', 'foogallery-pricing' );
+define( 'FOOGALLERY_ADMIN_MENU_ADDON_SLUG', 'foogallery-addons' );
 
 define( 'FOOGALLERY_ATTACHMENT_TAXONOMY_TAG', 'foogallery_attachment_tag' );
 define( 'FOOGALLERY_ATTACHMENT_TAXONOMY_CATEGORY', 'foogallery_attachment_category' );

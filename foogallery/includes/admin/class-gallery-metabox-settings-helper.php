@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Settings helper with sanitized internal values
 /**
  * Created by bradvin
  * Date: 28/04/2017
@@ -141,6 +142,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 		 * @return void
 		 */
 		private function render_gallery_template_settings_tab_contents_fields( $template, $section ) {
+			$minimize_gallery_settings_help = foogallery_get_setting( 'minimize_gallery_settings_help', false ) === 'on';
 			?>
 			<table class="foogallery-metabox-settings">
 				<tbody>
@@ -159,18 +161,35 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 					if ( isset( $field['row_data'] ) ) {
 						$field_row_data = array_map( 'esc_attr', $field['row_data'] );
 						foreach ( $field_row_data as $field_row_data_name => $field_row_data_value ) {
-							$field_row_data_html .= " $field_row_data_name=" . '"' . $field_row_data_value . '"';
+							$field_row_data_html .= " $field_row_data_name=" . '"' . esc_attr( $field_row_data_value ) . '"';
 						}
 					}
 					?>
-					<tr class="<?php echo $field_class; ?>"<?php echo $field_row_data_html; ?>>
-						<?php if ( 'help' === $field_type ) { ?>
+					<tr data-foogallery-setting-id="<?php echo esc_attr( $field['id'] ); ?>" data-foogallery-setting-type="<?php echo esc_attr( $field_type ); ?>" class="<?php echo esc_attr( $field_class ); ?>"<?php echo $field_row_data_html; ?>>
+						<?php 
+                        if ( 'warning' === $field_type ) { ?>
+							<td colspan="2">
+								<div class="foogallery-help foogallery-warning">
+									<i class="dashicons dashicons-warning"></i>
+									<?php if ( array_key_exists( 'title', $field ) ) { ?>
+									<?php echo '<h4>' . $field['title'] . '</h4>'; ?>
+									<?php } ?>
+									<?php if ( array_key_exists( 'desc', $field ) ) { ?>
+									<p><?php echo $field['desc']; ?></p>
+									<?php } ?>
+								</div>
+							</td>
+						<?php }                        
+                        else if ( 'help' === $field_type ) { ?>
 							<td colspan="2">
 								<div class="foogallery-help">
+									<i class="dashicons dashicons-editor-help"></i>
 									<?php if ( array_key_exists( 'title', $field ) ) { ?>
-									<?php echo '<strong>' . $field['title'] . '</strong><br /><br />'; ?>
+									<?php echo '<h4>' . $field['title'] . '</h4>'; ?>
 									<?php } ?>
-									<?php echo $field['desc']; ?>
+									<?php if ( array_key_exists( 'desc', $field ) ) { ?>
+									<p><?php echo $field['desc']; ?></p>
+									<?php } ?>
 								</div>
 							</td>
 						<?php } else if ( 'promo' === $field_type ) { ?>
@@ -194,16 +213,19 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
                             </td>
 						<?php } else { ?>
 							<th>
-								<label for="FooGallerySettings_<?php echo $template['slug'] . '_' . $field['id']; ?>"><?php echo $field['title']; ?></label>
+								<label data-setting="<?php echo esc_attr( $field['id'] ); ?>" for="FooGallerySettings_<?php echo $template['slug'] . '_' . $field['id']; ?>"><?php echo $field['title']; ?></label>
 								<?php if ( $is_promo ) { ?>
                                     <span data-balloon-length="large" data-balloon-pos="right" data-balloon="<?php echo esc_attr($field['promo']); ?>"><i class="dashicons dashicons-star-filled"></i></span>
 								<?php } ?>
-                                <?php if ( !empty( $field['desc'] ) ) { ?>
-									<span data-balloon-length="large" data-balloon-pos="right" data-balloon="<?php echo esc_attr($field['desc']); ?>"><i class="dashicons dashicons-editor-help"></i></span>
+								<?php if ( !empty( $field['desc'] ) && $minimize_gallery_settings_help ) { ?>
+									<span class="foogallery-settings-help" data-balloon-length="large" data-balloon-pos="right" data-balloon="<?php echo esc_attr($field['desc']); ?>"><i class="dashicons dashicons-editor-help"></i></span>
 								<?php } ?>
 							</th>
 							<td>
 								<?php do_action( 'foogallery_render_gallery_template_field', $field, $this->gallery, $template ); ?>
+								<?php if ( !empty( $field['desc'] ) && !$minimize_gallery_settings_help ) { ?>
+									<p class="foogallery-settings-description"><?php echo esc_html($field['desc']); ?></p>
+								<?php } ?>
 							</td>
 						<?php } ?>
 					</tr>
@@ -349,43 +371,6 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 			}
 
 			return 99;
-		}
-
-		/**
-		 * Render the hidden gallery template selector.
-		 *
-		 * @return void
-		 */
-		public function render_hidden_gallery_template_selector() {
-			?>
-			<span class="hidden foogallery-template-selector"> &mdash;
-				<select id="FooGallerySettings_GalleryTemplate" name="<?php echo FOOGALLERY_META_TEMPLATE; ?>">
-                    <?php
-					foreach ( $this->gallery_templates as $template ) {
-						$selected = ( $this->current_gallery_template === $template['slug'] ) ? 'selected' : '';
-
-						$preview_css = '';
-						if ( isset( $template['preview_css'] ) ) {
-							if ( is_array( $template['preview_css'] ) ) {
-								//dealing with an array of css files to include
-								$preview_css = implode( ',', $template['preview_css'] );
-							} else {
-								$preview_css = $template['preview_css'];
-							}
-						}
-						$preview_css = empty( $preview_css ) ? '' : ' data-preview-css="' . $preview_css . '" ';
-
-						$mandatory_classes = '';
-						if ( isset( $template['mandatory_classes'] ) ) {
-							$mandatory_classes = ' data-mandatory-classes="' . $template['mandatory_classes'] . '" ';
-						}
-
-						echo "<option {$selected}{$preview_css}{$mandatory_classes} value=\"{$template['slug']}\">{$template['name']}</option>";
-					}
-					?>
-                </select>
-            </span>
-			<?php
 		}
 	}
 }

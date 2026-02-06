@@ -336,8 +336,6 @@ function foogallery_attachment_html_caption( $foogallery_attachment, $args = arr
 		$caption_title = null;
 		$caption_desc = null;
 
-		$html = '<figcaption class="fg-caption"><div class="fg-caption-inner">';
-
 		if ( array_key_exists( 'override_title', $captions ) ) {
 			$caption_title = $captions['override_title'];
 		} else if ( array_key_exists( 'title', $captions ) ) {
@@ -349,14 +347,18 @@ function foogallery_attachment_html_caption( $foogallery_attachment, $args = arr
 			$caption_desc = $captions['desc'];
 		}
 
-		if ( !empty( $caption_title ) ) {
-			$html .= '<div class="fg-caption-title">' . $caption_title . '</div>';
-		}
-		if ( !empty( $caption_desc ) ) {
-			$html .= '<div class="fg-caption-desc">' . $caption_desc . '</div>';
-		}
+		if ( !empty( $caption_title ) || !empty( $caption_desc ) ) {
+			$html = '<figcaption class="fg-caption"><div class="fg-caption-inner">';
 
-		$html .= '</div></figcaption>';
+			if ( !empty( $caption_title ) ) {
+				$html .= '<div class="fg-caption-title">' . $caption_title . '</div>';
+			}
+			if ( !empty( $caption_desc ) ) {
+				$html .= '<div class="fg-caption-desc">' . $caption_desc . '</div>';
+			}
+
+			$html .= '</div></figcaption>';
+		}
 	}
 
     return apply_filters( 'foogallery_attachment_html_caption', $html, $foogallery_attachment, $args );
@@ -580,8 +582,8 @@ function foogallery_render_script_block_for_json_items( $gallery, $attachments )
 	if ( count( $attachments ) > 0 ) {
 		$attachments_json = array_map( 'foogallery_build_json_from_attachment', $attachments );
 		echo '<script type="text/javascript">';
-		echo '  window["' . $gallery->container_id() . '_items"] = [';
-		echo implode( ', ', $attachments_json );
+		echo '  window["' . esc_js( $gallery->container_id() ) . '_items"] = [';
+		echo implode( ', ', $attachments_json ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON data
 		echo '  ];';
 		echo '</script>';
 	}

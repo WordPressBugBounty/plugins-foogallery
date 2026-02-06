@@ -16,6 +16,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 
 			//add extra fields to the templates
 			add_filter( 'foogallery_override_gallery_template_fields-image-viewer', array( $this, 'adjust_fields' ), 10, 2 );
+			add_filter( 'foogallery_override_gallery_template_fields_defaults-image-viewer', array( $this, 'field_defaults' ), 10, 1 );
 
 			add_filter( 'foogallery_gallery_templates_files', array( $this, 'register_myself' ) );
 
@@ -37,35 +38,8 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 			add_filter( 'foogallery_build_container_data_options-image-viewer', array( $this, 'add_data_options' ), 10, 3 );
 
 			// add a style block for the gallery based on the thumbnail width.
-			add_action( 'foogallery_loaded_template_before', array( $this, 'add_width_style_block' ), 10, 1 );
+			add_action( 'foogallery_template_style_block-image-viewer', array( $this, 'add_css' ), 10, 2 );
         }
-
-		/**
-		 * Add a style block based on the width thumbnail size
-		 *
-		 * @param $gallery FooGallery
-		 */
-		function add_width_style_block( $gallery ) {
-			if ( self::TEMPLATE_ID !== $gallery->gallery_template ) {
-				return;
-			}
-
-			$id         = $gallery->container_id();
-			$dimensions = foogallery_gallery_template_setting('thumbnail_size');
-			if ( is_array( $dimensions ) && array_key_exists( 'width', $dimensions ) && intval( $dimensions['width'] ) > 0 ) {
-				$width      = intval( $dimensions['width'] );
-
-				// @formatter:off
-				?>
-<style type="text/css">
-	<?php echo '#' . $id; ?> .fg-image {
-        width: <?php echo $width; ?>px;
-    }
-</style>
-				<?php
-				// @formatter:on
-			}
-		}
 
         function alter_field_value( $value, $field, $gallery, $template ) {
             //only do something if we are dealing with the thumbnail_dimensions field in this template
@@ -97,7 +71,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 		 */
 		function add_template( $gallery_templates ) {
 
-			$gallery_templates[] = array(
+			$gallery_templates[self::TEMPLATE_ID] = array(
 				'slug'        => self::TEMPLATE_ID,
 				'name'        => __( 'Image Viewer', 'foogallery' ),
 				'preview_support' => true,
@@ -106,6 +80,12 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 				'mandatory_classes' => 'fg-image-viewer',
 				'thumbnail_dimensions' => true,
 				'enqueue_core' => true,
+				'icon' => '<svg viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="12"/>
+        <rect x="3" y="16" width="18" height="5"/>
+        <rect x="5" y="18" width="3" height="1"/>
+        <rect x="16" y="18" width="3" height="1"/>
+      </svg>',
 				'fields'	  => array(
                     array(
                         'id'      => 'thumbnail-help',
@@ -149,7 +129,6 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
                         'desc'    => __( 'The horizontal alignment of the thumbnails inside the gallery', 'foogallery' ),
                         'default' => 'fg-center',
 						'type'    => 'radio',
-						'spacer'  => '<span class="spacer"></span>',
                         'choices' => array(
                             'fg-left' => __( 'Left', 'foogallery' ),
                             'fg-center' => __( 'Center', 'foogallery' ),
@@ -167,10 +146,10 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 						'desc'    => __( 'When navigating through the images, do you want to loop image back to the first after you navigate past the last image?', 'foogallery' ),
 						'default' => 'enabled',
 						'type'    => 'radio',
-						'spacer'  => '<span class="spacer"></span>',
+						'class'   => 'foogallery-radios-12em',
 						'choices' => array(
 							'disabled' => __( 'Disabled', 'foogallery' ),
-							'enabled' => __( 'Looping Enabled', 'foogallery' ),
+							'enabled' => __( 'Enabled', 'foogallery' ),
 						),
 						'row_data'=> array(
 							'data-foogallery-change-selector' => 'input:radio',
@@ -208,6 +187,26 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 			}
 
 			return $fields;
+		}
+
+		/**
+		 * Return an array of field defaults for the template
+		 *
+		 * @param $field_defaults
+		 *
+		 * @return string[]
+		 */
+		function field_defaults( $field_defaults ) {
+			return array_merge( $field_defaults, array(
+				'hover_effect_caption_visibility' => 'fg-caption-always',
+				'caption_visibility_no_hover_effect' => 'fg-caption-always',
+				'drop_shadow' => 'fg-shadow-outline',
+				'hover_effect_icon' => 'fg-hover-plus3',
+				'hover_effect_scale' => 'fg-hover-semi-zoomed',
+				'inner_shadow' => 'fg-shadow-inset-large',
+				'rounded_corners' => 'fg-round-small',
+				'theme' => 'fg-light',
+			) );
 		}
 
 		/**
@@ -302,6 +301,23 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 			$options['template']['loop'] = $looping;
 
 			return $options;
+		}
+
+		/**
+		 * Add css to the page for the gallery
+		 *
+		 * @param $gallery FooGallery
+		 */
+		function add_css( $css, $gallery ) {
+
+			$id         = $gallery->container_id();
+			$dimensions = foogallery_gallery_template_setting('thumbnail_size');
+			if ( is_array( $dimensions ) && array_key_exists( 'width', $dimensions ) && intval( $dimensions['width'] ) > 0 ) {
+				$width = intval( $dimensions['width'] );
+				$css[] = '#' . $id . ' .fg-image { width: ' . $width . 'px; }';
+			}
+
+			return $css;
 		}
 	}
 }

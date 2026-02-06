@@ -62,27 +62,6 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 				'default'  => '',
 			);
 
-            $custom_attribute_desc = __( 'Even though the Custom Attributes setting is useful in some scenarios, due to numerous security concerns, we have decided to disable it. It will be completely removed in a future update. We are keeping it for now, to make it easier to migrate to the newer and safer Custom Attribute Key and Value settings below.', 'foogallery' );
-            $custom_attribute_desc_link = '<a href="https://fooplugins.com/support" target="_blank">' . __( 'contact us', 'foogallery' ) . '</a>';
-            $custom_attribute_desc .= '</br>' . sprintf( __( 'Please %s for any questions or help.', 'foogallery' ), $custom_attribute_desc_link );
-
-            $fields[] = array(
-                'id'      => 'custom_attributes_help',
-                'title'   => __( 'Custom Attributes Setting No Longer Works!', 'foogallery' ),
-                'desc'    => $custom_attribute_desc,
-                'section'  => __( 'Advanced', 'foogallery' ),
-                'type'    => 'help'
-            );
-
-			$fields[] = array(
-				'id'       => 'custom_attributes',
-				'title'    => __( 'Custom Attributes', 'foogallery' ),
-				'desc'     => __( 'Add any custom attributes to the gallery container. To be used by developers only!', 'foogallery' ),
-				'section'  => __( 'Advanced', 'foogallery' ),
-				'type'     => 'textarea',
-				'default'  => '',
-			);
-
             $fields[] = array(
                 'id'       => 'custom_attribute_key',
                 'title'    => __( 'Custom Attribute Key', 'foogallery' ),
@@ -116,11 +95,10 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 				'desc'    => __( 'You can choose to include a title attribute on the thumbnail image or not.', 'foogallery' ),
 				'section' => __( 'Advanced', 'foogallery' ),
 				'type'     => 'radio',
-				'spacer'   => '<span class="spacer"></span>',
 				'default'  => '',
 				'choices'  => array(
-					'' => __( 'Enabled', 'foogallery' ),
 					'disabled' => __( 'Disabled', 'foogallery' ),
+					'' => __( 'Enabled', 'foogallery' ),
 				),
 				'row_data' => array(
 					'data-foogallery-change-selector' => 'input:radio',
@@ -168,7 +146,7 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 
 			if ( $current_foogallery === $gallery ) {
                 $custom_attribute_key = sanitize_title( foogallery_gallery_template_setting( 'custom_attribute_key', '' ) );
-                $custom_attribute_value = sanitize_html_class( foogallery_gallery_template_setting( 'custom_attribute_value', '' ) );
+                $custom_attribute_value = sanitize_text_field( foogallery_gallery_template_setting( 'custom_attribute_value', '' ) );
 
                 if ( !empty( $custom_attribute_key ) && !empty( $custom_attribute_value ) ) {
 

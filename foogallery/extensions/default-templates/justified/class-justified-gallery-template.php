@@ -26,40 +26,11 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 			// build up the arguments needed for rendering this template.
 			add_filter( 'foogallery_gallery_template_arguments-justified', array( $this, 'build_gallery_template_arguments' ) );
 
-			add_filter( 'foogallery_override_gallery_template_fields-justified', array( $this, 'adjust_default_field_values' ), 10, 2 );
+			// Adjust the default settings for this layout
+			add_filter( 'foogallery_override_gallery_template_fields_defaults-justified', array( $this, 'field_defaults' ), 10, 1 );
 
 			// add a style block for the gallery based on the field settings.
-			add_action( 'foogallery_loaded_template_before', array( $this, 'add_style_block' ), 10, 1 );
-			// @formatter:on
-		}
-
-		/**
-		 * Add a style block based on the field settings
-		 *
-		 * @param $gallery FooGallery
-		 */
-		function add_style_block( $gallery ) {
-			if ( self::TEMPLATE_ID !== $gallery->gallery_template ) {
-				return;
-			}
-
-			$id         = $gallery->container_id();
-			$margins    = intval( foogallery_gallery_template_setting( 'margins', 2 ) );
-			$row_height = intval( foogallery_gallery_template_setting( 'row_height', 250 ) );
-
-			// @formatter:off
-			?>
-			<style>
-                #<?php echo $id; ?>.fg-justified .fg-item {
-                    margin-right: <?php echo $margins; ?>px;
-                    margin-bottom: <?php echo $margins; ?>px;
-                }
-
-                #<?php echo $id; ?>.fg-justified .fg-image {
-                    height: <?php echo $row_height; ?>px;
-                }
-			</style>
-			<?php
+			add_action( 'foogallery_template_style_block-justified', array( $this, 'add_css' ), 10, 2 );
 			// @formatter:on
 		}
 
@@ -84,9 +55,9 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 		 * @return array
 		 */
 		public function add_template( $gallery_templates ) {
-			$gallery_templates[] = array(
+			$gallery_templates[self::TEMPLATE_ID] = array(
 				'slug'                  => self::TEMPLATE_ID,
-				'name'                  => __( 'Justified Gallery', 'foogallery' ),
+				'name'                  => __( 'Justified', 'foogallery' ),
 				'preview_support'       => true,
 				'common_fields_support' => true,
 				'lazyload_support'      => true,
@@ -95,6 +66,15 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 				'thumbnail_dimensions'  => true,
 				'filtering_support'     => true,
 				'enqueue_core'          => true,
+				'icon' => '<svg viewBox="0 0 24 24">
+        <rect x="3" y="4" width="9" height="6"/>
+        <rect x="12" y="4" width="9" height="6"/>
+        <rect x="3" y="10" width="13" height="6"/>
+        <rect x="16" y="10" width="5" height="6"/>
+        <rect x="3" y="16" width="6" height="6"/>
+        <rect x="9" y="16" width="5" height="6"/>
+        <rect x="14" y="16" width="7" height="6"/>
+      </svg>',
 				'fields'                => array(
 					array(
 						'id'       => 'row_height',
@@ -129,17 +109,16 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 					),
 					array(
 						'id'       => 'margins',
-						'title'    => __( 'Margins', 'foogallery' ),
-						'desc'     => __( 'The spacing between your thumbnails.', 'foogallery' ),
+						'title'    => __( 'Thumbnail Gap', 'foogallery' ),
+						'desc'     => __( 'The spacing or gap between your thumbnails.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
-						'type'     => 'number',
-						'class'    => 'small-text',
+						'type'     => 'slider',
 						'default'  => 2,
-						'step'     => '1',
-						'min'      => '0',
+						'step'     => 1,
+						'min'      => 0,
+						'max'      => 50,
 						'row_data' => array(
-							'data-foogallery-change-selector' => 'input',
-							'data-foogallery-value-selector'  => 'input',
+							'data-foogallery-change-selector' => 'range-input',
 							'data-foogallery-preview'         => 'shortcode',
 						),
 					),
@@ -161,7 +140,6 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'desc'     => __( 'For rows that cannot be justified, what alignment should be used?', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
 						'type'     => 'radio',
-						'spacer'   => '<span class="spacer"></span>',
 						'default'  => 'center',
 						'choices'  => array(
 							'left'   => __( 'Left', 'foogallery' ),
@@ -321,29 +299,38 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 		}
 
 		/**
-		 * Adjust the default values for the justified template
+		 * Return an array of field defaults for the template
 		 *
-		 * @param $fields
-		 * @param $template
+		 * @param $field_defaults
 		 *
-		 * @return array
-		 * @uses "foogallery_override_gallery_template_fields"
+		 * @return string[]
 		 */
-		function adjust_default_field_values( $fields, $template ) {
-			//update specific fields
-			foreach ( $fields as &$field ) {
-				if ( 'border_size' === $field['id'] ) {
-					$field['default'] = '';
-				} else if ( 'hover_effect_caption_visibility' == $field['id'] ) {
-					$field['default'] = 'fg-caption-always';
-				} else if ( 'hover_effect_icon' == $field['id'] ) {
-					$field['default'] = 'fg-hover-zoom2';
-				} else if ( 'caption_desc_source' == $field['id'] ) {
-					$field['default'] = 'none';
-				}
-			}
+		function field_defaults( $field_defaults ) {
+			return array_merge( $field_defaults, array(
+				'hover_effect_caption_visibility' => 'fg-caption-always',
+				'caption_visibility_no_hover_effect' => 'fg-caption-always',
+				'border_size' => '',
+				'hover_effect_icon' => 'fg-hover-zoom2',
+				'caption_desc_source' => 'none',
+				'captions_limit_length' => 'clamp',
+				'caption_title_clamp' => '1'
+			) );
+		}
 
-			return $fields;
+		/**
+		 * Add css to the page for the gallery
+		 *
+		 * @param $gallery FooGallery
+		 */
+		function add_css( $css, $gallery ) {
+
+			$id         = $gallery->container_id();
+			$margins    = intval( foogallery_gallery_template_setting( 'margins', 2 ) );
+			$row_height = intval( foogallery_gallery_template_setting( 'row_height', 250 ) );
+			$css[] = '#' . $id . '.fg-justified .fg-item { margin-right: ' . $margins . 'px; margin-bottom: ' . $margins . 'px; }';
+			$css[] = '#' . $id . '.fg-justified .fg-image { height: ' . $row_height . 'px; }';
+
+			return $css;
 		}
 	}
 }

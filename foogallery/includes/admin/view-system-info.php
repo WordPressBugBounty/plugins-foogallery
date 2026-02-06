@@ -56,6 +56,13 @@ if ( current_user_can( 'activate_plugins' ) ) {
 	$foogallery = FooGallery_Plugin::get_instance();
 	$settings = $foogallery->options()->get_all();
 
+	// Redact sensitive settings
+	foreach ( $settings as $k => $v ) {
+		if ( preg_match( '/api_key|token|secret/i', $k ) ) {
+			$settings[$k] = 'REDACTED';
+		}
+	}
+
 	$stream_wrappers = stream_get_wrappers();
 
 	$debug_info = array(
@@ -107,11 +114,11 @@ if ( current_user_can( 'activate_plugins' ) ) {
 		}
 	</style>
 	<div class="wrap about-wrap">
-		<h1><?php echo $title; ?></h1>
-		<p><?php echo $support_text; ?></p>
+		<h1><?php echo esc_html( $title ); ?></h1>
+		<p><?php echo esc_html( $support_text ); ?></p>
     <textarea class="foogallery-debug">
 <?php foreach ( $debug_info as $key => $value ) {
-	echo $key . ' : ';
+	echo esc_html( $key ) . ' : ';
 	print_r( $value );
 	echo "\n";
 } ?>

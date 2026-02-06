@@ -66,11 +66,21 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			$settings[] = array(
 				'id'      => 'gallery_template',
-				'title'   => __( 'Default Gallery Template', 'foogallery' ),
-				'desc'    => __( 'The default gallery template to use for new galleries', 'foogallery' ),
+				'title'   => __( 'Default Gallery Layout', 'foogallery' ),
+				'desc'    => __( 'The default gallery layout to use for new galleries', 'foogallery' ),
 				'default' => foogallery_get_default( 'gallery_template' ) ,
 				'type'    => 'select',
 				'choices' => $gallery_templates_choices,
+				'tab'     => 'general',
+				'section' => __( 'Gallery Defaults', 'foogallery' )
+			);
+
+			$settings[] = array(
+				'id'      => 'default_gallery_attachments',
+				'title'   => __( 'Default Gallery Items', 'foogallery' ),
+				'desc'    => __( 'The default attachments to use for new galleries. Provide a comma separated list of attachment IDs.', 'foogallery' ),
+				'default' => '' ,
+				'type'    => 'text',
 				'tab'     => 'general',
 				'section' => __( 'Gallery Defaults', 'foogallery' )
 			);
@@ -154,8 +164,17 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			$settings[] = array(
 				'id'      => 'hide_gallery_template_help',
-				'title'   => __( 'Hide Gallery Template Help', 'foogallery' ),
-				'desc'    => __( 'Some gallery templates show helpful tips, which are useful for new users. You can choose to hide these tips.', 'foogallery' ),
+				'title'   => __( 'Hide Gallery Settings Tips', 'foogallery' ),
+				'desc'    => __( 'Some gallery settings show helpful tips, which are useful for new users. You can choose to hide these tips.', 'foogallery' ),
+				'type'    => 'checkbox',
+				'tab'     => 'general',
+				'section' => __( 'Admin', 'foogallery' )
+			);
+
+			$settings[] = array(
+				'id'      => 'minimize_gallery_settings_help',
+				'title'   => __( 'Minimize Gallery Settings Help Text', 'foogallery' ),
+				'desc'    => __( 'By default, help text is displayed under each gallery setting. You can choose to minimize this and rather show a help icon that opens the help text in a tooltip.', 'foogallery' ),
 				'type'    => 'checkbox',
 				'tab'     => 'general',
 				'section' => __( 'Admin', 'foogallery' )
@@ -182,20 +201,39 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			$settings[] = array(
 				'id'      => 'hide_editor_button',
-				'title'   => __( 'Hide Classic Editor Button', 'foogallery' ),
-				'desc'    => sprintf( __( 'If enabled, this will hide the "Add %s" button in the Classic editor.', 'foogallery' ), foogallery_plugin_name() ),
-				'type'    => 'checkbox',
+				'title'   => __( 'Classic Editor Button', 'foogallery' ),
+				'desc'    => sprintf( __( 'Either show or hide the "Add %s" button in the Classic editor.', 'foogallery' ), foogallery_plugin_name() ),
+				'default' => foogallery_get_default( 'hide_editor_button', 'on' ),
+				'type'    => 'select',
+				'choices' => array(
+					'on'  => __( 'Hidden', 'foogallery' ),
+					'off' => __( 'Visible', 'foogallery' )
+				),
 				'tab'     => 'general',
 				'section' => __( 'Admin', 'foogallery' )
 			);
 
 			$settings[] = array(
 				'id'      => 'advanced_attachment_modal',
-				'title'   => __( 'Enable Advanced Attachment Modal', 'foogallery' ),
+				'title'   => __( 'Advanced Attachment Modal', 'foogallery' ),
 				'desc'    => __( 'If enabled, this will use the advanced attachment modal which allows for faster and easier editing of attachment details, when creating your galleries.', 'foogallery' ),
-				'type'    => 'checkbox',
-				'default' => 'on',
+				'type'    => 'select',
+				'default' => foogallery_get_default( 'advanced_attachment_modal', 'on' ),
 				'tab'     => 'general',
+				'section' => __( 'Admin', 'foogallery' ),
+				'choices' => array(
+					'on'  => __( 'Enabled', 'foogallery' ),
+					'off' => __( 'Disabled', 'foogallery' )
+				)
+			);
+
+			$settings[] = array(
+				'id'    => 'limit_gallery_selector_block_editor',
+				'type'  => 'text',
+				'title' => __( 'Limit Galleries (Block Editor)', 'foogallery' ),
+				'desc'  => __( 'Limit the number of galleries that are returned in the block editor when choosing a gallery.', 'foogallery' ),
+				'tab'   => 'general',
+				'class' => 'foogallery_settings_short_text',
 				'section' => __( 'Admin', 'foogallery' )
 			);
 
@@ -400,6 +438,46 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			);
 
 			$settings[] = array(
+				'id'      => 'language_carousel_previous_text',
+				'title'   => __( 'Carousel "Previous" Text', 'foogallery' ),
+				'desc'    => __( 'The text that is shown when you hover over the previous arrow in the carousel.'), 
+				'type'    => 'text',
+				'default' => __( 'Previous', 'foogallery' ),
+				'section' => __( 'Carousel Template', 'foogallery' ),
+				'tab'     => 'language'
+			);
+
+			$settings[] = array(
+				'id'      => 'language_carousel_next_text',
+				'title'   => __( 'Carousel "Next" Text', 'foogallery' ),
+				'desc'    => __( 'The text that is shown when you hover over the next arrow in the carousel.'), 
+				'type'    => 'text',
+				'default' => __( 'Next', 'foogallery' ),
+				'section' => __( 'Carousel Template', 'foogallery' ),
+				'tab'     => 'language'
+			);
+
+			$settings[] = array(
+				'id'      => 'language_carousel_bullet_text',
+				'title'   => __( 'Carousel "Bullet" Text', 'foogallery' ),
+				'desc'    => __( 'The text that is shown when you hover over the bullet in the carousel.'), 
+				'type'    => 'text',
+				'default' => __( 'Item {ITEM}', 'foogallery' ),
+				'section' => __( 'Carousel Template', 'foogallery' ),
+				'tab'     => 'language'
+			);
+
+			$settings[] = array(
+				'id'      => 'language_carousel_bullet_active_text',
+				'title'   => __( 'Carousel "Bullet" Active Text', 'foogallery' ),
+				'desc'    => __( 'The text that is shown when you hover over the bullet in the carousel that is currently active.'), 
+				'type'    => 'text',
+				'default' => __( 'Item {ITEM} - Current', 'foogallery' ),
+				'section' => __( 'Carousel Template', 'foogallery' ),
+				'tab'     => 'language'
+			);
+
+			$settings[] = array(
 				'id'      => 'language_images_count_none_text',
 				'title'   => __( 'Image Count None Text', 'foogallery' ),
 				'type'    => 'text',
@@ -430,15 +508,6 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			//region Advanced Tab
 			$tabs['advanced'] = __( 'Advanced', 'foogallery' );
-
-            $settings[] = array(
-                'id'      => 'enable_custom_ready',
-                'title'   => __( 'Custom Ready Event', 'foogallery' ),
-                'desc'    => sprintf( __( 'There are sometimes unavoidable javascript errors on the page, which could result in the gallery not initializing correctly. Enable this setting to use a built-in custom ready event to overcome this problem if needed.', 'foogallery' ), foogallery_plugin_name() ),
-                'type'    => 'checkbox',
-                'tab'     => 'advanced',
-                'default' => 'on'
-            );
 
             $settings[] = array(
                 'id'      => 'add_media_button_start',
@@ -538,6 +607,14 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				);
 			}
 
+			$settings[] = array(
+				'id'    => 'enable_trial_mode',
+				'title' => __( 'Admin Trial Mode', 'foogallery' ),
+				'desc'  => __( 'Enables trial mode in the admin, which will highlight features that are only available in the Pro version.', 'foogallery' ),
+				'type'  => 'checkbox',
+				'tab'   => 'advanced'
+			);
+
 			//endregion Advanced Tab
 
 			//region Custom JS & CSS
@@ -595,17 +672,17 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 		function render_custom_setting_types( $args ) {
 			if ( 'clear_optimization_button' === $args['type'] ) { ?>
 				<div id="foogallery_clear_css_optimizations_container">
-					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_clear_css_optimizations' ) ); ?>" class="button-primary foogallery_clear_css_optimizations" value="<?php _e( 'Clear CSS Optimization Cache', 'foogallery' ); ?>">
+					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_clear_css_optimizations' ) ); ?>" class="button-primary foogallery_clear_css_optimizations" value="<?php esc_attr_e( 'Clear CSS Optimization Cache', 'foogallery' ); ?>">
 					<span id="foogallery_clear_css_cache_spinner" style="position: absolute" class="spinner"></span>
 				</div>
 			<?php } else if ( 'uninstall' === $args['type'] ) { ?>
 				<div id="foogallery_uninstall_container">
-					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_uninstall' ) ); ?>" class="button-primary foogallery_uninstall" value="<?php _e( 'Run Full Uninstall', 'foogallery' ); ?>">
+					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_uninstall' ) ); ?>" class="button-primary foogallery_uninstall" value="<?php esc_attr_e( 'Run Full Uninstall', 'foogallery' ); ?>">
 					<span id="foogallery_uninstall_spinner" style="position: absolute" class="spinner"></span>
 				</div>
 			<?php } else if ( 'thumb_generation_test' === $args['type'] ) { ?>
 				<div id="foogallery_thumb_generation_test_container">
-					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_thumb_generation_test' ) ); ?>" class="button-primary foogallery_thumb_generation_test" value="<?php _e( 'Run Tests', 'foogallery' ); ?>">
+					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_thumb_generation_test' ) ); ?>" class="button-primary foogallery_thumb_generation_test" value="<?php esc_attr_e( 'Run Tests', 'foogallery' ); ?>">
 					<span id="foogallery_thumb_generation_test_spinner" style="position: absolute" class="spinner"></span>
 				</div>
 			<?php }
@@ -624,7 +701,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				}
 				$nonce = wp_create_nonce( 'foogallery_apply_retina_defaults' );
 				?><div id="foogallery_apply_retina_support_container">
-					<input type="button" data-inputs="<?php echo implode( ',', $input_ids ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" class="button-primary foogallery_apply_retina_support" value="<?php _e( 'Apply Defaults to all Galleries', 'foogallery' ); ?>">
+					<input type="button" data-inputs="<?php echo esc_attr( implode( ',', $input_ids ) ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" class="button-primary foogallery_apply_retina_support" value="<?php esc_attr_e( 'Apply Defaults to all Galleries', 'foogallery' ); ?>">
 					<span id="foogallery_apply_retina_support_spinner" style="position: absolute" class="spinner"></span>
 				</div>
 			<?php }
@@ -634,76 +711,117 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 		 * AJAX endpoint for clearing all CSS optimizations
 		 */
 		function ajax_clear_css_optimizations() {
-			if ( check_admin_referer( 'foogallery_clear_css_optimizations' ) ) {
-				foogallery_clear_all_css_load_optimizations();
-
-				_e('The CSS optimization cache was successfully cleared!', 'foogallery' );
-				die();
+			if ( ! check_ajax_referer( 'foogallery_clear_css_optimizations', '_wpnonce', false ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Invalid security token.', 'foogallery' ) ),
+					403
+				);
 			}
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Insufficient permissions.', 'foogallery' ) ),
+					403
+				);
+			}
+
+			foogallery_clear_all_css_load_optimizations();
+
+			wp_send_json_success(
+				array( 'html' => esc_html__( 'The CSS optimization cache was successfully cleared!', 'foogallery' ) )
+			);
 		}
 
 		/**
 		 * AJAX endpoint for testing thumbnail generation
 		 */
 		function ajax_thumb_generation_test() {
-			if ( check_admin_referer( 'foogallery_thumb_generation_test' ) ) {
-				foogallery_output_thumbnail_generation_results();
-				die();
+			if ( ! check_ajax_referer( 'foogallery_thumb_generation_test', '_wpnonce', false ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Invalid security token.', 'foogallery' ) ),
+					403
+				);
 			}
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Insufficient permissions.', 'foogallery' ) ),
+					403
+				);
+			}
+
+			ob_start();
+			foogallery_output_thumbnail_generation_results();
+			$html = ob_get_clean();
+
+			wp_send_json_success( array( 'html' => $html ) );
 		}
 
 		/**
 		 * AJAX endpoint for applying the retina defaults to all galleries
 		 */
 		function ajax_apply_retina_defaults() {
-			if ( check_admin_referer( 'foogallery_apply_retina_defaults' ) ) {
+			if ( ! check_ajax_referer( 'foogallery_apply_retina_defaults', '_wpnonce', false ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Invalid security token.', 'foogallery' ) ),
+					403
+				);
+			}
 
-				$defaults = $_POST['defaults'];
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Insufficient permissions.', 'foogallery' ) ),
+					403
+				);
+			}
 
-				//extract the settings using a regex
-				$regex = '/foogallery\[default_retina_support\|(?<setting>.+?)\]/';
+			$defaults = isset( $_POST['defaults'] ) ? sanitize_text_field( wp_unslash( $_POST['defaults'] ) ) : '';
 
-				preg_match_all($regex, $defaults, $matches);
+			//extract the settings using a regex
+			$regex = '/foogallery\[default_retina_support\|(?<setting>.+?)\]/';
 
-				$gallery_retina_settings = array();
+			preg_match_all( $regex, $defaults, $matches );
 
-				if ( isset( $matches[1] ) ) {
-					foreach ( $matches[1] as $match ) {
-						$gallery_retina_settings[$match] = "true";
-					}
+			$gallery_retina_settings = array();
+
+			if ( isset( $matches[1] ) ) {
+				foreach ( $matches[1] as $match ) {
+					$gallery_retina_settings[ $match ] = 'true';
 				}
+			}
 
-				//go through all galleries and update the retina settings
-				$galleries = foogallery_get_all_galleries();
-				$gallery_update_count = 0;
-				foreach ( $galleries as $gallery ) {
-					update_post_meta( $gallery->ID, FOOGALLERY_META_RETINA, $gallery_retina_settings );
-					$gallery_update_count++;
-				}
+			//go through all galleries and update the retina settings
+			$galleries = foogallery_get_all_galleries();
+			$gallery_update_count = 0;
+			foreach ( $galleries as $gallery ) {
+				update_post_meta( $gallery->ID, FOOGALLERY_META_RETINA, $gallery_retina_settings );
+				$gallery_update_count++;
+			}
 
-				echo sprintf( _n(
+			/* translators: %s: number of galleries updated. */
+			$message = sprintf(
+				_n(
 					'1 gallery successfully updated to use the default retina settings.',
 					'%s galleries successfully updated to use the default retina settings.',
-					$gallery_update_count, 'foogallery' ), $gallery_update_count );
+					$gallery_update_count,
+					'foogallery'
+				),
+				absint( $gallery_update_count )
+			);
 
-				die();
-			}
+			wp_send_json_success( array( 'html' => esc_html( $message ) ) );
 		}
 
 		function ajax_uninstall() {
 			if ( check_admin_referer( 'foogallery_uninstall' ) && current_user_can( 'install_plugins' ) ) {
 				foogallery_uninstall();
 
-				_e('All traces of the plugin were removed from your system!', 'foogallery' );
+				esc_html_e('All traces of the plugin were removed from your system!', 'foogallery' );
 				die();
 			}
 		}
 
 		function generate_assets( $old_value, $value, $option) {
-			if ( !is_admin() ) {
-				return;
-			}
-
 			if ( !current_user_can( 'manage_options' ) ) {
 				return;
 			}

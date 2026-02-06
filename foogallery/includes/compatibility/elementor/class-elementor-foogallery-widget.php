@@ -47,7 +47,7 @@ class Elementor_FooGallery_Widget extends \Elementor\Widget_Base {
      * @return string Widget icon.
      */
     public function get_icon() {
-        return 'fa fa-images';
+        return 'eicon-gallery-justified';
     }
 
     /**
@@ -65,6 +65,40 @@ class Elementor_FooGallery_Widget extends \Elementor\Widget_Base {
     }
 
     /**
+     * Build gallery select control options.
+     *
+     * Provides a shared list of galleries for both the control definition and
+     * any runtime refresh requests coming from the editor UI.
+     *
+     * @since 1.0.0
+     * @access public
+     *
+     * @return array
+     */
+    public static function get_gallery_options() {
+        $options = [
+            '' => '',
+        ];
+
+        $galleries = foogallery_get_all_galleries();
+
+        if ( empty( $galleries ) ) {
+            return $options;
+        }
+
+        foreach ( $galleries as $gallery ) {
+            $name = $gallery->name;
+            if ( empty( $name ) ) {
+                $name = 'Gallery #' . $gallery->ID;
+            }
+
+            $options[ $gallery->ID ] = $name;
+        }
+
+        return $options;
+    }
+
+    /**
      * Register oEmbed widget controls.
      *
      * Adds different input fields to allow the user to change and customize the widget settings.
@@ -77,25 +111,55 @@ class Elementor_FooGallery_Widget extends \Elementor\Widget_Base {
         $this->start_controls_section(
             'content_section',
             [
-                'label' => __( 'Content', 'plugin-name' ),
+                'label' => __( 'Content', 'foogallery' ),
                 'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
             ]
         );
 
-        $options = array(
-            '' => ''
-        );
-        $galleries = foogallery_get_all_galleries();
-        foreach ( $galleries as $gallery ) {
-            $options[$gallery->ID] = $gallery->name;
-        }
+        $options = self::get_gallery_options();
 
         $this->add_control(
             'gallery_id',
             [
-                'label' => __( 'Choose the FooGallery', 'foogallery' ),
+                'label' => __( 'Choose the gallery', 'foogallery' ),
                 'type' => \Elementor\Controls_Manager::SELECT,
                 'options' => $options
+            ]
+        );
+
+        $this->add_control(
+            'gallery_refresh',
+            [
+                'text' => esc_html__( 'Refresh Galleries', 'foogallery' ),
+                'type' => \Elementor\Controls_Manager::BUTTON,
+                'show_label' => false,
+                'event' => 'foogallery:refresh',
+            ]
+        );
+
+        $this->add_control(
+            'gallery_edit',
+            [
+                'text' => esc_html__( 'Edit Gallery', 'foogallery' ),
+                'type' => \Elementor\Controls_Manager::BUTTON,
+                'show_label' => false,
+                'event' => 'foogallery:edit',
+                'condition' => [
+                    'gallery_id!' => '',
+                ],
+            ]
+        );
+
+        $this->add_control(
+            'gallery_add',
+            [
+                'text' => esc_html__( 'Add New Gallery', 'foogallery' ),
+                'type' => \Elementor\Controls_Manager::BUTTON,
+                'show_label' => false,
+                'event' => 'foogallery:add',
+                'condition' => [
+                    'gallery_id!' => '',
+                ],
             ]
         );
 
@@ -114,7 +178,10 @@ class Elementor_FooGallery_Widget extends \Elementor\Widget_Base {
     protected function render() {
         $settings = $this->get_settings_for_display();
         $foogallery_id = intval( $settings['gallery_id'] );
-        foogallery_render_gallery( $foogallery_id );
-
+        if ( $foogallery_id  > 0 ) {
+            foogallery_render_gallery( $foogallery_id );
+        } else if ( is_admin() ) {
+            echo '<p>' . esc_html__( 'Please select a gallery to display.', 'foogallery' ) . '</p>';
+        }
     }
 }

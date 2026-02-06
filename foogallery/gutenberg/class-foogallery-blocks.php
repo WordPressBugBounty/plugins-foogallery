@@ -13,7 +13,8 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 
 		function __construct() {
 			//Backend editor block assets.
-			add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+			//add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+			add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_editor_assets' ) );
 
 			add_action( 'init', array( $this, 'php_block_init' ) );
 
@@ -35,9 +36,14 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 				return;
 			}
 
+			if ( !is_admin() ) {
+				return;
+			}
+
 			//enqueue foogallery dependencies
+			wp_enqueue_script( 'lodash' );
 			wp_enqueue_script( 'masonry' );
-			foogallery_enqueue_core_gallery_template_script();
+			foogallery_enqueue_core_gallery_template_script( array('jquery', 'masonry' ) );
 			foogallery_enqueue_core_gallery_template_style();
 
             $path = FOOGALLERY_PATH . 'gutenberg/assets/blocks';
@@ -65,27 +71,17 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
                 $asset[ 'version' ]
 			);
 
-			$local_data = false;
-
-			if ( function_exists( 'wp_get_jed_locale_data' ) ) {
-				$local_data = wp_get_jed_locale_data( 'foogallery' );
-			} else if ( function_exists( 'gutenberg_get_jed_locale_data' ) ) {
-				$local_data = gutenberg_get_jed_locale_data( 'foogallery' );
+			if ( function_exists( 'wp_set_script_translations' ) ) {
+				wp_set_script_translations( 'foogallery-block-js', 'foogallery' );
 			}
 
 			$block_js_data = apply_filters('foogallery_gutenberg_block_js_data', array(
 				"editGalleryUrl" => $this->get_edit_gallery_url()
 			));
 
-			$inline_script = 'window.FOOGALLERY_BLOCK = ' . json_encode( $block_js_data ) . ';';
-			if ( false !== $local_data ) {
-				/*
-				 * Pass already loaded translations to our JavaScript.
-				 *
-				 * This happens _before_ our JavaScript runs, afterwards it's too late.
-				 */
-				$inline_script .= PHP_EOL . 'wp.i18n.setLocaleData( ' . json_encode( $local_data ) . ', "foogallery" );';
-			}
+			$inline_script = 'if ( typeof window.lodash === "undefined" && typeof window._ !== "undefined" ) { window.lodash = window._; }';
+			$inline_script .= PHP_EOL . 'if ( typeof window._ === "undefined" && typeof window.lodash !== "undefined" ) { window._ = window.lodash; }';
+			$inline_script .= PHP_EOL . 'window.FOOGALLERY_BLOCK = ' . json_encode( $block_js_data ) . ';';
 
 			wp_add_inline_script(
 				'foogallery-block-js',
@@ -121,20 +117,29 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 				return;
 			}
 
-			// Register our block, and explicitly define the attributes we accept.
-			register_block_type(
-				'fooplugins/foogallery', array(
-				'attributes' => array(
-					'id' => array(
-						'type' => 'number',
-						'default' => 0
+			if ( function_exists( 'register_block_type_from_metadata' ) ) {
+				register_block_type_from_metadata(
+					FOOGALLERY_PATH . 'gutenberg',
+					array(
+						'render_callback' => array( $this, 'render_block' ),
+					)
+				);
+			} else {
+				// Register our block, and explicitly define the attributes we accept.
+				register_block_type(
+					'fooplugins/foogallery', array(
+					'attributes' => array(
+						'id' => array(
+							'type' => 'number',
+							'default' => 0
+						),
+						'className' => array(
+							'type' => 'string'
+						),
 					),
-					'className' => array(
-						'type' => 'string'
-					),
-				),
-				'render_callback' => array( $this, 'render_block' ),
-			));
+					'render_callback' => array( $this, 'render_block' ),
+				));
+			}
 		}
 
 		/**

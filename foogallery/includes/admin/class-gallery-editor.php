@@ -25,7 +25,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 		}
 
 		private function should_hide_editor_button() {
-			return 'on' == foogallery_get_setting( 'hide_editor_button' );
+			return 'on' == foogallery_get_setting( 'hide_editor_button', false );
 		}
 
 		/**
@@ -56,7 +56,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 					title="<?php esc_attr_e( sprintf( __( 'Add Gallery From %s', 'foogallery' ), foogallery_plugin_name() ) ); ?>"
 					style="padding-left: .4em;"
 					data-editor="<?php esc_attr_e( $editor_id ); ?>">
-					<span class="wp-media-buttons-icon dashicons dashicons-format-gallery"></span> <?php echo sprintf( __( 'Add %s', 'foogallery' ), foogallery_plugin_name() ); ?>
+					<span class="wp-media-buttons-icon dashicons dashicons-format-gallery"></span> <?php echo esc_html( sprintf( __( 'Add %s', 'foogallery' ), foogallery_plugin_name() ) ); ?>
 				</button>
 			<?php
 		}
@@ -115,7 +115,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 		 */
 		public function render_tinymce_nonce() {
 			?>
-			<input id="foogallery-timnymce-action-nonce" type="hidden" value="<?php esc_url( wp_create_nonce( 'foogallery-timymce-nonce' ) ); ?>" />
+			<input id="foogallery-timnymce-action-nonce" type="hidden" value="<?php echo esc_attr( wp_create_nonce( 'foogallery-timymce-nonce' ) ); ?>" />
 			<?php
 		}
 
@@ -186,31 +186,31 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 						<div class="media-frame wp-core-ui hide-menu hide-router foogallery-meta-wrap">
 							<div class="media-frame-title">
 								<h1>
-									<?php _e( 'Choose a gallery to insert', 'foogallery' ); ?>
+									<?php esc_html_e( 'Choose a gallery to insert', 'foogallery' ); ?>
 									<div class="foogallery-modal-reload-container">
 										<div class="spinner"></div>
-										<a class="foogallery-modal-reload button" href="#"><span class="dashicons dashicons-update"></span> <?php _e( 'Reload', 'foogallery' ); ?></a>
+										<a class="foogallery-modal-reload button" href="#"><span class="dashicons dashicons-update"></span> <?php esc_html_e( 'Reload', 'foogallery' ); ?></a>
 									</div>
 								</h1>
 							</div>
 							<div class="media-frame-content">
 								<div class="attachments-browser">
 									<ul class="foogallery-attachment-container attachments" style="padding-left: 8px; top: 1em;">
-										<div class="foogallery-modal-loading"><?php _e( 'Loading galleries...', 'foogallery' ); ?></div>
+										<div class="foogallery-modal-loading"><?php esc_html_e( 'Loading galleries...', 'foogallery' ); ?></div>
 									</ul>
 									<!-- end .foogallery-meta -->
 									<div class="media-sidebar">
 										<div class="foogallery-modal-sidebar">
-											<h3><?php _e( 'Select A Gallery', 'foogallery' ); ?></h3>
+											<h3><?php esc_html_e( 'Select A Gallery', 'foogallery' ); ?></h3>
 											<p>
-												<?php _e( 'Select a gallery by clicking it, and then click the "Insert Gallery" button to insert it into your content.', 'foogallery' ); ?>
+												<?php esc_html_e( 'Select a gallery by clicking it, and then click the "Insert Gallery" button to insert it into your content.', 'foogallery' ); ?>
 											</p>
-											<h3><?php _e( 'Add A Gallery', 'foogallery' ); ?></h3>
+											<h3><?php esc_html_e( 'Add A Gallery', 'foogallery' ); ?></h3>
 											<p>
-												<?php _e( 'You can add a new gallery by clicking the "Add New Gallery" tile on the left. It will open in a new window.', 'foogallery' ); ?>
+												<?php esc_html_e( 'You can add a new gallery by clicking the "Add New Gallery" tile on the left. It will open in a new window.', 'foogallery' ); ?>
 											</p>
 											<p>
-												<?php _e( 'Once you have finished adding a gallery, come back to this dialog and click the "Reload" button to see your newly created gallery.', 'foogallery' ); ?>
+												<?php esc_html_e( 'Once you have finished adding a gallery, come back to this dialog and click the "Reload" button to see your newly created gallery.', 'foogallery' ); ?>
 											</p>
 										</div>
 										<!-- end .foogallery-meta-sidebar -->
@@ -223,11 +223,11 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 							<div class="media-frame-toolbar">
 								<div class="media-toolbar">
 									<div class="media-toolbar-secondary">
-										<a href="#" class="foogallery-modal-cancel button media-button button-large button-secondary media-button-insert" title="<?php esc_attr_e( 'Cancel', 'foogallery' ); ?>"><?php _e( 'Cancel', 'foogallery' ); ?></a>
+										<a href="#" class="foogallery-modal-cancel button media-button button-large button-secondary media-button-insert" title="<?php esc_attr_e( 'Cancel', 'foogallery' ); ?>"><?php esc_html_e( 'Cancel', 'foogallery' ); ?></a>
 									</div>
 									<div class="media-toolbar-primary">
 										<a href="#" class="foogallery-modal-insert button media-button button-large button-primary media-button-insert" disabled="disabled"
-										   title="<?php esc_attr_e( 'Insert Gallery', 'foogallery' ); ?>"><?php _e( 'Insert Gallery', 'foogallery' ); ?></a>
+										   title="<?php esc_attr_e( 'Insert Gallery', 'foogallery' ); ?>"><?php esc_html_e( 'Insert Gallery', 'foogallery' ); ?></a>
 									</div>
 									<!-- end .media-toolbar-primary -->
 								</div>
@@ -247,7 +247,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 
 		function ajax_galleries_html() {
 			if ( check_admin_referer( 'foogallery_load_galleries', 'foogallery_load_galleries' ) ) {
-				echo $this->get_galleries_html_for_modal();
+				echo $this->get_galleries_html_for_modal(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML generated by internal method
 			}
 			die();
 		}
@@ -269,13 +269,13 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 					$gallery->name;
 				?>
                 <li class="foogallery-pile">
-                    <div class="foogallery-gallery-select" data-foogallery-id="<?php echo $gallery->ID; ?>">
+                    <div class="foogallery-gallery-select" data-foogallery-id="<?php echo esc_attr( $gallery->ID ); ?>">
                         <div style="display: table;">
                             <div style="display: table-cell; vertical-align: middle; text-align: center;">
-                                <img src="<?php echo $img_src; ?>"/>
+                                <img src="<?php echo esc_url( $img_src ); ?>"/>
                                 <h3>
 									<?php echo esc_html( $title ); ?>
-                                    <span><?php echo $images; ?></span>
+                                    <span><?php echo esc_html( $images ); ?></span>
                                 </h3>
                             </div>
                         </div>
@@ -287,7 +287,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 						<a href="<?php echo esc_url( foogallery_admin_add_gallery_url() ); ?>" target="_blank" class="thumbnail" style="display: table;">
 							<span></span>
 							<div class="foogallery-gallery-select-inner" >
-								<h3><?php _e( 'Add New Gallery', 'foogallery' ); ?></h3>
+								<h3><?php esc_html_e( 'Add New Gallery', 'foogallery' ); ?></h3>
 							</div>
 						</a>
 					</div>
@@ -298,32 +298,40 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 		}
 
 		function ajax_get_gallery_info() {
+			if ( ! check_ajax_referer( 'foogallery-timymce-nonce', 'nonce', false ) ) {
+				wp_send_json_error( __( 'Invalid security token.', 'foogallery' ) );
+			}
 
-			$nonce = sanitize_text_field( safe_get_from_request( 'nonce' ) );
+			if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) ) {
+				wp_send_json_error( __( 'Insufficient permissions.', 'foogallery' ) );
+			}
 
-			wp_verify_nonce( $nonce, 'foogallery-timymce-nonce' );
-
-			$id = intval( safe_get_from_request( 'foogallery_id' ) );
+			$id = absint( safe_get_from_request( 'foogallery_id' ) );
+			if ( ! $id ) {
+				wp_send_json_error( __( 'Invalid gallery ID.', 'foogallery' ) );
+			}
 
 			$gallery = FooGallery::get_by_id( $id );
+			if ( ! $gallery ) {
+				wp_send_json_error( __( 'Gallery not found.', 'foogallery' ) );
+			}
+
+			if ( ! current_user_can( 'edit_post', $gallery->ID ) ) {
+				wp_send_json_error( __( 'Insufficient permissions.', 'foogallery' ) );
+			}
 
 			$image_src = foogallery_find_featured_attachment_thumbnail_src( $gallery, array(
 				'width' => get_option( 'thumbnail_size_w' ),
 				'height' => get_option( 'thumbnail_size_h' ),
-				'force_use_original_thumb' => true
+				'force_use_original_thumb' => true,
 			) );
 
-			$json_array = array(
+			wp_send_json_success( array(
 				'id'    => $id,
 				'name'  => $gallery->name,
 				'count' => $gallery->image_count(),
 				'src'   => $image_src,
-			);
-
-			header( 'Content-type: application/json' );
-			echo json_encode( $json_array );
-
-			die();
+			) );
 		}
 	}
 }

@@ -241,6 +241,11 @@ class FooGallery extends stdClass {
 	 * @return mixed|null
 	 */
 	function get_setting( $key, $default ) {
+		$override_setting = apply_filters( 'foogallery_instance_get_setting', null, $key, $default, $this );
+		if ( null !== $override_setting ) {
+			return $override_setting;
+		}
+
 		return $this->get_meta( "{$this->gallery_template}_$key", $default );
 	}
 
@@ -349,7 +354,15 @@ class FooGallery extends stdClass {
 	public function attachments() {
 		//lazy load the attachments for performance
 		if ( $this->_attachments === false ) {
-			$this->_attachments = $this->apply_datasource_filter( 'attachments', array() );
+			$attachments = $this->apply_datasource_filter( 'attachments', array() );
+            $attachments = apply_filters( 'foogallery_attachments_pre_sort', $attachments, $this );
+			if ( ! empty( $attachments ) && $this->apply_datasource_filter( 'must_sort', true ) ) {
+				$orderby = foogallery_sorting_get_posts_orderby_arg( $this->sorting );
+				$order = foogallery_sorting_get_posts_order_arg( $this->sorting );
+				$attachments = foogallery_sort_attachments( $attachments, $orderby, $order );
+				$attachments = apply_filters( 'foogallery_attachments', $attachments, $this );
+			}
+			$this->_attachments = $attachments;
 		}
 
 		return $this->_attachments;

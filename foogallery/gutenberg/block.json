@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "fooplugins/foogallery",
+  "title": "FooGallery",
+  "description": "Insert a FooGallery into your content",
+  "category": "media",
+  "icon": "format-gallery",
+  "keywords": [
+    "foogallery",
+    "gallery"
+  ],
+  "textdomain": "foogallery",
+  "attributes": {
+    "id": {
+      "type": "number",
+      "default": 0
+    },
+    "className": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "multiple": true,
+    "html": false
+  }
+}

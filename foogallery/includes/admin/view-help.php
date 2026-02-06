@@ -8,7 +8,7 @@ $plugin_name = foogallery_plugin_name();
 $fooplugins_url = foogallery_admin_url( 'https://fooplugins.com/', 'help' );
 $plugin_url = foogallery_admin_url( 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/', 'help' );
 $support_url = foogallery_admin_url( 'https://fooplugins.link/support/', 'help' );
-$plans_url = foogallery_admin_url( 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/pricing/#plans', 'help' );
+$plans_url = foogallery_admin_url( 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/compare-plans/', 'help' );
 $support_link = sprintf( '<a href="%s" target="_blank">%s</a>', $support_url, __( 'open a support ticket', 'foogallery' ) );
 $support_text = sprintf( __('Still stuck? Please %s and we will help!', 'foogallery'), $support_link );
 
@@ -21,8 +21,6 @@ $footer_text = sprintf( $made_by, $fooplugins_link );
 
 //allow the variables to be overwritten by other things!
 $logo = apply_filters( 'foogallery_admin_help_logo_url', $logo );
-
-$demos_created = foogallery_get_setting( 'demo_content' ) === 'on';
 
 $fs_instance = foogallery_fs();
 $foogallery_current_plan = $fs_instance->get_plan_name();
@@ -84,13 +82,12 @@ $show_demos = apply_filters( 'foogallery_admin_help_show_demos', true );
 
 					var $this = $(this),
 						data = {
-							'action': 'foogallery_admin_import_demos',
-							'_wpnonce': $this.data( 'nonce' ),
-							'_wp_http_referer': encodeURIComponent( $( 'input[name="_wp_http_referer"]' ).val() )
+							'action': $this.data( 'action' ),
+							'_wpnonce': $this.data( 'nonce' )
 						};
 
 					$this.prop('disable', true).addClass("foogallery-admin-help-loading");
-					$('.fgah-create-demos-text').html( $this.data('working') );
+					$this.find('.fgah-create-demos-text:first').html( $this.data('working') );
 
 					$.ajax({
 						type: 'POST',
@@ -98,9 +95,11 @@ $show_demos = apply_filters( 'foogallery_admin_help_show_demos', true );
 						data: data,
 						cache: false,
 						success: function( html ) {
+							$this.find('.fgah-create-demos-text:first').html( $this.data('complete') );
 							$('.fgah-demo-result').html( html );
-							$('.fgah-create-demos').hide();
-							$('.fgah-created-demos').show();
+						},
+						error: function() {
+							$this.find('.fgah-create-demos-text:first').html( $this.data('error') );
 						}
 					}).always(function(){
 						$this.removeClass("foogallery-admin-help-loading").prop('disable', false);
@@ -130,34 +129,23 @@ $show_demos = apply_filters( 'foogallery_admin_help_show_demos', true );
 		$.foogallery_demos.init();
 	});
 </script>
-<style>
-    <?php if ( $demos_created ) { ?>
-    .fgah-create-demos {
-	    display: none;
-    }
-	<?php } else { ?>
-    .fgah-created-demos {
-        display: none;
-    }
-	<?php } ?>
-</style>
 <div class="foogallery-admin-help">
 	<div class="foogallery-admin-help-header">
-		<div class="foogallery-admin-help-ribbon"><span><?php echo FOOGALLERY_VERSION; ?></span></div>
-		<img src="<?php echo $logo; ?>" width="200">
+		<div class="foogallery-admin-help-ribbon"><span><?php echo esc_html( FOOGALLERY_VERSION ); ?></span></div>
+		<img src="<?php echo esc_url( $logo ); ?>" width="200">
 	</div>
 	<nav>
 		<a class="foogallery-admin-help-tab-active" href="#help">
-			<?php _e( 'Welcome', 'foogallery' ); ?>
+			<?php esc_html_e( 'Welcome', 'foogallery' ); ?>
 		</a>
 		<a href="#pro">
-			<?php _e( $upgrade_tab_text, 'foogallery' ); ?>
+			<?php esc_html_e( $upgrade_tab_text, 'foogallery' ); ?>
 		</a>
 		<a href="#demos">
-			<?php _e( 'Demo', 'foogallery' ); ?>
+			<?php esc_html_e( 'Demo', 'foogallery' ); ?>
 		</a>
 		<a href="#support">
-			<?php _e( 'Support', 'foogallery' ); ?>
+			<?php esc_html_e( 'Support', 'foogallery' ); ?>
 		</a>
 	</nav>
 	<div class="foogallery-admin-help-content">
@@ -171,22 +159,22 @@ $show_demos = apply_filters( 'foogallery_admin_help_show_demos', true );
 		<div id="support_section" class="foogallery-admin-help-section" style="display: none">
             <section class="fgah-feature">
                 <header>
-                    <h3><?php _e( '🚑 Need help? We\'re here for you...' , 'foogallery' );?></h3>
+                    <h3><?php esc_html_e( '🚑 Need help? We\'re here for you...' , 'foogallery' );?></h3>
                 </header>
                 <ul class="fgah-help-list">
                     <li>
-                        <a href="<?php echo esc_url( foogallery_admin_url( 'https://fooplugins.com/documentation/foogallery/', 'help') ); ?>" target="_blank"><?php _e('FooGallery Documentation','foogallery'); ?></a>
-                        - <?php _e('Our documentation covers everything you need to know, from install instructions and account management, to troubleshooting common issues and extending the functionality.', 'foogallery'); ?>
+                        <a href="<?php echo esc_url( foogallery_admin_url( 'https://fooplugins.com/documentation/foogallery/', 'help') ); ?>" target="_blank"><?php esc_html_e('FooGallery Documentation','foogallery'); ?></a>
+                        - <?php esc_html_e('Our documentation covers everything you need to know, from install instructions and account management, to troubleshooting common issues and extending the functionality.', 'foogallery'); ?>
                     </li>
 	                <?php if ( $is_free ) { ?>
                     <li>
-                        <a href="https://wordpress.org/support/plugin/foogallery/" target="_blank"><?php _e('FooGallery WordPress.org Support','foogallery'); ?></a>
-                        - <?php _e('We actively monitor and answer all questions posted on WordPress.org for FooGallery.', 'foogallery'); ?>
+                        <a href="https://wordpress.org/support/plugin/foogallery/" target="_blank"><?php esc_html_e('FooGallery WordPress.org Support','foogallery'); ?></a>
+                        - <?php esc_html_e('We actively monitor and answer all questions posted on WordPress.org for FooGallery.', 'foogallery'); ?>
                     </li>
 	                <?php } else { ?>
 		                <li>
-			                <a href="<?php echo esc_url( $support_url ); ?>" target="_blank"><?php _e('Premium Support','foogallery'); ?></a>
-			                - <?php _e('Open a support ticket and our dedicated support team will assist. This is the fasted way to get help!', 'foogallery'); ?>
+			                <a href="<?php echo esc_url( $support_url ); ?>" target="_blank"><?php esc_html_e('Premium Support','foogallery'); ?></a>
+			                - <?php esc_html_e('Open a support ticket and our dedicated support team will assist. This is the fasted way to get help!', 'foogallery'); ?>
 		                </li>
 	                <?php } ?>
                 </ul>
@@ -194,6 +182,6 @@ $show_demos = apply_filters( 'foogallery_admin_help_show_demos', true );
 		</div>
 	</div>
 	<div class="foogallery-admin-help-footer">
-		<?php echo $footer_text; ?>
+		<?php echo wp_kses_post( $footer_text ); ?>
 	</div>
 </div>

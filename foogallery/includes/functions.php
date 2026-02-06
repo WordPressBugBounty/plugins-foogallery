@@ -88,7 +88,8 @@ function foogallery_permalink() {
  */
 function foogallery_get_setting(  $key, $default = false  ) {
     $foogallery = FooGallery_Plugin::get_instance();
-    return $foogallery->options()->get( $key, foogallery_get_default( $key, $default ) );
+    $value = $foogallery->options()->get( $key, foogallery_get_default( $key, $default ) );
+    return apply_filters( 'foogallery_get_setting-' . $key, $value, $default );
 }
 
 /**
@@ -134,6 +135,12 @@ function foogallery_gallery_shortcode_tag() {
  * @return string Key value on success, false on failure.
  */
 function foogallery_get_default(  $key, $default = false  ) {
+    $defaults = foogallery_get_default_options();
+    // Return the key specified.
+    return ( isset( $defaults[$key] ) ? $defaults[$key] : $default );
+}
+
+function foogallery_get_default_options() {
     $defaults = array(
         'gallery_template'           => 'default',
         'gallery_permalinks_enabled' => false,
@@ -143,11 +150,11 @@ function foogallery_get_default(  $key, $default = false  ) {
         'gallery_sorting'            => '',
         'datasource'                 => 'media_library',
         'advanced_attachment_modal'  => 'on',
+        'hide_editor_button'         => 'on',
     );
     // A handy filter to override the defaults.
     $defaults = apply_filters( 'foogallery_defaults', $defaults );
-    // Return the key specified.
-    return ( isset( $defaults[$key] ) ? $defaults[$key] : $default );
+    return $defaults;
 }
 
 /**
@@ -174,9 +181,7 @@ function foogallery_admin_add_gallery_url() {
  * @return string The Url to the FooGallery help page in admin
  */
 function foogallery_admin_help_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_HELP_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_HELP_SLUG );
 }
 
 /**
@@ -185,9 +190,7 @@ function foogallery_admin_help_url() {
  * @return string The Url to the FooGallery settings page in admin
  */
 function foogallery_admin_settings_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_SETTINGS_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_SETTINGS_SLUG );
 }
 
 /**
@@ -196,7 +199,7 @@ function foogallery_admin_settings_url() {
  * @return string The Url to the FooGallery extensions page in admin
  */
 function foogallery_admin_extensions_url() {
-    return foogallery_admin_extensions_url();
+    return '';
 }
 
 /**
@@ -205,9 +208,7 @@ function foogallery_admin_extensions_url() {
  * @return string The Url to the FooGallery extensions page in admin
  */
 function foogallery_admin_features_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_FEATURES_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_FEATURES_SLUG );
 }
 
 /**
@@ -216,9 +217,7 @@ function foogallery_admin_features_url() {
  * @return string The Url to the FooGallery system info page in admin
  */
 function foogallery_admin_systeminfo_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_SYSTEMINFO_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_SYSTEMINFO_SLUG );
 }
 
 /**
@@ -227,9 +226,16 @@ function foogallery_admin_systeminfo_url() {
  * @return string The Url to the FooGallery pricing page in admin
  */
 function foogallery_admin_pricing_url() {
-    return admin_url( add_query_arg( array(
-        'page' => FOOGALLERY_ADMIN_MENU_PRICING_SLUG,
-    ), foogallery_admin_menu_parent_slug() ) );
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_PRICING_SLUG );
+}
+
+/**
+ * Returns the FooGallery addon page Url within the admin
+ *
+ * @return string The Url to the FooGallery addon page in admin
+ */
+function foogallery_admin_addon_url() {
+    return foogallery_admin_url_for_page( FOOGALLERY_ADMIN_MENU_ADDON_SLUG );
 }
 
 /**
@@ -239,6 +245,19 @@ function foogallery_admin_pricing_url() {
  */
 function foogallery_admin_freetrial_url() {
     return add_query_arg( 'trial', 'true', foogallery_admin_pricing_url() );
+}
+
+/**
+ * Returns the FooGallery Url within the admin for a specific page
+ *
+ * @param string $admin_page The page to get the Url for
+ *
+ * @return string The Url to the FooGallery system info page in admin
+ */
+function foogallery_admin_url_for_page(  $admin_page  ) {
+    return admin_url( add_query_arg( array(
+        'page' => $admin_page,
+    ), foogallery_admin_menu_parent_slug() ) );
 }
 
 /**
@@ -442,6 +461,7 @@ function foogallery_build_class_attribute_safe(  $gallery  ) {
 function foogallery_build_class_attribute_render_safe(  $gallery  ) {
     $args = func_get_args();
     $result = call_user_func_array( "foogallery_build_class_attribute_safe", $args );
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $result is already escaped via esc_attr() in foogallery_build_class_attribute_safe()
     echo $result;
 }
 
@@ -592,6 +612,8 @@ function foogallery_enqueue_style(
     $media = 'all'
 ) {
     $src = apply_filters( 'foogallery_enqueue_style_src', $src, $handle );
+    //resolve the asset URL to a fingerprinted version if available.
+    $src = foogallery_resolve_asset_url( $src );
     wp_enqueue_style(
         $handle,
         $src,
@@ -774,6 +796,9 @@ function foogallery_get_caption_desc_for_attachment(  $attachment_post, $source 
             $source = foogallery_caption_desc_source();
         }
     }
+    if ( is_int( $attachment_post ) ) {
+        $attachment_post = get_post( $attachment_post );
+    }
     switch ( $source ) {
         case 'title':
             $caption = trim( $attachment_post->post_title );
@@ -798,14 +823,14 @@ function foogallery_output_thumbnail_generation_results() {
     try {
         $results = $thumbs->run_thumbnail_generation_tests();
         if ( $results['success'] ) {
-            echo '<span style="color:#0c0">' . __( 'Thumbnail generation test ran successfully.', 'foogallery' ) . '</span>';
+            echo '<span style="color:#0c0">' . esc_html__( 'Thumbnail generation test ran successfully.', 'foogallery' ) . '</span>';
         } else {
-            echo '<span style="color:#c00">' . __( 'Thumbnail generation test failed!', 'foogallery' ) . '</span>';
+            echo '<span style="color:#c00">' . esc_html__( 'Thumbnail generation test failed!', 'foogallery' ) . '</span>';
             var_dump( $results['error'] );
             var_dump( $results['file_info'] );
         }
     } catch ( Exception $e ) {
-        echo 'Exception: ' . $e->getMessage();
+        echo 'Exception: ' . esc_html( $e->getMessage() );
     }
 }
 
@@ -1844,6 +1869,9 @@ function foogallery_is_activation_page() {
  * @param array $array an array of data to render.
  */
 function foogallery_render_debug_array(  $array, $level = 0  ) {
+    if ( !is_array( $array ) ) {
+        return;
+    }
     foreach ( $array as $key => $value ) {
         if ( !empty( $value ) ) {
             if ( $level > 0 ) {
@@ -1876,7 +1904,18 @@ function foogallery_import_attachment(  $attachment_data  ) {
     if ( is_wp_error( $response ) ) {
         return $response;
     }
+    $response_code = (int) wp_remote_retrieve_response_code( $response );
+    if ( 200 !== $response_code ) {
+        return new WP_Error('foogallery_import_attachment_http_error', sprintf( __( 'Remote server returned HTTP %d.', 'foogallery' ), $response_code ));
+    }
+    $content_type = (string) wp_remote_retrieve_header( $response, 'content-type' );
+    if ( '' !== $content_type && 0 !== stripos( $content_type, 'image/' ) ) {
+        return new WP_Error('foogallery_import_attachment_invalid_content_type', sprintf( __( 'Remote URL did not return an image (content-type: %s).', 'foogallery' ), $content_type ));
+    }
     $contents = wp_remote_retrieve_body( $response );
+    if ( '' === $contents ) {
+        return new WP_Error('foogallery_import_attachment_empty_body', __( 'Remote server returned an empty response body.', 'foogallery' ));
+    }
     // Upload and get file data.
     $upload = wp_upload_bits( basename( $attachment_data['url'] ), null, $contents );
     if ( array_key_exists( 'error', $upload ) && false !== $upload['error'] ) {
@@ -1904,6 +1943,11 @@ function foogallery_import_attachment(  $attachment_data  ) {
     }
     if ( isset( $attachment_data['custom_target'] ) && !empty( $attachment_data['custom_target'] ) ) {
         $attachment_args['meta_input']['_foogallery_custom_target'] = $attachment_data['custom_target'];
+    }
+    if ( isset( $attachment_data['video'] ) && !empty( $attachment_data['video'] ) ) {
+        $attachment_args['meta_input']['_foogallery_video_data'] = array(
+            'url' => $attachment_data['video'],
+        );
     }
     // Save the original URL, so that we do not import it again!
     $attachment_args['meta_input']['_foogallery_imported_from'] = $attachment_data['url'];
@@ -2083,12 +2127,6 @@ function foogallery_local_url_to_path(  $url  ) {
 function foogallery_sanitize_code(  $text  ) {
     if ( !empty( $text ) ) {
         $text = wp_check_invalid_utf8( $text, true );
-        $text = htmlentities(
-            $text,
-            ENT_NOQUOTES,
-            'UTF-8',
-            false
-        );
         return apply_filters( 'foogallery_sanitize_code', $text );
     }
     return false;
@@ -2247,4 +2285,260 @@ function foogallery__(  $translation, $domain = 'foogallery'  ) {
         return __( $translation, $domain );
     }
     return $translation;
+}
+
+/**
+ * Formats the caption text for a gallery.
+ *
+ * @param string $text The caption text to format.
+ *
+ * @return string The formatted caption text.
+ */
+function foogallery_format_caption_text(  $text  ) {
+    global $current_foogallery;
+    if ( empty( $current_foogallery ) ) {
+        return $text;
+    }
+    //if text contains {{gallery-count}}
+    if ( strpos( $text, '{{gallery-count}}' ) !== false ) {
+        $text = str_replace( '{{gallery-count}}', $current_foogallery->attachment_count(), $text );
+    }
+    //if text contains {{gallery-title}}
+    if ( strpos( $text, '{{gallery-title}}' ) !== false ) {
+        $text = str_replace( '{{gallery-title}}', $current_foogallery->name, $text );
+    }
+    //if text contains {{gallery-description}}
+    if ( strpos( $text, '{{gallery-description}}' ) !== false ) {
+        $desc = $current_foogallery->_post->post_content;
+        $text = str_replace( '{{gallery-description}}', $desc, $text );
+    }
+    //if text contains {{attachment
+    if ( strpos( $text, '{{attachment' ) !== false ) {
+        $featured_attachment = $current_foogallery->featured_attachment();
+        if ( $featured_attachment ) {
+            //if text contains {{attachment-title}}
+            if ( strpos( $text, '{{attachment-title}}' ) !== false ) {
+                $text = str_replace( '{{attachment-title}}', $featured_attachment->title, $text );
+            }
+            //if text contains {{attachment-caption}}
+            if ( strpos( $text, '{{attachment-caption}}' ) !== false ) {
+                $text = str_replace( '{{attachment-caption}}', $featured_attachment->caption, $text );
+            }
+            //if text contains {{attachment-alt}}
+            if ( strpos( $text, '{{attachment-alt}}' ) !== false ) {
+                $text = str_replace( '{{attachment-alt}}', $featured_attachment->alt, $text );
+            }
+            //if text contains {{attachment-description}}
+            if ( strpos( $text, '{{attachment-description}}' ) !== false ) {
+                $text = str_replace( '{{attachment-description}}', $featured_attachment->description, $text );
+            }
+        }
+    }
+    return $text;
+}
+
+/**
+ * Safely convert a value to an int.
+ *
+ * @param $value
+ * @param int $default
+ *
+ * @return int
+ */
+function foogallery_intval(  $value, $default = 0  ) {
+    // Already a plain number
+    if ( is_numeric( $value ) ) {
+        return (int) $value;
+    }
+    // Backwards compat: extract int
+    if ( preg_match( '/\\d+$/', $value, $matches ) ) {
+        return (int) $matches[0];
+    }
+    return $default;
+}
+
+/**
+ * Returns true if we are currently showing a glalery preview.
+ */
+function foogallery_is_preview() {
+    return isset( $GLOBALS['foogallery_gallery_preview'] ) && $GLOBALS['foogallery_gallery_preview'];
+}
+
+/**
+ * Sort the retrieved attachment posts after the query has executed.
+ *
+ * @param FooGalleryAttachment[] $attachments Array of attachment objects.
+ * @param string $orderby Orderby clause used for the query.
+ * @param string $order Order clause used for the query.
+ *
+ * @return FooGalleryAttachment[] Sorted array of attachment objects.
+ */
+function foogallery_sort_attachments(  $attachments, $orderby, $order  ) {
+    if ( empty( $attachments ) ) {
+        return $attachments;
+    }
+    $order = ( strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC' );
+    switch ( $orderby ) {
+        case 'date':
+            usort( $attachments, function ( $a, $b ) use($order) {
+                $first_source = $a->date ?? '';
+                $second_source = $b->date ?? '';
+                $first = ( strtotime( $first_source ) ?: 0 );
+                $second = ( strtotime( $second_source ) ?: 0 );
+                $comparison = 0;
+                if ( $first < $second ) {
+                    $comparison = -1;
+                } elseif ( $first > $second ) {
+                    $comparison = 1;
+                }
+                return ( 'ASC' === $order ? $comparison : -$comparison );
+            } );
+            break;
+        case 'modified':
+            usort( $attachments, function ( $a, $b ) use($order) {
+                $first_source = $a->modified ?? '';
+                $second_source = $b->modified ?? '';
+                $first = ( strtotime( $first_source ) ?: 0 );
+                $second = ( strtotime( $second_source ) ?: 0 );
+                $comparison = 0;
+                if ( $first < $second ) {
+                    $comparison = -1;
+                } elseif ( $first > $second ) {
+                    $comparison = 1;
+                }
+                return ( 'ASC' === $order ? $comparison : -$comparison );
+            } );
+            break;
+        case 'title':
+            usort( $attachments, function ( $a, $b ) use($order) {
+                $comparison = strnatcasecmp( $a->title ?? '', $b->title ?? '' );
+                if ( 'ASC' === $order ) {
+                    return $comparison;
+                }
+                return -$comparison;
+            } );
+            break;
+        case 'rand':
+            shuffle( $attachments );
+            break;
+        default:
+            // For 'post__in' and any other unsupported orderby values we keep the original order when no sort override is set.
+            // Check if the attachments have a sort property, and use that to sort.
+            $sortable_attachments = array_filter( $attachments, static function ( $attachment ) {
+                return isset( $attachment->sort ) && '' !== $attachment->sort && null !== $attachment->sort;
+            } );
+            if ( !empty( $sortable_attachments ) ) {
+                usort( $attachments, function ( $a, $b ) use($order) {
+                    $first = $a->sort ?? '';
+                    $second = $b->sort ?? '';
+                    $first_numeric = is_numeric( $first );
+                    $second_numeric = is_numeric( $second );
+                    $comparison = 0;
+                    if ( $first_numeric || $second_numeric ) {
+                        $first = ( $first_numeric ? (float) $first : PHP_INT_MAX );
+                        $second = ( $second_numeric ? (float) $second : PHP_INT_MAX );
+                        if ( $first < $second ) {
+                            $comparison = -1;
+                        } elseif ( $first > $second ) {
+                            $comparison = 1;
+                        }
+                    } else {
+                        $comparison = strnatcasecmp( (string) $first, (string) $second );
+                    }
+                    return $comparison;
+                } );
+            }
+            break;
+    }
+    return apply_filters(
+        'foogallery_sort_attachments',
+        $attachments,
+        $orderby,
+        $order
+    );
+}
+
+/**
+ * Returns the lightbox name for the plugin, that is whitelable safe.
+ *
+ * @return string
+ */
+function foogallery_lightbox_name() {
+    return sprintf( __( '%s Lightbox', 'foogallery' ), foogallery_plugin_name() );
+}
+
+/**
+ * Resolve a relative asset path OR a full plugin URL into a fingerprinted URL.
+ * External URLs (non-plugin) are returned unchanged.
+ *
+ * @param string $path Relative path OR full URL.
+ * @return string Fully-resolved URL (fingerprinted if applicable, otherwise original).
+ */
+function foogallery_resolve_asset_url(  $path  ) {
+    static $manifest = null;
+    // Load manifest only once
+    if ( $manifest === null ) {
+        $manifest_file = FOOGALLERY_PATH . 'includes/asset-manifest.php';
+        $manifest = ( file_exists( $manifest_file ) ? include $manifest_file : [] );
+    }
+    $plugin_url = rtrim( FOOGALLERY_URL, '/' );
+    // First, check if $path is a full URL
+    if ( preg_match( '#^https?://#i', $path ) ) {
+        // If NOT a local asset, then get out early.
+        if ( strpos( $path, $plugin_url ) !== 0 ) {
+            return $path;
+        }
+        // Normalize plugin full URL to a relative path.
+        $relative_path = ltrim( substr( $path, strlen( $plugin_url ) ), '/' );
+    } else {
+        $relative_path = $path;
+    }
+    // Try to resolve through manifest.
+    $resolved = ( isset( $manifest[$relative_path] ) ? $manifest[$relative_path] : null );
+    // If we do not resolve to anything then return the original AS IS.
+    if ( $resolved === null ) {
+        return $path;
+    }
+    // Finally, reconstruct full URL.
+    return trailingslashit( $plugin_url ) . ltrim( $resolved, '/' );
+}
+
+/**
+ * Returns true if the current request is a REST API request.
+ *
+ * @return bool
+ */
+function foogallery_is_rest_request() {
+    // Must be a real REST API request
+    if ( !(defined( 'REST_REQUEST' ) && REST_REQUEST) ) {
+        return false;
+    }
+    // Must be targeting a REST route (sanity check)
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( strpos( $uri, '/' . rest_get_url_prefix() . '/' ) === false ) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Returns true if the current request is a REST API request from the admin.
+ *
+ * @return bool
+ */
+function foogallery_is_rest_request_from_admin() {
+    if ( !foogallery_is_rest_request() ) {
+        return false;
+    }
+    // Must have an admin referer
+    $ref = $_SERVER['HTTP_REFERER'] ?? '';
+    if ( empty( $ref ) ) {
+        return false;
+    }
+    // Check referer starts with /wp-admin/
+    if ( strpos( $ref, admin_url() ) === 0 ) {
+        // Finally, ensures the user is logged in.
+        return is_user_logged_in();
+    }
+    return false;
 }
