@@ -78,6 +78,7 @@
 				$nonce = $modal.find('#foogallery_album_gallery_details_nonce'),
 				$details = $modal.find('.gallery-details'),
 				data = 'action=foogallery_get_gallery_details' +
+					'&foogallery_album_id=' + $('#post_ID').val() +
 					'&foogallery_id=' + $this.data('gallery-id') +
 					'&_wpnonce=' + $nonce.val() +
 					'&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val());
@@ -110,9 +111,10 @@
 				$nonce = $modal.find('#foogallery_album_gallery_details_nonce'),
 				$form = $modal.find('form[name="foogallery_gallery_details"]'),
 				data = 'action=foogallery_save_gallery_details' +
+						'&foogallery_album_id=' + $('#post_ID').val() +
 						'&_wpnonce=' + $nonce.val() +
 						'&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val()) +
-						'& ' + $form.serialize();
+						'&' + $form.serialize();
 
 			$this.attr('disabled', 'disabled');
 			$spinner.addClass('is-active');

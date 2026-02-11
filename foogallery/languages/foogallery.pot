@@ -8,7 +8,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language-Team: FooPlugins <info@fooplugins.com> (https://fooplugins.com)\n"
 "Last-Translator: FooPlugins <info@fooplugins.com> (https://fooplugins.com)\n"
-"POT-Creation-Date: 2026-01-30 15:58+0000\n"
+"POT-Creation-Date: 2026-02-10 14:21+0000\n"
 "Report-Msgid-Bugs-To: https://github.com/fooplugins/foogallery/issues\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-KeywordsList: __;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
@@ -29,7 +29,7 @@ msgstr ""
 msgid "Sorry, you are not allowed to read galleries as this user."
 msgstr ""
 
-#: includes/class-foogallery-attachment-custom-class.php:25, includes/admin/class-gallery-attachment-modal.php:714
+#: includes/class-foogallery-attachment-custom-class.php:25, includes/admin/class-gallery-attachment-modal.php:716
 msgid "Custom Class"
 msgstr ""
 
@@ -37,7 +37,7 @@ msgstr ""
 msgid "Add extra classes to the attachment"
 msgstr ""
 
-#: includes/class-foogallery-attachment-type.php:72, includes/admin/class-gallery-attachment-modal.php:964
+#: includes/class-foogallery-attachment-type.php:72, includes/admin/class-gallery-attachment-modal.php:966
 msgid "Override Type"
 msgstr ""
 
@@ -69,7 +69,11 @@ msgstr ""
 msgid "Clear Gallery HTML Cache"
 msgstr ""
 
-#: includes/class-foogallery-cache.php:215
+#: includes/class-foogallery-cache.php:215, includes/class-override-thumbnail.php:86, includes/admin/class-menu.php:123
+msgid "You do not have permission!"
+msgstr ""
+
+#: includes/class-foogallery-cache.php:221
 msgid "The cache for all galleries has been cleared!"
 msgstr ""
 
@@ -185,7 +189,7 @@ msgstr ""
 msgid "An animated loading icon can be shown while the thumbnails are busy loading."
 msgstr ""
 
-#: includes/class-foogallery-common-fields.php:217, includes/class-foogallery-common-fields.php:303, includes/class-foogallery-common-fields.php:486, includes/class-foogallery-common-fields.php:587, includes/class-foogallery-lightbox.php:439, includes/class-foogallery-lightbox.php:464, includes/class-foogallery-lightbox.php:584, includes/class-foogallery-lightbox.php:821, includes/class-foogallery-paging.php:265, includes/functions.php:587, includes/functions.php:1868, includes/functions.php:2328, extensions/albums/functions.php:81, includes/admin/class-pro-promotion.php:209, includes/admin/class-settings.php:185, includes/admin/view-help-demos.php:44, pro/includes/class-foogallery-pro-advanced-thumbnails.php:56, pro/includes/class-foogallery-pro-buttons.php:333, pro/includes/class-foogallery-pro-datasource-folders.php:476, pro/includes/class-foogallery-pro-filtering.php:315, pro/includes/class-foogallery-pro-filtering.php:390, extensions/albums/admin/class-metaboxes.php:543, extensions/default-templates/default/class-default-gallery-template.php:139, pro/includes/video/class-foogallery-pro-video.php:277, pro/includes/video/class-foogallery-pro-video.php:662, pro/extensions/default-templates/slider/class-slider-gallery-template.php:237
+#: includes/class-foogallery-common-fields.php:217, includes/class-foogallery-common-fields.php:303, includes/class-foogallery-common-fields.php:486, includes/class-foogallery-common-fields.php:587, includes/class-foogallery-lightbox.php:439, includes/class-foogallery-lightbox.php:464, includes/class-foogallery-lightbox.php:584, includes/class-foogallery-lightbox.php:821, includes/class-foogallery-paging.php:265, includes/functions.php:587, includes/functions.php:1914, includes/functions.php:2374, extensions/albums/functions.php:81, includes/admin/class-pro-promotion.php:209, includes/admin/class-settings.php:185, includes/admin/view-help-demos.php:44, pro/includes/class-foogallery-pro-advanced-thumbnails.php:56, pro/includes/class-foogallery-pro-buttons.php:333, pro/includes/class-foogallery-pro-datasource-folders.php:476, pro/includes/class-foogallery-pro-filtering.php:315, pro/includes/class-foogallery-pro-filtering.php:390, extensions/albums/admin/class-metaboxes.php:594, extensions/default-templates/default/class-default-gallery-template.php:139, pro/includes/video/class-foogallery-pro-video.php:277, pro/includes/video/class-foogallery-pro-video.php:662, pro/extensions/default-templates/slider/class-slider-gallery-template.php:237
 msgid "Default"
 msgstr ""
 
@@ -537,7 +541,7 @@ msgstr ""
 msgid "settings"
 msgstr ""
 
-#: includes/class-foogallery-common-fields.php:603, includes/admin/class-gallery-attachment-modal.php:682, pro/includes/foogallery-media-views-templates.php:234, pro/includes/foogallery-media-views-templates.php:455, pro/includes/woocommerce/class-foogallery-pro-datasource-products.php:388
+#: includes/class-foogallery-common-fields.php:603, includes/admin/class-gallery-attachment-modal.php:684, pro/includes/foogallery-media-views-templates.php:234, pro/includes/foogallery-media-views-templates.php:455, pro/includes/woocommerce/class-foogallery-pro-datasource-products.php:388
 msgid "Title"
 msgstr ""
 
@@ -549,7 +553,7 @@ msgstr ""
 msgid "Default (as per %s)"
 msgstr ""
 
-#: includes/class-foogallery-common-fields.php:625, includes/admin/class-gallery-attachment-modal.php:690, pro/includes/class-foogallery-pro-datasource-folders.php:601, pro/includes/foogallery-media-views-templates.php:240, pro/includes/foogallery-media-views-templates.php:461
+#: includes/class-foogallery-common-fields.php:625, includes/admin/class-gallery-attachment-modal.php:692, pro/includes/class-foogallery-pro-datasource-folders.php:601, pro/includes/foogallery-media-views-templates.php:240, pro/includes/foogallery-media-views-templates.php:461
 msgid "Description"
 msgstr ""
 
@@ -609,7 +613,7 @@ msgstr ""
 msgid "The default crop position when resizing thumbnails."
 msgstr ""
 
-#: includes/class-foogallery-crop-position.php:161, includes/admin/class-gallery-attachment-modal.php:834
+#: includes/class-foogallery-crop-position.php:161, includes/admin/class-gallery-attachment-modal.php:836
 msgid "Crop Position"
 msgstr ""
 
@@ -677,7 +681,7 @@ msgstr ""
 msgid "If you choose to disable lazy loading, then all thumbnails will be loaded at once. This means you will lose the performance improvements that lazy loading gives you."
 msgstr ""
 
-#: includes/class-foogallery-lazyload.php:217, includes/class-gallery-advanced-settings.php:60, includes/class-gallery-advanced-settings.php:69, includes/class-gallery-advanced-settings.php:78, includes/class-gallery-advanced-settings.php:87, includes/class-gallery-advanced-settings.php:96, includes/admin/class-gallery-attachment-modal.php:669, includes/admin/class-pro-promotion.php:1082, includes/admin/class-pro-promotion.php:1120, includes/admin/class-settings.php:510, pro/includes/class-foogallery-pro-advanced-gallery-settings.php:31, pro/includes/class-foogallery-pro-advanced-gallery-settings.php:49, pro/includes/class-foogallery-pro-advanced-thumbnails.php:52, pro/includes/class-foogallery-pro-advanced-thumbnails.php:70, pro/includes/class-foogallery-pro-advanced-thumbnails.php:84, pro/includes/class-foogallery-pro-buttons.php:404, pro/includes/class-foogallery-pro-exif.php:494, pro/includes/class-foogallery-pro-filtering.php:514, pro/includes/class-foogallery-pro-filtering.php:531, pro/includes/class-foogallery-pro-filtering.php:558, pro/includes/class-foogallery-pro-filtering.php:602, pro/includes/class-foogallery-pro-filtering.php:628, pro/includes/class-foogallery-pro-filtering.php:654, pro/includes/class-foogallery-pro-filtering.php:676, pro/includes/class-foogallery-pro-filtering.php:698, pro/includes/class-foogallery-pro-filtering.php:724, pro/includes/class-foogallery-pro-filtering.php:746, pro/includes/class-foogallery-pro-filtering.php:796, pro/includes/class-foogallery-pro-filtering.php:879, pro/includes/class-foogallery-pro-ribbons.php:417, pro/includes/protection/class-foogallery-pro-protection.php:627, pro/includes/video/class-foogallery-pro-video.php:373, pro/includes/woocommerce/class-foogallery-pro-woocommerce.php:1422
+#: includes/class-foogallery-lazyload.php:217, includes/class-gallery-advanced-settings.php:60, includes/class-gallery-advanced-settings.php:69, includes/class-gallery-advanced-settings.php:78, includes/class-gallery-advanced-settings.php:87, includes/class-gallery-advanced-settings.php:96, includes/admin/class-gallery-attachment-modal.php:671, includes/admin/class-pro-promotion.php:1082, includes/admin/class-pro-promotion.php:1120, includes/admin/class-settings.php:510, pro/includes/class-foogallery-pro-advanced-gallery-settings.php:31, pro/includes/class-foogallery-pro-advanced-gallery-settings.php:49, pro/includes/class-foogallery-pro-advanced-thumbnails.php:52, pro/includes/class-foogallery-pro-advanced-thumbnails.php:70, pro/includes/class-foogallery-pro-advanced-thumbnails.php:84, pro/includes/class-foogallery-pro-buttons.php:404, pro/includes/class-foogallery-pro-exif.php:494, pro/includes/class-foogallery-pro-filtering.php:514, pro/includes/class-foogallery-pro-filtering.php:531, pro/includes/class-foogallery-pro-filtering.php:558, pro/includes/class-foogallery-pro-filtering.php:602, pro/includes/class-foogallery-pro-filtering.php:628, pro/includes/class-foogallery-pro-filtering.php:654, pro/includes/class-foogallery-pro-filtering.php:676, pro/includes/class-foogallery-pro-filtering.php:698, pro/includes/class-foogallery-pro-filtering.php:724, pro/includes/class-foogallery-pro-filtering.php:746, pro/includes/class-foogallery-pro-filtering.php:796, pro/includes/class-foogallery-pro-filtering.php:879, pro/includes/class-foogallery-pro-ribbons.php:417, pro/includes/protection/class-foogallery-pro-protection.php:627, pro/includes/video/class-foogallery-pro-video.php:373, pro/includes/woocommerce/class-foogallery-pro-woocommerce.php:1422
 msgid "Advanced"
 msgstr ""
 
@@ -809,7 +813,7 @@ msgstr ""
 msgid "The below settings will control the thumbnail strip that is shown within the lightbox."
 msgstr ""
 
-#: includes/class-foogallery-lightbox.php:357, includes/class-foogallery-lightbox.php:371, includes/class-foogallery-lightbox.php:387, includes/class-foogallery-lightbox.php:413, includes/class-foogallery-lightbox.php:435, includes/class-foogallery-lightbox.php:460, includes/class-foogallery-lightbox.php:483, includes/admin/class-gallery-attachment-modal.php:649, includes/admin/class-gallery-metaboxes.php:178, pro/extensions/default-templates/slider/class-slider-gallery-template.php:227
+#: includes/class-foogallery-lightbox.php:357, includes/class-foogallery-lightbox.php:371, includes/class-foogallery-lightbox.php:387, includes/class-foogallery-lightbox.php:413, includes/class-foogallery-lightbox.php:435, includes/class-foogallery-lightbox.php:460, includes/class-foogallery-lightbox.php:483, includes/admin/class-gallery-attachment-modal.php:651, includes/admin/class-gallery-metaboxes.php:178, pro/extensions/default-templates/slider/class-slider-gallery-template.php:227
 msgid "Thumbnails"
 msgstr ""
 
@@ -1345,11 +1349,11 @@ msgstr ""
 msgid "Invalid security token."
 msgstr ""
 
-#: includes/class-override-thumbnail.php:88, includes/admin/class-gallery-attachment-modal.php:63, includes/admin/class-gallery-attachment-modal.php:199, includes/admin/class-gallery-attachment-modal.php:215
+#: includes/class-override-thumbnail.php:94, includes/admin/class-gallery-attachment-modal.php:63, includes/admin/class-gallery-attachment-modal.php:199, includes/admin/class-gallery-attachment-modal.php:215
 msgid "Invalid attachment data."
 msgstr ""
 
-#: includes/class-override-thumbnail.php:95, includes/admin/class-gallery-attachment-modal.php:70, includes/admin/class-gallery-attachment-modal.php:77, includes/admin/class-gallery-attachment-modal.php:222, includes/admin/class-gallery-attachment-modal.php:262, includes/admin/class-gallery-attachment-modal.php:270, includes/admin/class-gallery-datasources.php:151, includes/admin/class-gallery-editor.php:306, includes/admin/class-gallery-editor.php:320, includes/admin/class-gallery-metabox-items.php:147, includes/admin/class-gallery-metaboxes.php:527, includes/admin/class-gallery-metaboxes.php:535, includes/admin/class-gallery-metaboxes.php:588, includes/admin/class-gallery-metaboxes.php:641, includes/admin/class-settings.php:723, includes/admin/class-settings.php:748, includes/admin/class-settings.php:773
+#: includes/class-override-thumbnail.php:101, includes/admin/class-gallery-attachment-modal.php:70, includes/admin/class-gallery-attachment-modal.php:77, includes/admin/class-gallery-attachment-modal.php:222, includes/admin/class-gallery-attachment-modal.php:262, includes/admin/class-gallery-attachment-modal.php:270, includes/admin/class-gallery-datasources.php:151, includes/admin/class-gallery-editor.php:306, includes/admin/class-gallery-editor.php:320, includes/admin/class-gallery-metabox-items.php:147, includes/admin/class-gallery-metaboxes.php:527, includes/admin/class-gallery-metaboxes.php:535, includes/admin/class-gallery-metaboxes.php:588, includes/admin/class-gallery-metaboxes.php:641, includes/admin/class-settings.php:723, includes/admin/class-settings.php:748, includes/admin/class-settings.php:773
 msgid "Insufficient permissions."
 msgstr ""
 
@@ -1369,7 +1373,7 @@ msgstr ""
 msgid "Add New Gallery"
 msgstr ""
 
-#: includes/class-posttypes.php:53, extensions/albums/admin/class-metaboxes.php:554, includes/compatibility/elementor/class-elementor-foogallery-widget.php:143
+#: includes/class-posttypes.php:53, extensions/albums/admin/class-metaboxes.php:605, includes/compatibility/elementor/class-elementor-foogallery-widget.php:143
 msgid "Edit Gallery"
 msgstr ""
 
@@ -1511,7 +1515,7 @@ msgstr ""
 msgid "Image Attachment Page"
 msgstr ""
 
-#: includes/functions.php:1200, extensions/albums/functions.php:82, includes/admin/class-attachment-fields.php:22, includes/admin/class-gallery-attachment-modal.php:698, pro/includes/class-foogallery-pro-advanced-captions.php:112, pro/includes/class-foogallery-pro-datasource-folders.php:609, extensions/albums/admin/class-metaboxes.php:570
+#: includes/functions.php:1200, extensions/albums/functions.php:82, includes/admin/class-attachment-fields.php:22, includes/admin/class-gallery-attachment-modal.php:700, pro/includes/class-foogallery-pro-advanced-captions.php:112, pro/includes/class-foogallery-pro-datasource-folders.php:609, extensions/albums/admin/class-metaboxes.php:621
 msgid "Custom URL"
 msgstr ""
 
@@ -1651,55 +1655,55 @@ msgstr ""
 msgid "Bulk copy your gallery settings to other galleries in a flash."
 msgstr ""
 
-#: includes/functions.php:1864
+#: includes/functions.php:1910
 msgid "ShortPixel Adaptive Images"
 msgstr ""
 
-#: includes/functions.php:1869
+#: includes/functions.php:1915
 msgid "The default engine used to generate locally cached thumbnails."
 msgstr ""
 
-#: includes/functions.php:1873
+#: includes/functions.php:1919
 msgid "ShortPixel"
 msgstr ""
 
-#: includes/functions.php:1874
+#: includes/functions.php:1920
 msgid "Uses %s to generate all your gallery thumbnails. They will be optimized and offloaded to the ShortPixel global CDN!"
 msgstr ""
 
-#: includes/functions.php:1881
+#: includes/functions.php:1927
 msgid "Dummy"
 msgstr ""
 
-#: includes/functions.php:1882
+#: includes/functions.php:1928
 msgid "A dummy thumbnail engine that can be used for testing. (uses dummyimage.com)"
 msgstr ""
 
-#: includes/functions.php:2028
+#: includes/functions.php:2074
 msgid "Remote server returned HTTP %d."
 msgstr ""
 
-#: includes/functions.php:2036
+#: includes/functions.php:2082
 msgid "Remote URL did not return an image (content-type: %s)."
 msgstr ""
 
-#: includes/functions.php:2044
+#: includes/functions.php:2090
 msgid "Remote server returned an empty response body."
 msgstr ""
 
-#: includes/functions.php:2329, extensions/albums/admin/class-metaboxes.php:544, pro/includes/video/class-foogallery-pro-video.php:663
+#: includes/functions.php:2375, extensions/albums/admin/class-metaboxes.php:595, pro/includes/video/class-foogallery-pro-video.php:663
 msgid "New tab (_blank)"
 msgstr ""
 
-#: includes/functions.php:2330, extensions/albums/admin/class-metaboxes.php:545, pro/includes/video/class-foogallery-pro-video.php:664
+#: includes/functions.php:2376, extensions/albums/admin/class-metaboxes.php:596, pro/includes/video/class-foogallery-pro-video.php:664
 msgid "Same tab (_self)"
 msgstr ""
 
-#: includes/functions.php:2331, includes/compatibility/class-foobox-compatibility.php:328, pro/includes/video/class-foogallery-pro-video.php:665
+#: includes/functions.php:2377, includes/compatibility/class-foobox-compatibility.php:328, pro/includes/video/class-foogallery-pro-video.php:665
 msgid "FooBox"
 msgstr ""
 
-#: includes/functions.php:2634
+#: includes/functions.php:2680
 msgid "%s Lightbox"
 msgstr ""
 
@@ -2089,7 +2093,7 @@ msgstr ""
 msgid "Attachments"
 msgstr ""
 
-#: extensions/import-export/class-foogallery-export-view-helper.php:115, extensions/import-export/class-foogallery-import-export.php:506, extensions/import-export/view-import-export.php:46
+#: extensions/import-export/class-foogallery-export-view-helper.php:115, extensions/import-export/class-foogallery-import-export.php:512, extensions/import-export/view-import-export.php:46
 msgid "Export"
 msgstr ""
 
@@ -2169,11 +2173,15 @@ msgstr ""
 msgid "Created gallery \"%1$s\" (ID: %2$s)"
 msgstr ""
 
-#: extensions/import-export/class-foogallery-import-export.php:482
+#: extensions/import-export/class-foogallery-import-export.php:471
+msgid "You do not have permission to export galleries."
+msgstr ""
+
+#: extensions/import-export/class-foogallery-import-export.php:488
 msgid "Import / Export"
 msgstr ""
 
-#: extensions/import-export/class-foogallery-import-export.php:529
+#: extensions/import-export/class-foogallery-import-export.php:535
 msgid "Below is a JSON export of your gallery."
 msgstr ""
 
@@ -2313,7 +2321,7 @@ msgstr ""
 msgid "Point your attachment to a custom URL"
 msgstr ""
 
-#: includes/admin/class-attachment-fields.php:29, includes/admin/class-gallery-attachment-modal.php:702, pro/includes/class-foogallery-pro-datasource-folders.php:613, pro/includes/class-foogallery-pro-datasource-post-query.php:513, extensions/albums/admin/class-metaboxes.php:576
+#: includes/admin/class-attachment-fields.php:29, includes/admin/class-gallery-attachment-modal.php:704, pro/includes/class-foogallery-pro-datasource-folders.php:613, pro/includes/class-foogallery-pro-datasource-post-query.php:513, extensions/albums/admin/class-metaboxes.php:627
 msgid "Custom Target"
 msgstr ""
 
@@ -2325,7 +2333,7 @@ msgstr ""
 msgid "Layout"
 msgstr ""
 
-#: includes/admin/class-columns.php:25, extensions/albums/admin/class-metaboxes.php:564
+#: includes/admin/class-columns.php:25, extensions/albums/admin/class-metaboxes.php:615
 msgid "Media"
 msgstr ""
 
@@ -2397,159 +2405,159 @@ msgstr ""
 msgid "Could not add new taxonomy term!"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:624
+#: includes/admin/class-gallery-attachment-modal.php:626
 msgid "Main"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:639
+#: includes/admin/class-gallery-attachment-modal.php:641
 msgid "Taxonomies"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:686, pro/includes/class-foogallery-pro-datasource-folders.php:597
+#: includes/admin/class-gallery-attachment-modal.php:688, pro/includes/class-foogallery-pro-datasource-folders.php:597
 msgid "Caption"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:694
+#: includes/admin/class-gallery-attachment-modal.php:696
 msgid "ALT Text"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:718
+#: includes/admin/class-gallery-attachment-modal.php:720
 msgid "The custom class will be applied to the anchor tag of the image, which you can target with custom CSS."
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:721
+#: includes/admin/class-gallery-attachment-modal.php:723
 msgid "File URL"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:725
+#: includes/admin/class-gallery-attachment-modal.php:727
 msgid "Copy to clipboard"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:789, pro/includes/class-foogallery-pro-datasource-folders.php:618, pro/includes/foogallery-media-views-templates.php:481, pro/includes/foogallery-media-views-templates.php:500
+#: includes/admin/class-gallery-attachment-modal.php:791, pro/includes/class-foogallery-pro-datasource-folders.php:618, pro/includes/foogallery-media-views-templates.php:481, pro/includes/foogallery-media-views-templates.php:500
 msgid "Save"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:790, includes/admin/class-gallery-datasources.php:253, includes/admin/class-gallery-datasources.php:253, includes/admin/class-gallery-editor.php:226, includes/admin/class-gallery-editor.php:226, pro/includes/class-foogallery-pro-datasource-folders.php:617, pro/includes/class-foogallery-pro-gallery-blueprints.php:667, pro/includes/class-foogallery-pro-gallery-blueprints.php:630, pro/includes/class-foogallery-pro-media-folders.php:155, pro/includes/foogallery-media-views-templates.php:532
+#: includes/admin/class-gallery-attachment-modal.php:792, includes/admin/class-gallery-datasources.php:253, includes/admin/class-gallery-datasources.php:253, includes/admin/class-gallery-editor.php:226, includes/admin/class-gallery-editor.php:226, pro/includes/class-foogallery-pro-datasource-folders.php:617, pro/includes/class-foogallery-pro-gallery-blueprints.php:667, pro/includes/class-foogallery-pro-gallery-blueprints.php:630, pro/includes/class-foogallery-pro-media-folders.php:155, pro/includes/foogallery-media-views-templates.php:532
 msgid "Cancel"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:799
+#: includes/admin/class-gallery-attachment-modal.php:801
 msgid "Manage %s"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:836
+#: includes/admin/class-gallery-attachment-modal.php:838
 msgid "Left, Top"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:837
+#: includes/admin/class-gallery-attachment-modal.php:839
 msgid "Center, Top"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:838
+#: includes/admin/class-gallery-attachment-modal.php:840
 msgid "Right, Top"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:839
+#: includes/admin/class-gallery-attachment-modal.php:841
 msgid "Left, Center"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:840
+#: includes/admin/class-gallery-attachment-modal.php:842
 msgid "Center, Center"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:841
+#: includes/admin/class-gallery-attachment-modal.php:843
 msgid "Right, Center"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:842
+#: includes/admin/class-gallery-attachment-modal.php:844
 msgid "Left, Bottom"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:843
+#: includes/admin/class-gallery-attachment-modal.php:845
 msgid "Center, Bottom"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:844
+#: includes/admin/class-gallery-attachment-modal.php:846
 msgid "Right, Bottom"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:849
+#: includes/admin/class-gallery-attachment-modal.php:851
 msgid "Thumbnail Info"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:855
+#: includes/admin/class-gallery-attachment-modal.php:857
 msgid "Clear FooGallery Thumbnails"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:858, pro/includes/video/class-foogallery-pro-video.php:813, pro/includes/woocommerce/class-foogallery-pro-woocommerce.php:1702
+#: includes/admin/class-gallery-attachment-modal.php:860, pro/includes/video/class-foogallery-pro-video.php:813, pro/includes/woocommerce/class-foogallery-pro-woocommerce.php:1702
 msgid "Clear"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:878
+#: includes/admin/class-gallery-attachment-modal.php:880
 msgid "Registered thumbnail sizes in WordPress : "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:889
+#: includes/admin/class-gallery-attachment-modal.php:891
 msgid "Thumbnails generated by WordPress : "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:902
+#: includes/admin/class-gallery-attachment-modal.php:904
 msgid "Thumbnails generated by FooGallery : "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:940, pro/includes/video/class-foogallery-pro-video.php:203
+#: includes/admin/class-gallery-attachment-modal.php:942, pro/includes/video/class-foogallery-pro-video.php:203
 msgid "Override Width"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:944
+#: includes/admin/class-gallery-attachment-modal.php:946
 msgid "Specify a custom width to override the default width."
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:948, pro/includes/video/class-foogallery-pro-video.php:208
+#: includes/admin/class-gallery-attachment-modal.php:950, pro/includes/video/class-foogallery-pro-video.php:208
 msgid "Override Height"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:952
+#: includes/admin/class-gallery-attachment-modal.php:954
 msgid "Specify a custom height to override the default height."
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:957, includes/compatibility/class-foobox-compatibility.php:343
+#: includes/admin/class-gallery-attachment-modal.php:959, includes/compatibility/class-foobox-compatibility.php:343
 msgid "Panning"
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:961
+#: includes/admin/class-gallery-attachment-modal.php:963
 msgid "When using FooBox lightbox, enable panning to allow users to click and drag to navigate overflowing content."
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:968
+#: includes/admin/class-gallery-attachment-modal.php:970
 msgid "Override the type of the attachment used by the lightbox."
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:987
+#: includes/admin/class-gallery-attachment-modal.php:989
 msgid "Uploaded On: "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:991
+#: includes/admin/class-gallery-attachment-modal.php:993
 msgid "Uploaded By: "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:995
+#: includes/admin/class-gallery-attachment-modal.php:997
 msgid "File Name: "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:999
+#: includes/admin/class-gallery-attachment-modal.php:1001
 msgid "File Type: "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:1003
+#: includes/admin/class-gallery-attachment-modal.php:1005
 msgid "File Size: "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:1007
+#: includes/admin/class-gallery-attachment-modal.php:1009
 msgid "Dimensions: "
 msgstr ""
 
-#: includes/admin/class-gallery-attachment-modal.php:1027
+#: includes/admin/class-gallery-attachment-modal.php:1029
 msgid "Save Attachment Details"
 msgstr ""
 
@@ -2689,7 +2697,7 @@ msgstr ""
 msgid "No items were found for this gallery."
 msgstr ""
 
-#: includes/admin/class-gallery-metabox-template.php:26, extensions/albums/admin/class-metaboxes.php:558
+#: includes/admin/class-gallery-metabox-template.php:26, extensions/albums/admin/class-metaboxes.php:609
 msgid "Gallery Layout"
 msgstr ""
 
@@ -2833,11 +2841,11 @@ msgstr ""
 msgid "%s settings reset to defaults."
 msgstr ""
 
-#: includes/admin/class-menu.php:126
+#: includes/admin/class-menu.php:132
 msgid "%d sample images imported, and %d demo galleries created!"
 msgstr ""
 
-#: includes/admin/class-menu.php:124
+#: includes/admin/class-menu.php:130
 msgid "There was a problem creating the demo galleries!"
 msgstr ""
 
@@ -6970,19 +6978,23 @@ msgstr ""
 msgid "Add any custom CSS to target this specific album. For example %s"
 msgstr ""
 
-#: extensions/albums/admin/class-metaboxes.php:506
+#: extensions/albums/admin/class-metaboxes.php:540
 msgid "Invalid Gallery!"
 msgstr ""
 
-#: extensions/albums/admin/class-metaboxes.php:552
+#: extensions/albums/admin/class-metaboxes.php:551
+msgid "Invalid gallery details request."
+msgstr ""
+
+#: extensions/albums/admin/class-metaboxes.php:603
 msgid "Gallery Title"
 msgstr ""
 
-#: extensions/albums/admin/class-metaboxes.php:572
+#: extensions/albums/admin/class-metaboxes.php:623
 msgid "Point your gallery to a custom URL"
 msgstr ""
 
-#: extensions/albums/admin/class-metaboxes.php:578
+#: extensions/albums/admin/class-metaboxes.php:629
 msgid "Set a custom target for your gallery"
 msgstr ""
 

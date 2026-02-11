@@ -408,12 +408,46 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 			}
 		}
 
+		/**
+		 * Validate incoming AJAX context for album gallery details requests.
+		 * 
+		 * Reviewers : please note that we cannot check if the gallery belongs to the album, as the user might be in the process of creating an album
+		 *
+		 * @return array|false
+		 */
+		private function validate_gallery_details_ajax_context() {
+			$album_id      = isset( $_POST['foogallery_album_id'] ) ? absint( wp_unslash( $_POST['foogallery_album_id'] ) ) : 0;
+			$foogallery_id = isset( $_POST['foogallery_id'] ) ? absint( wp_unslash( $_POST['foogallery_id'] ) ) : 0;
+
+			if ( $album_id <= 0 || $foogallery_id <= 0 ) {
+				return false;
+			}
+
+			if ( ! current_user_can( 'edit_post', $album_id ) || ! current_user_can( 'edit_post', $foogallery_id ) ) {
+				return false;
+			}
+
+			$album   = FooGalleryAlbum::get_by_id( $album_id );
+			$gallery = FooGallery::get_by_id( $foogallery_id );
+
+			if ( false === $album || false === $gallery ) {
+				return false;
+			}
+
+			return array(
+				'album_id'      => $album_id,
+				'foogallery_id' => $foogallery_id,
+				'gallery'       => $gallery,
+			);
+		}
+
 		public function ajax_get_gallery_details() {
 			if ( check_admin_referer( 'foogallery_album_gallery_details' ) ) {
-				$foogallery_id = intval( $_POST['foogallery_id'] );
-				$gallery = FooGallery::get_by_id( $foogallery_id );
+				$context = $this->validate_gallery_details_ajax_context();
 
-				if ( false !== $gallery ) {
+				if ( false !== $context ) {
+					$foogallery_id = $context['foogallery_id'];
+					$gallery       = $context['gallery'];
 					$fields = $this->get_gallery_detail_fields( $gallery ); ?>
 					<form name="foogallery_gallery_details">
 					<input type="hidden" name="foogallery_id" id="foogallery_id" value="<?php echo esc_attr( $foogallery_id ); ?>" />
@@ -511,22 +545,39 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 
 		public function ajax_save_gallery_details() {
 			if ( check_admin_referer( 'foogallery_album_gallery_details' ) ) {
-				$foogallery_id = $_POST['foogallery_id'];
-				$gallery       = FooGallery::get_by_id( $foogallery_id );
-				if ( false !== $gallery ) {
-					$fields = $this->get_gallery_detail_fields( $gallery );
-
-					foreach ( $fields as $field => $values ) {
-						//for every field, save some info
-						do_action( 'foogallery_album_gallery_details_save', $field, $values, $gallery );
-					}
+				$context = $this->validate_gallery_details_ajax_context();
+				if ( false === $context ) {
+					wp_send_json_error( array(
+						'message' => __( 'Invalid gallery details request.', 'foogallery' ),
+					), 403 );
 				}
+
+				$gallery = $context['gallery'];
+				$fields  = $this->get_gallery_detail_fields( $gallery );
+
+				foreach ( $fields as $field => $values ) {
+					//for every field, save some info
+					do_action( 'foogallery_album_gallery_details_save', $field, $values, $gallery );
+				}
+
+				wp_send_json_success();
 			}
 		}
 
 		public function gallery_details_save($field, $field_args, $gallery) {
+			if ( ! isset( $_POST[$field] ) ) {
+				return;
+			}
+
 			if ( 'custom_url' === $field || 'custom_target' === $field ) {
-				$value = $_POST[$field];
+				$value = wp_unslash( $_POST[$field] );
+
+				if ( 'custom_url' === $field ) {
+					$value = esc_url_raw( $value );
+				} else {
+					$value = sanitize_key( $value );
+				}
+
 				update_post_meta( $gallery->ID, $field, $value );
 			}
 		}

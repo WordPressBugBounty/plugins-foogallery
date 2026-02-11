@@ -1506,6 +1506,48 @@ function foogallery_sanitize_full(  $text  ) {
 }
 
 /**
+ * Sanitize attachment custom URLs before persisting or rendering.
+ *
+ * @since 1.0.0
+ *
+ * @param string $url
+ * @return string
+ */
+function foogallery_sanitize_attachment_custom_url(  $url  ) {
+    if ( !is_string( $url ) ) {
+        return '';
+    }
+    $url = trim( $url );
+    if ( '' === $url ) {
+        return '';
+    }
+    return esc_url_raw( $url );
+}
+
+/**
+ * Sanitize attachment custom target values against known options.
+ *
+ * @since 1.0.0
+ *
+ * @param string $target
+ * @return string
+ */
+function foogallery_sanitize_attachment_custom_target(  $target  ) {
+    if ( !is_string( $target ) ) {
+        return '';
+    }
+    $target = sanitize_key( $target );
+    if ( '' === $target ) {
+        return '';
+    }
+    $target_options = foogallery_get_target_options();
+    if ( array_key_exists( $target, $target_options ) ) {
+        return $target;
+    }
+    return 'default';
+}
+
+/**
  * Sanitize HTML to make it safe to output. Used to sanitize potentially harmful HTML used for captions
  *
  * @since 1.9.23
@@ -1939,10 +1981,10 @@ function foogallery_import_attachment(  $attachment_data  ) {
         $attachment_args['meta_input']['_wp_attachment_image_alt'] = $attachment_data['alt'];
     }
     if ( isset( $attachment_data['custom_url'] ) && !empty( $attachment_data['custom_url'] ) ) {
-        $attachment_args['meta_input']['_foogallery_custom_url'] = $attachment_data['custom_url'];
+        $attachment_args['meta_input']['_foogallery_custom_url'] = foogallery_sanitize_attachment_custom_url( $attachment_data['custom_url'] );
     }
     if ( isset( $attachment_data['custom_target'] ) && !empty( $attachment_data['custom_target'] ) ) {
-        $attachment_args['meta_input']['_foogallery_custom_target'] = $attachment_data['custom_target'];
+        $attachment_args['meta_input']['_foogallery_custom_target'] = foogallery_sanitize_attachment_custom_target( $attachment_data['custom_target'] );
     }
     if ( isset( $attachment_data['video'] ) && !empty( $attachment_data['video'] ) ) {
         $attachment_args['meta_input']['_foogallery_video_data'] = array(

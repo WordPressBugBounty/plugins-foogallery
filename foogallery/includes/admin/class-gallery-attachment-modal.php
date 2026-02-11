@@ -331,11 +331,13 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 				}
 
 				if ( array_key_exists( 'custom-url', $data ) ) {
-					update_post_meta( $img_id, '_foogallery_custom_url', $data['custom-url'] );
+					$custom_url = foogallery_sanitize_attachment_custom_url( wp_unslash( $data['custom-url'] ) );
+					update_post_meta( $img_id, '_foogallery_custom_url', $custom_url );
 				}
 
 				if ( array_key_exists( 'custom-target', $data ) ) {
-					update_post_meta( $img_id, '_foogallery_custom_target', $data['custom-target'] );
+					$custom_target = foogallery_sanitize_attachment_custom_target( wp_unslash( $data['custom-target'] ) );
+					update_post_meta( $img_id, '_foogallery_custom_target', $custom_target );
 				}
 
 				if ( array_key_exists( 'custom-class', $data ) ) {

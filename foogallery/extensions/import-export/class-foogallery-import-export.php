@@ -466,6 +466,12 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 		 */
 		public function ajax_generate_export() {
 			if ( check_admin_referer( 'foogallery_gallery_export' ) ) {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					wp_send_json_error( array(
+						'message' => __( 'You do not have permission to export galleries.', 'foogallery' ),
+					), 403 );
+				}
+
 				if ( isset( $_POST['galleries'] ) ) {
 					$galleries = array_map( 'sanitize_text_field', wp_unslash( $_POST['galleries'] ) );
 					echo foogallery_generate_export_json( $galleries ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output

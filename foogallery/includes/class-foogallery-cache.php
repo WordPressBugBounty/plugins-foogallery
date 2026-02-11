@@ -210,6 +210,12 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 		function ajax_clear_all_caches() {
 			if ( check_admin_referer( 'foogallery_clear_html_cache' ) ) {
 
+				if ( ! current_user_can( 'manage_options' ) ) {
+					wp_send_json_error( array(
+						'message' => __( 'You do not have permission!', 'foogallery' ),
+					), 403 );
+				}
+
 				$this->clear_all_gallery_caches();
 
 				esc_html_e('The cache for all galleries has been cleared!', 'foogallery' );

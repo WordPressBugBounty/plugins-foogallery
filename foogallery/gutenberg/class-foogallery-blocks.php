@@ -48,10 +48,16 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 
             $path = FOOGALLERY_PATH . 'gutenberg/assets/blocks';
             $url = FOOGALLERY_URL . 'gutenberg/assets/blocks';
-            $asset = require_once( $path . '.asset.php' );
+            $asset = require( $path . '.asset.php' );
+            if ( ! is_array( $asset ) ) {
+                $asset = array(
+                    'dependencies' => array(),
+                    'version' => false,
+                );
+            }
 
-            if ( is_array( $asset[ 'dependencies' ] ) ){
-                $asset[ 'dependencies' ][] = 'foogallery-core';
+            if ( isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ){
+                $asset['dependencies'][] = 'foogallery-core';
             }
 
 			// Scripts.

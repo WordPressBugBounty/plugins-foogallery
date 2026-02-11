@@ -69,7 +69,7 @@ if ( ! class_exists( 'FooGallery_Attachment_Custom_Class' ) ) {
 		public function load_custom_class_meta( $foogallery_attachment, $post ) {
 			$custom_class = get_post_meta( $post->ID, '_foogallery_custom_class', true );
 			if ( !empty( $custom_class ) ) {
-				$foogallery_attachment->custom_class = $custom_class;
+				$foogallery_attachment->custom_class = foogallery_sanitize_javascript( $custom_class );
 			}
 		}
 	}

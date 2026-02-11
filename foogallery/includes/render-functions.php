@@ -130,7 +130,7 @@ function foogallery_build_attachment_html_anchor_attributes( $foogallery_attachm
 		// get the URL to the attachment page.
 		$url = get_attachment_link( $foogallery_attachment->ID );
 	} elseif ( 'custom' === $link ) {
-		$url = $args['custom_link'];
+		$url = foogallery_sanitize_attachment_custom_url( $args['custom_link'] );
 	} else {
 		$url = $foogallery_attachment->url;
 	}

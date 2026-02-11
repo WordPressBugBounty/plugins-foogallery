@@ -49,8 +49,8 @@ if ( ! class_exists( 'FooGalleryAttachment' ) ) {
 			$this->caption = trim( $post->post_excerpt );
 			$this->description = trim( $post->post_content );
 			$this->alt = trim( get_post_meta( $this->ID, '_wp_attachment_image_alt', true ) );
-			$this->custom_url = get_post_meta( $this->ID, '_foogallery_custom_url', true );
-			$this->custom_target = get_post_meta( $this->ID, '_foogallery_custom_target', true );
+			$this->custom_url = foogallery_sanitize_attachment_custom_url( get_post_meta( $this->ID, '_foogallery_custom_url', true ) );
+			$this->custom_target = foogallery_sanitize_attachment_custom_target( get_post_meta( $this->ID, '_foogallery_custom_target', true ) );
 			$this->load_attachment_image_data( $this->ID );
 
 			$this->date = !empty( $post->post_date_gmt ) ? $post->post_date_gmt : $post->post_date;

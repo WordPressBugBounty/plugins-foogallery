@@ -118,6 +118,12 @@ if ( ! class_exists( 'FooGallery_Admin_Menu' ) ) {
 		function create_demo_galleries() {
 			if ( check_ajax_referer( 'foogallery_admin_import_demos' ) ) {
 
+				if ( ! current_user_can( 'manage_options' ) ) {
+					wp_send_json_error( array(
+						'message' => __( 'You do not have permission!', 'foogallery' ),
+					), 403 );
+				}
+
 				$results = foogallery_create_demo_content();
 
 				if ( $results === false ) {
