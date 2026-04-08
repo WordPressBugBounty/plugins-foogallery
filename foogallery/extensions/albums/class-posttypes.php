@@ -65,13 +65,15 @@ if ( ! class_exists( 'FooGallery_Albums_PostTypes' ) ) {
 					'not_found_in_trash' => __( 'No Albums found in Trash', 'foogallery' ),
 					'all_items'          => __( 'Albums', 'foogallery' ),
 				),
-				'hierarchical' => false,
-				'public'       => false,
-				'rewrite'      => false,
-				'show_ui'      => true,
-				'supports'     => array( 'title' ),
-                'show_in_menu' => foogallery_admin_menu_parent_slug(),
-                'capabilities' => FooGallery_Albums_PostTypes::ALBUM_CAPABILITIES
+				'hierarchical'  => false,
+				'public'        => false,
+				'rewrite'       => false,
+				'show_ui'       => true,
+				'show_in_rest'  => true,
+				'rest_base'     => 'foogallery-album',
+				'supports'      => array( 'title' ),
+                'show_in_menu'  => foogallery_admin_menu_parent_slug(),
+                'capabilities'  => FooGallery_Albums_PostTypes::ALBUM_CAPABILITIES
 			);
 
 			$args = apply_filters( 'foogallery_album_posttype_register_args', $args );

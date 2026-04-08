@@ -56,3 +56,48 @@ tr.foogallery_settings_radio td input[type="radio"] + label {
 	margin-top: 0;
 	margin-left: 5px;
 }
+
+#foogallery_uninstall_container {
+	position: relative;
+}
+
+.foogallery-uninstall-danger-zone {
+	max-width: 460px;
+	margin-top: 12px;
+	padding: 16px;
+	border: 1px solid #d63638;
+	border-radius: 4px;
+	background: #fcf0f1;
+}
+
+.foogallery-uninstall-danger-zone .description {
+	margin-top: 0;
+}
+
+.foogallery-uninstall-danger-zone__title {
+	margin: 0 0 8px;
+	color: #b32d2e;
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.foogallery-uninstall-danger-zone__input {
+	display: block;
+	width: 100%;
+	max-width: none;
+	margin: 10px 0 12px;
+	border-color: #d63638;
+}
+
+.foogallery-uninstall-danger-zone__input:focus {
+	border-color: #d63638;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
+.foogallery-uninstall-danger-zone__error {
+	margin: 0 0 8px;
+	color: #b32d2e;
+	font-weight: 600;
+}

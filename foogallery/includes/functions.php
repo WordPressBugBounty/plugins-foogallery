@@ -60,6 +60,21 @@ function foogallery_default_gallery_template() {
 }
 
 /**
+ * Returns the current WordPress major version as an integer.
+ *
+ * Examples:
+ * - 6.8.1 => 6
+ * - 7.0-beta2-61784 => 7
+ *
+ * @return int
+ */
+function foogallery_wp_version_major() {
+    global $wp_version;
+    preg_match( '/^(\\d+)/', (string) $wp_version, $wp_version_matches );
+    return (int) ($wp_version_matches[1] ?? 0);
+}
+
+/**
  * Returns if gallery permalinks are enabled
  *
  * @return bool
@@ -142,15 +157,17 @@ function foogallery_get_default(  $key, $default = false  ) {
 
 function foogallery_get_default_options() {
     $defaults = array(
-        'gallery_template'           => 'default',
-        'gallery_permalinks_enabled' => false,
-        'gallery_permalink'          => 'gallery',
-        'lightbox'                   => 'foogallery',
-        'thumb_jpeg_quality'         => '90',
-        'gallery_sorting'            => '',
-        'datasource'                 => 'media_library',
-        'advanced_attachment_modal'  => 'on',
-        'hide_editor_button'         => 'on',
+        'gallery_template'                 => 'default',
+        'gallery_permalinks_enabled'       => false,
+        'gallery_permalink'                => 'gallery',
+        'lightbox'                         => 'foogallery',
+        'thumb_jpeg_quality'               => '90',
+        'gallery_sorting'                  => '',
+        'datasource'                       => 'media_library',
+        'advanced_attachment_modal'        => 'on',
+        'hide_editor_button'               => 'on',
+        'thumb_resize_upscale_small'       => 'on',
+        'thumb_resize_upscale_small_color' => 'auto',
     );
     // A handy filter to override the defaults.
     $defaults = apply_filters( 'foogallery_defaults', $defaults );
@@ -485,7 +502,7 @@ function foogallery_build_container_attributes_safe(  $gallery, $attributes  ) {
     //clean up the attributes to make them safe for output
     $html = '';
     foreach ( $attributes as $key => $value ) {
-        $safe_value = esc_attr( $value );
+        $safe_value = foogallery_esc_attr( $value );
         $html .= "{$key}=\"{$safe_value}\" ";
     }
     return apply_filters(
@@ -921,7 +938,7 @@ function foogallery_find_featured_attachment_thumbnail_html(  $gallery, $args = 
     }
     $featuredAttachment = $gallery->featured_attachment();
     if ( $featuredAttachment ) {
-        return $featuredAttachment->html_img( $args );
+        return foogallery_attachment_html_image( $featuredAttachment, $args );
     } else {
         //if we have no featured attachment, then use the built-in image placeholder
         return foogallery_image_placeholder_html( $args );
@@ -1128,10 +1145,11 @@ function foogallery_build_default_settings_for_gallery_template(  $template_name
  */
 function foogallery_gallery_template_field_thumb_link_choices() {
     return apply_filters( 'foogallery_gallery_template_field_thumb_links', array(
-        'image'  => __( 'Full Size Image', 'foogallery' ),
-        'page'   => __( 'Image Attachment Page', 'foogallery' ),
-        'custom' => __( 'Custom URL', 'foogallery' ),
-        'none'   => __( 'Not linked', 'foogallery' ),
+        'image'       => __( 'Full Size Image', 'foogallery' ),
+        'page'        => __( 'Image Attachment Page', 'foogallery' ),
+        'parent_post' => __( 'Parent / Uploaded Post', 'foogallery' ),
+        'custom'      => __( 'Custom URL', 'foogallery' ),
+        'none'        => __( 'Not linked', 'foogallery' ),
     ) );
 }
 
@@ -1206,13 +1224,27 @@ function foogallery_get_attachment_id_by_url(  $url  ) {
  * @param string $text
  * @return string
  */
-function foogallery_esc_attr(  $text  ) {
+function foogallery_esc_attr(  $text, $overrides = false  ) {
     $safe_text = wp_check_invalid_utf8( $text );
+    $quote_style = ENT_QUOTES;
+    $charset = false;
+    $double_encode = true;
+    if ( false !== $overrides ) {
+        if ( isset( $overrides['quote_style'] ) ) {
+            $quote_style = $overrides['quote_style'];
+        }
+        if ( isset( $overrides['charset'] ) ) {
+            $charset = $overrides['charset'];
+        }
+        if ( isset( $overrides['double_encode'] ) ) {
+            $double_encode = $overrides['double_encode'];
+        }
+    }
     $safe_text = _wp_specialchars(
         $safe_text,
-        ENT_QUOTES,
-        false,
-        true
+        $quote_style,
+        $charset,
+        $double_encode
     );
     return $safe_text;
 }
@@ -1545,6 +1577,72 @@ function foogallery_sanitize_attachment_custom_target(  $target  ) {
         return $target;
     }
     return 'default';
+}
+
+/**
+ * Sanitize attachment custom rel values against allowed tokens.
+ *
+ * @since 1.0.0
+ *
+ * @param string $rel
+ * @return string
+ */
+function foogallery_sanitize_attachment_custom_rel(  $rel  ) {
+    if ( !is_string( $rel ) ) {
+        return '';
+    }
+    $rel = strtolower( trim( $rel ) );
+    if ( '' === $rel ) {
+        return '';
+    }
+    $allowed = wp_kses_allowed_html();
+    $allowed_tokens = array(
+        'alternate',
+        'author',
+        'bookmark',
+        'external',
+        'help',
+        'license',
+        'me',
+        'next',
+        'nofollow',
+        'dofollow',
+        'noopener',
+        'noreferrer',
+        'prev',
+        'search',
+        'sponsored',
+        'tag',
+        'ugc'
+    );
+    /**
+     * Filter the list of allowed rel tokens for attachment custom rel values.
+     *
+     * @since 1.0.0
+     *
+     * @param array  $allowed_tokens Allowed rel tokens.
+     * @param string $rel            Raw rel value before tokenization.
+     */
+    $allowed_tokens = apply_filters( 'foogallery_custom_rel_allowed_tokens', $allowed_tokens, $rel );
+    if ( !is_array( $allowed_tokens ) ) {
+        $allowed_tokens = array();
+    }
+    $rel_tokens = preg_split( '/\\s+/', $rel );
+    if ( !is_array( $rel_tokens ) ) {
+        return '';
+    }
+    $sanitized_tokens = array();
+    foreach ( $rel_tokens as $token ) {
+        $token = sanitize_key( $token );
+        if ( in_array( $token, $allowed_tokens, true ) ) {
+            $sanitized_tokens[] = $token;
+        }
+    }
+    if ( empty( $sanitized_tokens ) ) {
+        return '';
+    }
+    $sanitized_tokens = array_values( array_unique( $sanitized_tokens ) );
+    return implode( ' ', $sanitized_tokens );
 }
 
 /**

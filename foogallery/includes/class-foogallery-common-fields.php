@@ -41,6 +41,9 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 							$field['type']    = 'radio';
 							$field['class']   = 'foogallery-radios-stacked';
 							$field['choices'] = foogallery_gallery_template_field_thumb_link_choices();
+							if ( ! array_key_exists( 'desc', $field ) ) {
+								$field['desc'] = __( 'You can choose to link each thumbnail to the full size image, the image\'s attachment page, the parent post it was uploaded to, a custom URL, or you can choose to not link to anything.', 'foogallery' );
+							}
 							if ( !isset( $field['row_data'] ) ) {
 								$field['row_data'] = array(
 									'data-foogallery-change-selector' => 'input:radio',

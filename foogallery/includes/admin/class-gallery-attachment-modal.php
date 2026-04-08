@@ -158,7 +158,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
             }
 
 			?>
-			<div id="foogallery-image-edit-modal" style="display: none;"
+			<div id="foogallery-image-edit-modal" class="foogallery-modal-wrapper" style="display: none;"
                  data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_attachment_modal_open' ) ); ?>"
                  data-gallery_id="<?php echo esc_attr( $post->ID ); ?>"
                  data-modal_style="<?php echo esc_attr( $modal_style ); ?>">
@@ -166,19 +166,18 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 					<div class="media-modal-content">
 						<div class="edit-attachment-frame mode-select hide-menu hide-router">
 							<div class="edit-media-header">
-
 								<button title="<?php esc_attr_e( 'Edit previous attachment in the gallery', 'foogallery' ); ?>" class="left dashicons"><span class="screen-reader-text"><?php esc_html_e( 'Edit previous attachment in the gallery', 'foogallery' ); ?></span></button>
 								<button title="<?php esc_attr_e( 'Edit next attachment in the gallery', 'foogallery' ); ?>" class="right dashicons"><span class="screen-reader-text"><?php esc_html_e( 'Edit next attachment in the gallery', 'foogallery' ); ?></span></button>
 								<button type="button" class="media-modal-close"><span class="media-modal-icon"><span class="screen-reader-text"><?php esc_html_e('Close dialog', 'foogallery'); ?></span></span></button>
 							</div>
-							<div class="media-frame-title">
+							<div class="media-frame-title foogallery-modal-title">
                                 <h1><?php esc_html_e('Edit Attachment Details', 'foogallery'); ?></h1>
                                 <div class="attachment-modal-autosave">
                                     <input id="attachment-modal-autosave" type="checkbox" />
                                     <label for="attachment-modal-autosave"><?php esc_html_e( 'Autosave', 'foogallery' ); ?></label>
                                 </div>
                             </div>
-							<div class="media-frame-content">
+							<div class="media-frame-content foogallery-modal-container">
 								<div class="attachment-details save-ready">
 								</div>
 							</div>
@@ -314,34 +313,61 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 				);
 
 				if ( array_key_exists( 'title', $data ) ) {
-					$foogallery_post['post_title'] = $data['title'];
+					$foogallery_post['post_title'] = sanitize_text_field( wp_unslash( $data['title'] ) );
 				}
 
 				if ( array_key_exists( 'caption', $data ) ) {
-					$foogallery_post['post_excerpt'] = $data['caption'];
+					$foogallery_post['post_excerpt'] = sanitize_text_field( wp_unslash( $data['caption'] ) );
 				}
 
 				if ( array_key_exists( 'description', $data ) ) {
-					$foogallery_post['post_content'] = $data['description'];
+					$foogallery_post['post_content'] = wp_kses_post( wp_unslash( $data['description'] ) );
 				}
 
 				// Update post meta values
 				if ( array_key_exists( 'alt-text', $data ) ) {
-					update_post_meta( $img_id, '_wp_attachment_image_alt', $data['alt-text'] );
+					$alt_text = sanitize_text_field( wp_unslash( $data['alt-text'] ) );
+					if ( '' === $alt_text ) {
+						delete_post_meta( $img_id, '_wp_attachment_image_alt' );
+					} else {
+						update_post_meta( $img_id, '_wp_attachment_image_alt', $alt_text );
+					}
 				}
 
 				if ( array_key_exists( 'custom-url', $data ) ) {
 					$custom_url = foogallery_sanitize_attachment_custom_url( wp_unslash( $data['custom-url'] ) );
-					update_post_meta( $img_id, '_foogallery_custom_url', $custom_url );
+					if ( '' === $custom_url ) {
+						delete_post_meta( $img_id, '_foogallery_custom_url' );
+					} else {
+						update_post_meta( $img_id, '_foogallery_custom_url', $custom_url );
+					}
 				}
 
 				if ( array_key_exists( 'custom-target', $data ) ) {
 					$custom_target = foogallery_sanitize_attachment_custom_target( wp_unslash( $data['custom-target'] ) );
-					update_post_meta( $img_id, '_foogallery_custom_target', $custom_target );
+					if ( '' === $custom_target ) {
+						delete_post_meta( $img_id, '_foogallery_custom_target' );
+					} else {
+						update_post_meta( $img_id, '_foogallery_custom_target', $custom_target );
+					}
+				}
+
+				if ( array_key_exists( 'custom-rel', $data ) ) {
+					$custom_rel = foogallery_sanitize_attachment_custom_rel( wp_unslash( $data['custom-rel'] ) );
+					if ( '' === $custom_rel ) {
+						delete_post_meta( $img_id, '_foogallery_custom_rel' );
+					} else {
+						update_post_meta( $img_id, '_foogallery_custom_rel', $custom_rel );
+					}
 				}
 
 				if ( array_key_exists( 'custom-class', $data ) ) {
-					update_post_meta( $img_id, '_foogallery_custom_class', $data['custom-class'] );
+					$custom_class = sanitize_text_field( wp_unslash( $data['custom-class'] ) );
+					if ( '' === $custom_class ) {
+						delete_post_meta( $img_id, '_foogallery_custom_class' );
+					} else {
+						update_post_meta( $img_id, '_foogallery_custom_class', $custom_class );
+					}
 				}
 
 				if ( is_array( $foogallery_post ) && count( $foogallery_post ) > 1 ) {
@@ -476,6 +502,21 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
                     $modal_data['image_alt'] = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
                     $modal_data['meta'] = wp_get_attachment_metadata( $attachment_id );
 
+                    $uploaded_to_id = (int) $attachment_post->post_parent;
+                    if ( $uploaded_to_id > 0 ) {
+                        $uploaded_to_post = get_post( $uploaded_to_id );
+                        $uploaded_to_url = get_edit_post_link( $uploaded_to_post );
+
+                        if ( is_a( $uploaded_to_post, 'WP_Post' ) ) {
+                            $modal_data['uploaded_to_id'] = $uploaded_to_id;
+                            $modal_data['uploaded_to_title'] = get_the_title( $uploaded_to_post );
+
+                            if ( ! empty( $uploaded_to_url ) ) {
+                                $modal_data['uploaded_to_url'] = $uploaded_to_url;
+                            }
+                        }
+                    }
+
                     // Get attachment file size.
                     $file_size = false;
                     if ( isset( $modal_data['meta']['filesize'] ) ) {
@@ -497,6 +538,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 
                     $modal_data['custom_url'] = get_post_meta( $attachment_id, '_foogallery_custom_url', true );
                     $modal_data['custom_target'] = get_post_meta( $attachment_id, '_foogallery_custom_target', true );
+                    $modal_data['custom_rel'] = foogallery_sanitize_attachment_custom_rel( get_post_meta( $attachment_id, '_foogallery_custom_rel', true ) );
                     $modal_data['custom_class'] = get_post_meta( $attachment_id, '_foogallery_custom_class', true );
                 }
             }
@@ -711,6 +753,10 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 									}
 									?>
 								</select>
+							</span>
+							<span class="setting" data-setting="custom_rel">
+								<label for="attachments-foogallery-custom-rel" class="name"><?php esc_html_e('Custom Rel', 'foogallery'); ?></label>
+								<input type="text" id="attachments-foogallery-custom-rel" name="foogallery[custom-rel]" value="<?php echo esc_attr( $modal_data['custom_rel'] );?>">
 							</span>
 							<span class="setting has-description" data-setting="custom_class">
 								<label for="attachments-foogallery-custom-class" class="name"><?php esc_html_e('Custom Class', 'foogallery'); ?></label>
@@ -985,28 +1031,40 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 				if ( $modal_data['img_id'] > 0 ) { ?>
 					<section id="foogallery-panel-info">
 						<div class="foogallery-panel-info-inner">
-							<div class="foogallery-modal-info-fields">
-								<label for="attachment-details-two-column-uploaded-on" class="name"><?php esc_html_e('Uploaded On: ', 'foogallery'); ?></label>
-								<span><?php echo esc_html( $modal_data['post_date'] ); ?></span>
-							</div>
-							<div class="foogallery-modal-info-fields">
-								<label for="attachment-details-two-column-uploaded-by" class="name"><?php esc_html_e('Uploaded By: ', 'foogallery'); ?></label>
-								<span><?php echo esc_html( $modal_data['author_name'] ); ?></span>
-							</div>
-							<div class="foogallery-modal-info-fields">
-								<label for="attachment-details-two-column-file-name" class="name"><?php esc_html_e('File Name: ', 'foogallery'); ?></label>
+							<div class="foogallery-modal-info-fields foogallery-modal-info-fields-full">
+								<label class="name"><?php esc_html_e('File Name: ', 'foogallery'); ?></label>
 								<span id="attachment-details-two-column-copy-file-name"><?php echo esc_html( $modal_data['file_name'] ); ?></span>
 							</div>
 							<div class="foogallery-modal-info-fields">
-								<label for="attachment-details-two-column-file-type" class="name"><?php esc_html_e('File Type: ', 'foogallery'); ?></label>
+								<label class="name"><?php esc_html_e('Uploaded On: ', 'foogallery'); ?></label>
+								<span><?php echo esc_html( $modal_data['post_date'] ); ?></span>
+							</div>
+							<div class="foogallery-modal-info-fields">
+								<label class="name"><?php esc_html_e('Uploaded By: ', 'foogallery'); ?></label>
+								<span><?php echo esc_html( $modal_data['author_name'] ); ?></span>
+							</div>
+							<?php if ( ! empty( $modal_data['uploaded_to_title'] ) ) : ?>
+							<div class="foogallery-modal-info-fields">
+								<label class="name"><?php esc_html_e('Uploaded To: ', 'foogallery'); ?></label>
+								<span>
+									<?php if ( ! empty( $modal_data['uploaded_to_url'] ) ) : ?>
+									<a id="attachment-details-two-column-uploaded-to" href="<?php echo esc_url( $modal_data['uploaded_to_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $modal_data['uploaded_to_title'] ); ?></a>
+									<?php else : ?>
+									<span id="attachment-details-two-column-uploaded-to"><?php echo esc_html( $modal_data['uploaded_to_title'] ); ?></span>
+									<?php endif; ?>
+								</span>
+							</div>
+							<?php endif; ?>
+							<div class="foogallery-modal-info-fields">
+								<label class="name"><?php esc_html_e('File Type: ', 'foogallery'); ?></label>
 								<span><?php echo esc_html( $modal_data['file_type'] ); ?></span>
 							</div>
 							<div class="foogallery-modal-info-fields">
-								<label for="attachment-details-two-column-file-size" class="name"><?php esc_html_e('File Size: ', 'foogallery'); ?></label>
+								<label class="name"><?php esc_html_e('File Size: ', 'foogallery'); ?></label>
 								<span><?php echo esc_html( $modal_data['file_size'] ); ?></span>
 							</div>
 							<div class="foogallery-modal-info-fields">
-								<label for="attachment-details-two-column-dimensions" class="name"><?php esc_html_e('Dimensions: ', 'foogallery'); ?></label>
+								<label class="name"><?php esc_html_e('Dimensions: ', 'foogallery'); ?></label>
 								<span><?php echo esc_html( $modal_data['media_dims'] ); ?></span>
 							</div>
 						</div>

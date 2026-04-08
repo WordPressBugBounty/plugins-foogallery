@@ -59,14 +59,16 @@ if ( ! class_exists( 'FooGallery_PostTypes' ) ) {
                     'menu_name'          => foogallery_plugin_name(),
                     'all_items'          => __( 'Galleries', 'foogallery' ),
                 ),
-                'hierarchical' => false,
-                'public'       => false, // set to false to make the post type private
-                'rewrite'      => false,
-                'show_ui'      => true,
-                'show_in_menu' => true,
-                'menu_icon'    => 'dashicons-format-gallery',
-                'supports'     => array( 'title', 'thumbnail' ),
-                'capabilities' => FooGallery_PostTypes::GALLERY_CAPABILITIES
+                'hierarchical'  => false,
+                'public'        => false, // set to false to make the post type private
+                'rewrite'       => false,
+                'show_ui'       => true,
+                'show_in_menu'  => true,
+                'show_in_rest'  => true,
+                'rest_base'     => 'foogallery',
+                'menu_icon'     => 'dashicons-format-gallery',
+                'supports'      => array( 'title', 'thumbnail' ),
+                'capabilities'  => FooGallery_PostTypes::GALLERY_CAPABILITIES
             );
 
             $args = apply_filters( 'foogallery_gallery_posttype_register_args', $args );

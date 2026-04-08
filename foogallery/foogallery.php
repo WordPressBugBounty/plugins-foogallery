@@ -3,7 +3,7 @@
 /*
 Plugin Name: FooGallery
 Description: FooGallery is the most intuitive and extensible gallery management tool ever created for WordPress
-Version:     3.1.13
+Version:     3.1.26
 Author:      FooPlugins
 Plugin URI:  https://fooplugins.com/foogallery-wordpress-gallery-plugin/
 Author URI:  https://fooplugins.com
@@ -24,7 +24,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
         define( 'FOOGALLERY_PATH', plugin_dir_path( __FILE__ ) );
         define( 'FOOGALLERY_URL', plugin_dir_url( __FILE__ ) );
         define( 'FOOGALLERY_FILE', __FILE__ );
-        define( 'FOOGALLERY_VERSION', '3.1.13' );
+        define( 'FOOGALLERY_VERSION', '3.1.26' );
         define( 'FOOGALLERY_SETTINGS_VERSION', '2' );
         require_once FOOGALLERY_PATH . 'includes/constants.php';
         require_once FOOGALLERY_PATH . 'includes/functions.php';
@@ -35,27 +35,28 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 // Include Freemius SDK.
                 require_once dirname( __FILE__ ) . '/freemius/start.php';
                 $foogallery_fs = fs_dynamic_init( array(
-                    'id'              => '843',
-                    'slug'            => 'foogallery',
-                    'type'            => 'plugin',
-                    'public_key'      => 'pk_d87616455a835af1d0658699d0192',
-                    'anonymous_mode'  => foogallery_freemius_is_anonymous(),
-                    'is_premium'      => false,
-                    'has_paid_plans'  => true,
-                    'has_addons'      => true,
-                    'has_affiliation' => 'selected',
-                    'trial'           => array(
+                    'id'               => '843',
+                    'slug'             => 'foogallery',
+                    'type'             => 'plugin',
+                    'public_key'       => 'pk_d87616455a835af1d0658699d0192',
+                    'anonymous_mode'   => foogallery_freemius_is_anonymous(),
+                    'is_premium'       => false,
+                    'has_paid_plans'   => true,
+                    'has_addons'       => true,
+                    'has_affiliation'  => 'selected',
+                    'trial'            => array(
                         'days'               => 7,
                         'is_require_payment' => false,
                     ),
-                    'menu'            => array(
+                    'menu'             => array(
                         'slug'       => 'edit.php?post_type=' . FOOGALLERY_CPT_GALLERY,
                         'first-path' => 'edit.php?post_type=' . FOOGALLERY_CPT_GALLERY . '&page=' . FOOGALLERY_ADMIN_MENU_HELP_SLUG,
                         'account'    => true,
                         'contact'    => false,
                         'support'    => false,
                     ),
-                    'is_live'         => true,
+                    'is_live'          => true,
+                    'is_org_compliant' => true,
                 ) );
             }
             return $foogallery_fs;
@@ -119,6 +120,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                         1
                     );
                     foogallery_fs()->add_filter( 'pricing/show_annual_in_monthly', '__return_false' );
+                    foogallery_fs()->add_filter( 'show_affiliate_program_notice', '__return_false' );
                     add_action( 'foogallery_admin_menu_before', array($this, 'add_freemius_activation_menu') );
                 } else {
                     new FooGallery_Public();

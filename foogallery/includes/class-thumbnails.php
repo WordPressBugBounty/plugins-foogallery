@@ -113,12 +113,14 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 				//check if we must upscale smaller images
 				if ( 'on' === foogallery_get_setting( 'thumb_resize_upscale_small' ) ) {
 					$force_resize = true;
-					$color = foogallery_get_setting( 'thumb_resize_upscale_small_color', '' );
-					if ( $color !== 'auto' && $color !== 'transparent' ) {
-						$colors = foogallery_rgb_to_color_array( $color );
-						$color  = sprintf( "%03d%03d%03d000", $colors[0], $colors[1], $colors[2] );
+					if ( !isset( $args['background_fill'] ) ) {
+						$color = foogallery_get_setting( 'thumb_resize_upscale_small_color', '' );
+						if ( $color !== 'auto' && $color !== 'transparent' ) {
+							$colors = foogallery_rgb_to_color_array( $color );
+							$color  = sprintf( "%03d%03d%03d000", $colors[0], $colors[1], $colors[2] );
+						}
+						$args['background_fill'] = $color;
 					}
-					$args['background_fill'] = $color;
 				}
 			}
 

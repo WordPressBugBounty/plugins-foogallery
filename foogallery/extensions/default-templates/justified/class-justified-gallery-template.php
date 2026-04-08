@@ -128,7 +128,6 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'section' => __( 'General', 'foogallery' ),
 						'default' => 'image',
 						'type'    => 'thumb_link',
-						'desc'    => __( 'You can choose to link each thumbnail to the full size image, or to the image\'s attachment page, or you can choose to not link to anything.', 'foogallery' ),
 					),
 					array(
 						'id'      => 'lightbox',

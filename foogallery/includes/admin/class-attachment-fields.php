@@ -31,6 +31,13 @@ if (!class_exists('FooGallery_Attachment_Fields')) {
 				    'helps'       => __( 'Set a custom target for your attachment', 'foogallery' ),
 				    'exclusions'  => array( 'audio', 'video' ),
 				    'options'     => $target_options
+			    ),
+
+			    'foogallery_custom_rel' => array(
+				    'label'       => __( 'Custom Rel', 'foogallery' ),
+				    'input'       => 'text',
+				    'helps'       => __( 'Set rel values for custom URL links (for example: nofollow sponsored).', 'foogallery' ),
+				    'exclusions'  => array( 'audio', 'video' ),
 			    )
 		    );
 
@@ -214,6 +221,8 @@ if (!class_exists('FooGallery_Attachment_Fields')) {
 								    $value = foogallery_sanitize_attachment_custom_url( $value );
 							    } elseif ( 'foogallery_custom_target' === $field ) {
 								    $value = foogallery_sanitize_attachment_custom_target( $value );
+							    } elseif ( 'foogallery_custom_rel' === $field ) {
+								    $value = foogallery_sanitize_attachment_custom_rel( $value );
 							    } else {
 									$value = sanitize_text_field( $value );
 								}

@@ -222,7 +222,28 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 			    }
 		    }
 
+			if ( array_key_exists( FOOGALLERY_META_SORT, $post_data ) ) {
+				$args['sort'] = $this->sanitize_preview_sort( $post_data[FOOGALLERY_META_SORT] );
+			}
+
             return $args;
+		}
+
+		/**
+		 * Sanitize the preview sort value against the available sort options.
+		 *
+		 * @param string $sort The requested sort value.
+		 *
+		 * @return string
+		 */
+		private function sanitize_preview_sort( $sort ) {
+			$sort = sanitize_text_field( $sort );
+
+			if ( array_key_exists( $sort, foogallery_sorting_options() ) ) {
+				return $sort;
+			}
+
+			return '';
 		}
 
 	    function str_replace_first($search, $replace, $subject) {

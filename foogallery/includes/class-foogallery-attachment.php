@@ -34,8 +34,11 @@ if ( ! class_exists( 'FooGalleryAttachment' ) ) {
 			$this->url = '';
 			$this->width = 0;
 			$this->height = 0;
+			$this->parent_post_id = 0;
+			$this->parent_post_url = '';
 			$this->custom_url = '';
 			$this->custom_target = '';
+			$this->custom_rel = '';
 		}
 
 		/**
@@ -51,6 +54,11 @@ if ( ! class_exists( 'FooGalleryAttachment' ) ) {
 			$this->alt = trim( get_post_meta( $this->ID, '_wp_attachment_image_alt', true ) );
 			$this->custom_url = foogallery_sanitize_attachment_custom_url( get_post_meta( $this->ID, '_foogallery_custom_url', true ) );
 			$this->custom_target = foogallery_sanitize_attachment_custom_target( get_post_meta( $this->ID, '_foogallery_custom_target', true ) );
+			$this->custom_rel = foogallery_sanitize_attachment_custom_rel( get_post_meta( $this->ID, '_foogallery_custom_rel', true ) );
+			$this->parent_post_id = (int) $post->post_parent;
+			if ( $this->parent_post_id > 0 ) {
+				$this->parent_post_url = get_permalink( $this->parent_post_id );
+			}
 			$this->load_attachment_image_data( $this->ID );
 
 			$this->date = !empty( $post->post_date_gmt ) ? $post->post_date_gmt : $post->post_date;
@@ -112,34 +120,7 @@ if ( ! class_exists( 'FooGalleryAttachment' ) ) {
 		 * @return string
 		 */
 		public function html_img( $args = array() ) {
-			$attr['src'] = $this->html_img_src( $args );
-
-			if ( ! empty( $this->alt ) ) {
-				$attr['alt'] = $this->alt;
-			}
-
-			//pull any custom attributes out the args
-			if ( isset( $args['image_attributes'] ) && is_array( $args['image_attributes'] ) ) {
-				$attr = array_merge( $attr, $args['image_attributes'] );
-			}
-
-			//check for width and height args and add those to the image
-			if ( isset( $args['width'] ) && intval( $args['width'] ) > 0 ) {
-				$attr['width'] = $args['width'];
-			}
-			if ( isset( $args['height'] ) && intval( $args['height'] ) > 0 ) {
-				$attr['height'] = $args['height'];
-			}
-
-			$attr = apply_filters( 'foogallery_attachment_html_image_attributes', $attr, $args, $this );
-			$attr = array_map( 'esc_attr', $attr );
-			$html = '<img ';
-			foreach ( $attr as $name => $value ) {
-				$html .= " $name=" . '"' . $value . '"';
-			}
-			$html .= ' />';
-
-			return apply_filters( 'foogallery_attachment_html_image', $html, $args, $this );
+			return foogallery_attachment_html_image( $this, $args );
 		}
 
 		/**
@@ -153,81 +134,7 @@ if ( ! class_exists( 'FooGalleryAttachment' ) ) {
 		 * @return string
 		 */
 		public function html( $args = array(), $output_image = true, $output_closing_tag = true ) {
-			if ( empty ( $this->url ) )  {
-				return '';
-			}
-
-			$arg_defaults = array(
-				'link' => 'image',
-				'custom_link' => $this->custom_url
-			);
-
-			$args = wp_parse_args( $args, $arg_defaults );
-
-			$link = $args['link'];
-
-			$img = $this->html_img( $args );
-
-			/* 12 Apr 2016 - PLEASE NOTE
-			We no longer just return the image html when "no link" option is chosen.
-			It was decided that it is better to return an anchor link with no href or target attributes.
-			This results in more standardized HTML output for better CSS and JS code
-			*/
-
-			if ( 'page' === $link ) {
-				//get the URL to the attachment page
-				$url = get_attachment_link( $this->ID );
-			} else if ( 'custom' === $link ) {
-				$url = $args['custom_link'];
-			} else {
-				$url = $this->url;
-			}
-
-			//fallback for images that might not have a custom url
-			if ( empty( $url ) ) {
-				$url = $this->url;
-			}
-
-			$attr = array();
-
-			//only add href and target attributes to the anchor if the link is NOT set to 'none'
-			if ( $link !== 'none' ){
-				$attr['href'] = $url;
-				if ( ! empty( $this->custom_target ) && 'default' !== $this->custom_target ) {
-					$attr['target'] = $this->custom_target;
-				}
-			}
-
-			if ( ! empty( $this->caption ) ) {
-				$attr['data-caption-title'] = $this->caption;
-			}
-
-			if ( !empty( $this->description ) ) {
-				$attr['data-caption-desc'] = $this->description;
-			}
-
-			$attr['data-attachment-id'] = $this->ID;
-
-			//pull any custom attributes out the args
-			if ( isset( $args['link_attributes'] ) && is_array( $args['link_attributes'] ) ) {
-				$attr = array_merge( $attr, $args['link_attributes'] );
-			}
-
-			$attr = apply_filters( 'foogallery_attachment_html_link_attributes', $attr, $args, $this );
-			$attr = array_map( 'esc_attr', $attr );
-			$html = '<a ';
-			foreach ( $attr as $name => $value ) {
-				$html .= " $name=" . '"' . $value . '"';
-			}
-			$html .= '>';
-			if ( $output_image ) {
-				$html .= $img;
-			}
-			if ( $output_closing_tag ) {
-				$html .= '</a>';
-			};
-
-			return apply_filters( 'foogallery_attachment_html_link', $html, $args, $this );
+			return foogallery_attachment_html_anchor( $this, $args, $output_image, $output_closing_tag );
 		}
 
 		/**
@@ -240,22 +147,7 @@ if ( ! class_exists( 'FooGalleryAttachment' ) ) {
 		 * @return string
 		 */
 		public function html_caption( $caption_content ) {
-			$html = '';
-			$caption_html = array();
-			if ( $this->caption && ( 'title' === $caption_content || 'both' === $caption_content ) ) {
-				$caption_html[] = '<div class="foogallery-caption-title">' . $this->caption . '</div>';
-			}
-			if ( $this->description && ( 'desc' === $caption_content || 'both' === $caption_content ) ) {
-				$caption_html[] = '<div class="foogallery-caption-desc">' . $this->description . '</div>';
-			}
-
-			if ( count($caption_html) > 0 ) {
-				$html = '<div class="foogallery-caption"><div class="foogallery-caption-inner">';
-				$html .= implode( $caption_html );
-				$html .= '</div></div>';
-			}
-
-			return apply_filters( 'foogallery_attachment_html_caption', $html, $caption_content, $this );
+			return foogallery_attachment_html_caption( $this );
 		}
 	}
 }

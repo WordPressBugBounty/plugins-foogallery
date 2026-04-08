@@ -125,6 +125,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
                         'desc'    => __( 'Choose the size of your thumbnail.', 'foogallery' ),
                         'section' => __( 'General', 'foogallery' ),
                         'type'    => 'thumb_size_no_crop',
+						'for'     => 'thumbnail_dimensions_width',
                         'default' => array(
                             'width' => 350,
                             'height' => 250

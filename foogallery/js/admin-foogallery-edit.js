@@ -220,25 +220,28 @@ FooGallery.autoEnabled = false;
 		//show all fields for the selected template only
 		$settingsToShow.show()
 			.addClass('foogallery-settings-container-active')
-			.find(':input, range-input').removeAttr('disabled');
+			.find(':input').prop('disabled', false)
+			.end().find('range-input').each(function() {
+				this.removeAttribute('disabled');
+			});
 
 		if (currentTab) {
 			currentTab = currentTab.replace( previousSelectedTemplate, selectedTemplate );
 
 			//ensure the previously active tab is clicked
-			$settingsToShow.find('.foogallery-vertical-tab[data-name="' + currentTab + '"]').click();
+			$settingsToShow.find('.foogallery-vertical-tab[data-name="' + currentTab + '"]').trigger('click');
 
 			if (currentChildTab) {
 				currentChildTab = currentChildTab.replace( previousSelectedTemplate, selectedTemplate );
 
 				//ensure the previously active child tab is clicked
-				$settingsToShow.find('.foogallery-vertical-child-tab[data-name="' + currentChildTab + '"]').click();
+				$settingsToShow.find('.foogallery-vertical-child-tab[data-name="' + currentChildTab + '"]').trigger('click');
 			}
 		}
 
 		// always ensure a tab is clicked
 		if ( $settingsToShow.find('.foogallery-vertical-tab.foogallery-tab-active').length === 0 ) {
-			$settingsToShow.find('.foogallery-vertical-tab:first').click();
+			$settingsToShow.find('.foogallery-vertical-tab:first').trigger('click');
 		}
 
 		//trigger a change so custom template js can do something
@@ -420,7 +423,10 @@ FooGallery.autoEnabled = false;
 			if (showField) {
 				$item.show()
 					.removeClass('foogallery_template_field_template_hidden')
-					.find(':input, range-input').removeAttr('disabled')
+					.find(':input').prop('disabled', false)
+					.end().find('range-input').each(function() {
+						this.removeAttribute('disabled');
+					})
 					.end().find('.colorpicker').spectrum("enable");
 			}
 		});
@@ -465,12 +471,12 @@ FooGallery.autoEnabled = false;
 			$visibleTabs = $activeSettings.find('.foogallery-vertical-tab:visible');
 
 		if ($activeTab.length === 0 && $visibleTabs.length) {
-			$visibleTabs.first().click();
+			$visibleTabs.first().trigger('click');
 		} else if ($activeTab.length) {
 			var $visibleChildren = $activeTab.find('.foogallery-vertical-child-tab:visible');
 
 			if ($visibleChildren.length && $visibleChildren.filter('.foogallery-tab-active').length === 0) {
-				$visibleChildren.first().click();
+				$visibleChildren.first().trigger('click');
 			}
 		}
 	};
@@ -586,6 +592,14 @@ FooGallery.autoEnabled = false;
 				}
 			});
         });
+
+		$(document).on('change', 'input[name="foogallery_sort"]', function() {
+			$('.foogallery_preview_container').addClass('foogallery-preview-force-refresh');
+
+			if ( $('.foogallery_preview_container').is(':visible') ) {
+				FOOGALLERY.reloadGalleryPreview();
+			}
+		});
 
 		//trigger this onload too!
 		FOOGALLERY.galleryTemplateChanged(false);
@@ -794,7 +808,7 @@ FooGallery.autoEnabled = false;
         });
 
 		$('.remove_all_media').on('click', function(e) {
-			$('.foogallery-attachments-list a.remove').click();
+			$('.foogallery-attachments-list a.remove').trigger('click');
 		});
 
 		$(document).on('foogallery-datasource-changed', function(e, activeDatasource) {
@@ -997,7 +1011,7 @@ FooGallery.autoEnabled = false;
 
 	FOOGALLERY.initAttachmentModal = function() {
 		//close attachments modal
-		jQuery('#foogallery-image-edit-modal .media-modal-close').click(function() {
+		jQuery('#foogallery-image-edit-modal .media-modal-close').on('click', function() {
 			var $content = jQuery('#foogallery-image-edit-modal'),
 				$wrapper = jQuery('#foogallery-image-edit-modal .media-frame-content .attachment-details'),
 				$loader = jQuery('#foogallery-image-edit-modal .media-frame-content .spinner');
@@ -1043,7 +1057,7 @@ FooGallery.autoEnabled = false;
 							success: function(res) {
 								var html = '<li><a href="javascript:void(0);" class="button button-small recently-added" data-term-id="' + res.data.id + '">' + res.data.name + '</a></li>';
 								$ul.find('.taxonomy_add').before(html);
-								$ul.find('a.recently-added').removeClass('recently-added').click();
+								$ul.find('a.recently-added').removeClass('recently-added').trigger('click');
 								$ul.find('input.foogallery_attachment_taxonomy_add').val('');
 								$ul.find('.foogallery_attachment_taxonomy_add').toggle();
 							}
@@ -1114,11 +1128,11 @@ FooGallery.autoEnabled = false;
 				// Check if we must save the data first!
 				if ( autosave ) {
 					FOOGALLERY.saveAttachmentModal(function () {
-						$(this).removeAttr( 'disabled' );
+						$(this).prop( 'disabled', false );
 						FOOGALLERY.openAttachmentModal(selected_attachment_id);
 					});
 				} else {
-					$(this).removeAttr( 'disabled' );
+					$(this).prop( 'disabled', false );
 					FOOGALLERY.openAttachmentModal(selected_attachment_id);
 				}
 			}
@@ -1183,7 +1197,7 @@ FooGallery.autoEnabled = false;
 				jQuery('#foogallery-image-edit-modal .media-modal-content .edit-attachment-frame .media-frame-content .attachment-details').html(json.html);
 
 				if ( json.current_tab ) {
-					jQuery('.foogallery-img-modal-tab-wrapper[data-tab_id="' + json.current_tab + '"] input').click();
+					jQuery('.foogallery-img-modal-tab-wrapper[data-tab_id="' + json.current_tab + '"] input').trigger('click');
 				}
 
 				$wrapper.removeClass('not-loaded');

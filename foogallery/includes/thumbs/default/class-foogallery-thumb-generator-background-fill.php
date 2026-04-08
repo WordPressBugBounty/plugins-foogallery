@@ -19,8 +19,17 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 		 * @return WP_Image_Editor
 		 */
 		function add_background_fill( $editor, $args ) {
-			// currently only supports GD
-			if ( !is_a( $editor, 'FooGallery_Thumb_Image_Editor_GD' ) ) {
+			// currently only supports GD and Imagick
+			if ( ! is_a( $editor, 'FooGallery_Thumb_Image_Editor_GD' ) && ! is_a( $editor, 'FooGallery_Thumb_Image_Editor_Imagick' ) ) {
+				return $editor;
+			}
+
+			if ( empty( $args['width'] ) || empty( $args['height'] ) ) {
+				return $editor;
+			}
+
+			$current_size = $editor->get_size();
+			if ( $current_size['width'] == $args['width'] && $current_size['height'] == $args['height'] ) {
 				return $editor;
 			}
 
@@ -66,6 +75,10 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 		 * @param array $colors The desired pad colors in RGB format, array should be array( 'top' => '', 'bottom' => '', 'left' => '', 'right' => '' );
 		 */
 		private function fill_color( array $colors ) {
+			if ( is_a( $this->editor, 'FooGallery_Thumb_Image_Editor_Imagick' ) ) {
+				$this->fill_color_imagick( $colors );
+				return;
+			}
 
 			$current_size = $this->editor->get_size();
 
@@ -127,6 +140,118 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 
 			$this->editor->update_image( $new_image );
 			$this->editor->update_size();
+		}
+
+		/**
+		 * Background fill an image using Imagick.
+		 *
+		 * @param array $colors The desired pad colors in RGB format.
+		 */
+		private function fill_color_imagick( array $colors ) {
+			if ( ! class_exists( 'Imagick' ) ) {
+				return;
+			}
+
+			$current_size = $this->editor->get_size();
+			$size = array( 'width' => (int) $this->args['width'], 'height' => (int) $this->args['height'] );
+
+			if ( $size['width'] <= $current_size['width'] && $size['height'] <= $current_size['height'] ) {
+				return;
+			}
+
+			$pad_left = max( 0, (int) floor( ( $size['width'] - $current_size['width'] ) / 2 ) );
+			$pad_top = max( 0, (int) floor( ( $size['height'] - $current_size['height'] ) / 2 ) );
+			$pad_right = max( 0, $size['width'] - $current_size['width'] - $pad_left );
+			$pad_bottom = max( 0, $size['height'] - $current_size['height'] - $pad_top );
+
+			if ( $pad_left === 0 && $pad_right === 0 && $pad_top === 0 && $pad_bottom === 0 ) {
+				return;
+			}
+
+			$new_image = new Imagick();
+			$new_image->newImage( $size['width'], $size['height'], new ImagickPixel( 'transparent' ) );
+
+			$draw = new ImagickDraw();
+			if ( method_exists( $draw, 'setStrokeOpacity' ) ) {
+				$draw->setStrokeOpacity( 0 );
+			}
+			$draw->setStrokeWidth( 0 );
+
+			if ( $pad_left > 0 ) {
+				$draw->setFillColor( $this->imagick_pixel_from_color( $colors['left'] ) );
+				$draw->rectangle( 0, 0, $pad_left - 1, $size['height'] - 1 );
+			}
+
+			if ( $pad_right > 0 ) {
+				$draw->setFillColor( $this->imagick_pixel_from_color( $colors['right'] ) );
+				$draw->rectangle( $size['width'] - $pad_right, 0, $size['width'] - 1, $size['height'] - 1 );
+			}
+
+			if ( $pad_top > 0 ) {
+				$draw->setFillColor( $this->imagick_pixel_from_color( $colors['top'] ) );
+				$draw->rectangle( 0, 0, $size['width'] - 1, $pad_top - 1 );
+			}
+
+			if ( $pad_bottom > 0 ) {
+				$draw->setFillColor( $this->imagick_pixel_from_color( $colors['bottom'] ) );
+				$draw->rectangle( 0, $size['height'] - $pad_bottom, $size['width'] - 1, $size['height'] - 1 );
+			}
+
+			try {
+				$new_image->drawImage( $draw );
+				$new_image->compositeImage( $this->editor->get_image(), Imagick::COMPOSITE_OVER, $pad_left, $pad_top );
+			} catch (ImagickException $e) {
+				error_log('ImagickException message: ' . $e->getMessage());
+				error_log('ImagickException code: ' . $e->getCode());
+				error_log('ImagickException trace: ' . $e->getTraceAsString());
+				return;
+			}
+
+			if ( method_exists( $new_image, 'setImagePage' ) ) {
+				$new_image->setImagePage( $size['width'], $size['height'], 0, 0 );
+			}
+
+			$source_image = $this->editor->get_image();
+			if ( $source_image instanceof Imagick ) {
+				try {
+					$new_image->setImageFormat( $source_image->getImageFormat() );
+				} catch ( Exception $e ) {
+				}
+			}
+
+			$this->editor->update_image( $new_image );
+			$this->editor->update_size();
+		}
+
+		/**
+		 * Convert a GD-style color string into an ImagickPixel.
+		 *
+		 * @param string $color
+		 * @return ImagickPixel
+		 */
+		private function imagick_pixel_from_color( $color ) {
+			$rgba = $this->parse_color_string( $color );
+			$opacity = ( 127 - $rgba['alpha'] ) / 127;
+
+			return new ImagickPixel( sprintf( 'rgba(%d,%d,%d,%.3f)', $rgba['red'], $rgba['green'], $rgba['blue'], $opacity ) );
+		}
+
+		/**
+		 * Parse a padded color string into rgba components.
+		 *
+		 * @param string $color
+		 * @return array
+		 */
+		private function parse_color_string( $color ) {
+			$color = (string) $color;
+			$color = str_pad( $color, 12, '0' );
+
+			return array(
+				'red'   => intval( substr( $color, 0, 3 ) ),
+				'green' => intval( substr( $color, 3, 3 ) ),
+				'blue'  => intval( substr( $color, 6, 3 ) ),
+				'alpha' => intval( substr( $color, 9, 3 ) ),
+			);
 		}
 
 		/**

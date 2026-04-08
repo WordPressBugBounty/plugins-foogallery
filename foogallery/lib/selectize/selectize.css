@@ -371,3 +371,17 @@
   background: transparent;
 }
 
+/* FooGallery WP7+ modern admin overrides (scoped, preserves legacy default styling). */
+body.admin-color-modern .selectize-input,
+body.admin-color-modern .compat-item tr.compat-field-selectize .selectize-input {
+  min-height: 40px;
+  border-color: #949494;
+  border-radius: 0;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+body.admin-color-modern .selectize-control.multi .selectize-input > div,
+body.admin-color-modern .selectize-control.multi .selectize-input > div.active {
+  border-radius: 0;
+}

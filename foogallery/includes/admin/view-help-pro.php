@@ -33,9 +33,11 @@ $foogallery_pro_features = foogallery_pro_features();
             <footer>
                 <a class="foogallery-admin-help-button-cta" href="<?php echo esc_url ( foogallery_admin_freetrial_url() ); ?>"><?php esc_html_e( 'Start Your 7-day Free Trial', 'foogallery' ); ?></a>
             </footer>
-        <?php } else if ( $show_thanks_for_pro ) { ?>
+        <?php } else if ( $show_thanks_for_pro ) { 
+            $current_plan_name = isset( $foogallery_plans[ $foogallery_current_plan ] ) ? $foogallery_plans[ $foogallery_current_plan ] : '';
+            ?>
             <header>
-                <h3><?php echo sprintf( esc_html__( 'Thanks for your support by purchasing a %s license 😍', 'foogallery' ), '<span class="fgah-plan-' . esc_attr( $foogallery_current_plan ) . '">' . esc_html( $foogallery_plans[ $foogallery_current_plan ] ) . '</span>' );?></h3>
+                <h3><?php echo sprintf( esc_html__( 'Thanks for your support by purchasing a %s license 😍', 'foogallery' ), '<span class="fgah-plan-' . esc_attr( $foogallery_current_plan ) . '">' . esc_html( $current_plan_name ) . '</span>' );?></h3>
                 <p><?php esc_html_e( 'Check out the PRO features you can start using immediately...', 'foogallery' );?></p>
             </header>
         <?php } else if ( $is_trial ) { ?>

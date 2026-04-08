@@ -213,14 +213,14 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
 
             ?>
             <?php wp_nonce_field('foogallery_load_galleries', 'foogallery_load_galleries', false); ?>
-            <div class="foogallery-datasources-modal-wrapper" data-foogalleryid="<?php echo esc_attr( $post->ID ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery-datasource-content' ) ); ?>" style="display: none;">
+            <div class="foogallery-modal-wrapper foogallery-datasources-modal-wrapper" data-foogalleryid="<?php echo esc_attr( $post->ID ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery-datasource-content' ) ); ?>" style="display: none;">
                 <div class="media-modal wp-core-ui">
                     <button type="button" class="media-modal-close">
                         <span class="media-modal-icon"><span class="screen-reader-text">Close media panel</span></span>
                     </button>
                     <div class="media-modal-content">
                         <div class="media-frame wp-core-ui">
-                            <div class="foogallery-datasource-modal-title">
+                            <div class="foogallery-modal-title foogallery-datasource-modal-title">
                                 <h1>
                                     <?php esc_html_e('Add To Gallery From Another Source', 'foogallery'); ?>
                                     <a class="foogallery-datasource-modal-reload button" href="#" style="display: none; margin-top: -4px;"><span style="padding-top: 3px;" class="dashicons dashicons-update"></span> <?php esc_html_e('Reload', 'foogallery'); ?></a>
@@ -234,7 +234,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
                                         <?php } } ?>
                                 </div>
                             </div>
-                            <div class="foogallery-datasource-modal-container">
+                            <div class="foogallery-modal-container foogallery-datasource-modal-container">
 								<div class="foogallery-datasource-modal-container-inner">
 									<?php do_action( 'foogallery_admin_datasource_modal_content' ); ?>
 								</div>
@@ -245,12 +245,14 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
                                         </div>
                                     <?php } } ?>
                             </div>
-                            <div class="foogallery-datasource-modal-toolbar">
+                            <div class="foogallery-modal-toolbar foogallery-datasource-modal-toolbar">
                                 <div class="foogallery-datasource-modal-toolbar-inner">
                                     <div class="media-toolbar-secondary">
                                         <a href="#"
                                            class="foogallery-datasource-modal-cancel button media-button button-large button-secondary media-button-insert"
-                                           title="<?php esc_attr_e('Cancel', 'foogallery'); ?>"><?php esc_html_e('Cancel', 'foogallery'); ?></a>
+                                           title="<?php esc_attr_e('Cancel', 'foogallery'); ?>"><?php esc_html_e('Cancel', 'foogallery'); ?>
+										</a>
+										<p><?php esc_html_e( '* Denotes a 3rd Party Plugin by another company.', 'foogallery' ); ?></p>
                                     </div>
                                     <div class="media-toolbar-primary">
                                         <a href="#"

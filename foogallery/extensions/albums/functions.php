@@ -36,6 +36,7 @@ function foogallery_album_templates() {
 				'desc'    => __( 'Choose the size of your gallery thumbnails.', 'foogallery' ),
 				'section' => __( 'Thumbnail Settings', 'foogallery' ),
 				'type'    => 'thumb_size',
+				'for'     => 'thumbnail_dimensions_width',
 				'default' => array(
 					'width' => get_option( 'thumbnail_size_w' ),
 					'height' => get_option( 'thumbnail_size_h' ),
@@ -150,6 +151,7 @@ function foogallery_album_templates() {
 				'desc'    => __( 'Choose the size of your image stack thumbnails.', 'foogallery' ),
 				'section' => __( 'Thumbnail Settings', 'foogallery' ),
 				'type'    => 'thumb_size_no_crop',
+				'for'     => 'thumbnail_dimensions_width',
 				'default' => array(
 					'width' => get_option( 'thumbnail_size_w' ),
 					'height' => get_option( 'thumbnail_size_h' ),

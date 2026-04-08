@@ -147,7 +147,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
                             'title' => __('Your Lightbox Will Not Work!', 'foogallery'),
                             'desc' => __('No lightbox will be shown, because under the General tab, you have set the Thumbnail Link to "Not linked".', 'foogallery'),
                             'section' => __( 'Lightbox', 'foogallery' ),
-                            'subsection' => array('lightbox-general' => __('General', 'foogallery')),
+                            'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
                             'type' => 'help',
                             'row_data' => array(
                                 'data-foogallery-hidden' => true,
@@ -222,20 +222,6 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 						'data-foogallery-show-when-field-value'    => 'foogallery',
 					),
 				);
-
-                $field[] = array(
-                    'id'      => 'lightbox_help_controls_2',
-                    'desc'    => __( 'The Lightbox Controls settings are only available when your lightbox is set to "FooGallery Lightbox"', 'foogallery' ),
-                    'section' => $section,
-                    'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
-                    'type'    => 'help',
-                    'row_data'   => array(
-                        'data-foogallery-hidden'                   => true,
-                        'data-foogallery-show-when-field'          => 'lightbox',
-                        'data-foogallery-show-when-field-operator' => '!==',
-                        'data-foogallery-show-when-field-value'    => 'foogallery',
-                    ),
-                );
 			}
 
 			$field[] = array(
@@ -363,20 +349,6 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 						'data-foogallery-show-when-field-value'    => 'foogallery',
 					),
 				);
-
-                $field[] = array(
-                    'id'      => 'lightbox_help_thumbnails_2',
-                    'desc'    => __( 'The Lightbox Thumbnails settings are only available when your lightbox is set to "FooGallery Lightbox"', 'foogallery' ),
-                    'section' => $section,
-                    'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
-                    'type'    => 'help',
-                    'row_data'   => array(
-                        'data-foogallery-hidden'                   => true,
-                        'data-foogallery-show-when-field'          => 'lightbox',
-                        'data-foogallery-show-when-field-operator' => '!==',
-                        'data-foogallery-show-when-field-value'    => 'foogallery',
-                    ),
-                );
 			}
 
 			$field[] = array(
@@ -999,6 +971,29 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			);
 
 			$field[] = array(
+				'id'       => 'lightbox_show_download_button',
+				'title'    => __( 'Download Button', 'foogallery' ),
+				'desc'     => __( 'Whether of not to show the download button', 'foogallery' ),
+				'section'  => $section,
+				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'type'     => 'radio',
+				'default'  => 'no',
+				'choices'  => array(
+					'yes' => __( 'Shown', 'foogallery' ),
+					'no'  => __( 'Hidden', 'foogallery' ),
+				),
+				'row_data' => array(
+					'data-foogallery-change-selector' => 'input:radio',
+					'data-foogallery-preview'         => 'shortcode',
+					'data-foogallery-value-selector'  => 'input:checked',
+					'data-foogallery-hidden' 				   => true,
+					'data-foogallery-show-when-field'          => 'lightbox',
+                    'data-foogallery-show-when-field-operator' => '===',
+					'data-foogallery-show-when-field-value'    => 'foogallery',
+				)
+			);
+
+			$field[] = array(
 				'id'       => 'lightbox_show_nav_buttons',
 				'title'    => __( 'Prev/Next Buttons', 'foogallery' ),
 				'desc'     => __( 'Whether of not to show the navigation (prev/next) buttons', 'foogallery' ),
@@ -1045,6 +1040,11 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 
 				$options['template'] = $this->get_options_from_settings();
 
+			}
+
+			$show_download_button = foogallery_gallery_template_setting( 'lightbox_show_download_button', false );
+			if ( false !== $show_download_button ) {
+				$options['panel']['buttons']['download'] = ( 'yes' === $show_download_button );
 			}
 
 			return $options;
@@ -1216,6 +1216,11 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			$show_thumbstrip_button = foogallery_gallery_template_setting( 'lightbox_show_thumbstrip_button', false );
 			if ( $show_thumbstrip_button !== false ) {
 				$options['buttons']['thumbs'] = ($show_thumbstrip_button === 'yes');
+			}
+
+			$show_download_button = foogallery_gallery_template_setting( 'lightbox_show_download_button', false );
+			if ( $show_download_button !== false ) {
+				$options['buttons']['download'] = ( $show_download_button === 'yes' );
 			}
 
 			$show_nav_buttons = foogallery_gallery_template_setting( 'lightbox_show_nav_buttons', 'yes' );

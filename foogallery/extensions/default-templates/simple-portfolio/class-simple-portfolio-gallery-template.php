@@ -99,6 +99,7 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                         'desc'    => __( 'Choose the size of your thumbnails.', 'foogallery' ),
                         'section' => __( 'General', 'foogallery' ),
                         'type'    => 'thumb_size_no_crop',
+						'for'     => 'thumbnail_dimensions_width',
                         'default' => array(
                             'width' => 250,
                             'height' => 200
@@ -114,7 +115,6 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                         'section' => __( 'General', 'foogallery' ),
                         'default' => 'image',
                         'type'    => 'thumb_link',
-                        'desc'	  => __( 'You can choose to link each thumbnail to the full size image, or to the image\'s attachment page, or you can choose to not link to anything.', 'foogallery' ),
                     ),
                     array(
                         'id'      => 'lightbox',

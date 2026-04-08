@@ -241,24 +241,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			// region Album Tab.
 			$tabs['albums'] = __( 'Albums', 'foogallery' );
-			$roles         = get_editable_roles();
-			$role_choices = array(
-				'inherit' => __( 'Inherit from gallery creator role', 'foogallery' ),
-			);
-
-			foreach ( $roles as $role_slug => $role_data ) {
-				$role_choices[ $role_slug ] = $role_data['name'];
-			}
-
-			$settings[] = array(
-				'id'      => 'album_creator_role',
-				'title'   => __( 'Album Creator Role', 'foogallery' ),
-				'desc'    => __( 'Set the default role for album creators.', 'foogallery' ),
-				'type'    => 'select',
-				'choices' => $role_choices,
-				'default' => 'inherit',
-				'tab'     => 'albums',
-			);
+			
 			// end of album region.
 
 			//region Images Tab
@@ -343,18 +326,19 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			if ( foogallery_thumb_active_engine()->has_local_cache() ) {
 				$settings[] = array(
 					'id'    => 'thumb_resize_upscale_small',
-					'title' => __( 'Upscale Small Images', 'foogallery' ),
-					'desc'  => __( 'If the original image is smaller than the thumbnail size, then upscale the image thumbnail to match the size.', 'foogallery' ) . '<br/>' . __( 'PLEASE NOTE : this is only supported if your server supports the GD image library and it is currently active.', 'foogallery' ),
+					'title' => __( 'Background Fill', 'foogallery' ),
+					'desc'  => __( 'If the image is smaller than the thumbnail size, then use a background color to fill the space. (Previously called Upscale Small Images)', 'foogallery' ),
+					'default' => 'on',
 					'type'  => 'checkbox',
 					'tab'   => 'thumb'
 				);
 
 				$settings[] = array(
 					'id'      => 'thumb_resize_upscale_small_color',
-					'title'   => __( 'Upscale Background Color', 'foogallery' ),
+					'title'   => __( 'Background Fill Color', 'foogallery' ),
 					'desc'    => __( 'The background color to use for upscaled images. You can also use "transparent" or "auto".', 'foogallery' ),
 					'type'    => 'text',
-					'default' => 'rgb(0,0,0)',
+					'default' => 'auto',
 					'tab'     => 'thumb'
 				);
 			}
@@ -677,8 +661,10 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				</div>
 			<?php } else if ( 'uninstall' === $args['type'] ) { ?>
 				<div id="foogallery_uninstall_container">
-					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_uninstall' ) ); ?>" class="button-primary foogallery_uninstall" value="<?php esc_attr_e( 'Run Full Uninstall', 'foogallery' ); ?>">
-					<span id="foogallery_uninstall_spinner" style="position: absolute" class="spinner"></span>
+					<?php
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $this->get_uninstall_markup();
+					?>
 				</div>
 			<?php } else if ( 'thumb_generation_test' === $args['type'] ) { ?>
 				<div id="foogallery_thumb_generation_test_container">
@@ -686,6 +672,51 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 					<span id="foogallery_thumb_generation_test_spinner" style="position: absolute" class="spinner"></span>
 				</div>
 			<?php }
+		}
+
+		/**
+		 * Build the uninstall control markup.
+		 *
+		 * @param bool   $show_confirmation Whether to include the confirmation UI.
+		 * @param string $error_message Optional validation error to show in the danger zone.
+		 *
+		 * @return string
+		 */
+		private function get_uninstall_markup( $show_confirmation = false, $error_message = '' ) {
+			ob_start();
+			?>
+			<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_uninstall' ) ); ?>" class="button-primary foogallery_uninstall" value="<?php esc_attr_e( 'Run Full Uninstall', 'foogallery' ); ?>">
+			<span id="foogallery_uninstall_spinner" style="position: absolute" class="spinner"></span>
+			<?php if ( $show_confirmation ) { ?>
+				<div class="foogallery-uninstall-danger-zone">
+					<p class="foogallery-uninstall-danger-zone__title"><?php esc_html_e( 'Danger Zone', 'foogallery' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Type UNINSTALL to confirm permanent removal of all FooGallery galleries, settings, and metadata.', 'foogallery' ); ?></p>
+					<?php if ( ! empty( $error_message ) ) { ?>
+						<p class="foogallery-uninstall-danger-zone__error"><?php echo esc_html( $error_message ); ?></p>
+					<?php } ?>
+					<label class="screen-reader-text" for="foogallery_uninstall_confirmation"><?php esc_html_e( 'Type UNINSTALL to confirm the full uninstall.', 'foogallery' ); ?></label>
+					<input type="text" id="foogallery_uninstall_confirmation" class="regular-text foogallery-uninstall-danger-zone__input" value="" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="<?php echo esc_attr__( 'UNINSTALL', 'foogallery' ); ?>">
+					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_uninstall' ) ); ?>" class="button button-secondary foogallery_uninstall_confirm" value="<?php esc_attr_e( 'Confirm Full Uninstall', 'foogallery' ); ?>">
+				</div>
+			<?php }
+
+			return ob_get_clean();
+		}
+
+		/**
+		 * Build the uninstall success message markup.
+		 *
+		 * @return string
+		 */
+		private function get_uninstall_success_markup() {
+			ob_start();
+			?>
+			<div class="notice notice-success inline">
+				<p><?php esc_html_e( 'All traces of the plugin were removed from your system!', 'foogallery' ); ?></p>
+			</div>
+			<?php
+
+			return ob_get_clean();
 		}
 
 		function after_render_setting( $args ) {
@@ -813,12 +844,50 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 		}
 
 		function ajax_uninstall() {
-			if ( check_admin_referer( 'foogallery_uninstall' ) && current_user_can( 'install_plugins' ) ) {
-				foogallery_uninstall();
-
-				esc_html_e('All traces of the plugin were removed from your system!', 'foogallery' );
-				die();
+			if ( ! check_ajax_referer( 'foogallery_uninstall', '_wpnonce', false ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Invalid security token.', 'foogallery' ) ),
+					403
+				);
 			}
+
+			if ( ! current_user_can( 'install_plugins' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Insufficient permissions.', 'foogallery' ) ),
+					403
+				);
+			}
+
+			$confirmation = '';
+			if ( isset( $_POST['confirmation'] ) ) {
+				$confirmation = sanitize_text_field( wp_unslash( $_POST['confirmation'] ) );
+				$confirmation = trim( $confirmation );
+			}
+
+			if ( '' === $confirmation ) {
+				wp_send_json_success(
+					array( 'html' => $this->get_uninstall_markup( true ) )
+				);
+			}
+
+			if ( 'UNINSTALL' !== $confirmation ) {
+				wp_send_json_error(
+					array(
+						'html'    => $this->get_uninstall_markup(
+							true,
+							__( 'Type UNINSTALL exactly to confirm the full uninstall.', 'foogallery' )
+						),
+						'message' => __( 'Type UNINSTALL exactly to confirm the full uninstall.', 'foogallery' ),
+					),
+					400
+				);
+			}
+
+			foogallery_uninstall();
+
+			wp_send_json_success(
+				array( 'html' => $this->get_uninstall_success_markup() )
+			);
 		}
 
 		function generate_assets( $old_value, $value, $option) {

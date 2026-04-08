@@ -184,8 +184,10 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 					'title'   => __( 'Lightbox Caption Source', 'foogallery' ),
 					'desc'    => __( 'The lightbox captions can be different to the thumbnail captions.', 'foogallery' ),
 					'section' => __( 'Lightbox', 'foogallery' ),
+					'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
 					'type'    => 'radio',
 					'default' => '',
+					'class'   => 'foogallery-radios-stacked',
 					'choices' => array(
 						'' => __('Smart (try to show both caption titles and descriptions if available)', 'foogallery' ),
 						'same' => __( 'Same As Thumbnail', 'foogallery' ),
@@ -205,8 +207,10 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 					'title'   => __( 'Override Caption Title', 'foogallery' ),
 					'desc'    => __( 'You can override the caption title to be different from the thumbnail caption title.', 'foogallery' ),
 					'section' => __( 'Lightbox', 'foogallery' ),
+					'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
 					'type'    => 'radio',
 					'default' => '',
+					'class'   => 'foogallery-radios-stacked',
 					'choices' => array(
 						'' => __( 'Same As Thumbnail', 'foogallery' ),
 						'title'  => __( 'Attachment Title', 'foogallery' ),
@@ -230,8 +234,10 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 					'title'   => __( 'Override Caption Desc.', 'foogallery' ),
 					'desc'    => __( 'You can override the caption description to be different from the thumbnail caption description.', 'foogallery' ),
 					'section' => __( 'Lightbox', 'foogallery' ),
+					'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
 					'type'    => 'radio',
 					'default' => '',
+					'class'   => 'foogallery-radios-stacked',
 					'choices' => array(
 						'' => __( 'Same As Thumbnail', 'foogallery' ),
 						'title'  => __( 'Attachment Title', 'foogallery' ),

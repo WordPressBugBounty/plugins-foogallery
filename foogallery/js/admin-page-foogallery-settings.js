@@ -178,29 +178,39 @@ jQuery(document).ready(function($) {
     };
 
     FOOGALLERY.bindUninstallButton = function() {
-        $('.foogallery_uninstall').on('click', function(e) {
+        $('#foogallery_uninstall_container').on('click', '.foogallery_uninstall, .foogallery_uninstall_confirm', function(e) {
             e.preventDefault();
 
             var $button = $(this),
                 $container = $('#foogallery_uninstall_container'),
                 $spinner = $('#foogallery_uninstall_spinner'),
-                data = 'action=foogallery_uninstall' +
-                    '&_wpnonce=' + $button.data('nonce') +
-                    '&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val());
+                data = {
+                    action: 'foogallery_uninstall',
+                    _wpnonce: $button.data('nonce'),
+                    _wp_http_referer: $('input[name="_wp_http_referer"]').val()
+                };
+
+            if ($button.hasClass('foogallery_uninstall_confirm')) {
+                data.confirmation = $('#foogallery_uninstall_confirmation').val();
+            }
 
             $spinner.addClass('is-active');
-            $button.prop('disabled', true);
+            $container.find('.foogallery_uninstall, .foogallery_uninstall_confirm, #foogallery_uninstall_confirmation').prop('disabled', true);
 
             $.ajax({
                 type: "POST",
                 url: ajaxurl,
                 data: data,
-                success: function(data) {
-                    $container.html(data);
+                dataType: "json",
+                success: function(response) {
+                    FOOGALLERY.renderSettingsAjaxResponse($container, response);
+                },
+                error: function(xhr) {
+                    FOOGALLERY.renderSettingsAjaxResponse($container, xhr.responseJSON);
                 },
                 complete: function() {
-                    $spinner.removeClass('is-active');
-                    $button.prop('disabled', false);
+                    $('#foogallery_uninstall_spinner').removeClass('is-active');
+                    $container.find('.foogallery_uninstall, .foogallery_uninstall_confirm, #foogallery_uninstall_confirmation').prop('disabled', false);
                 }
             });
         });

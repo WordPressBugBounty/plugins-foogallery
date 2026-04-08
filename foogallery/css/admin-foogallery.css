@@ -1,5 +1,8 @@
 :root {
-    --foogallery-color-wp-primary: #2271b1;
+    /* Main FooGallery Admin Colors */
+	--foogallery-color-wp-primary: #2271b1;
+    --foogallery-color-wp-error: #BF1123;
+
 	--foogallery-color-pro-starter: #1E8CBA;
 	--foogallery-color-pro-expert: #31be4d;
 	--foogallery-color-pro-commerce: #B0459D;
@@ -133,6 +136,10 @@
 .foogallery-attachments-list .attachment .attachment-preview a.info {
 	top: 5px;
 	left: 5px;
+}
+
+.foogallery-attachments-list .attachment:not(:has(.filename))::after {
+	display: none;
 }
 
 .foogallery_template_field td {
@@ -769,15 +776,10 @@ button[data-balloon]{overflow:visible}[data-balloon]{position:relative}[data-bal
 
 .foogallery-items-view .button-hero .dashicons {
 	vertical-align: middle;
-	padding-right: 10px;
 	width: 24px;
 	height: 24px;
 	font-size: 24px;
 	font-weight: normal;
-}
-.rtl .foogallery-items-view .button-hero .dashicons {
-	padding-left: 10px;
-	padding-right: 0;
 }
 
 .foogallery_preview_container .foogallery {
@@ -1139,8 +1141,28 @@ button[data-balloon]{overflow:visible}[data-balloon]{position:relative}[data-bal
 	vertical-align: middle;
 	font-size: 13px;
 }
-.foogallery-modal-info-fields label {
+#foogallery-panel-info .foogallery-modal-info-fields {
+	display: flex;
+	align-items: baseline;
+}
+#foogallery-panel-info .foogallery-modal-info-fields label {
 	font-weight: 600;
+	display: block;
+	flex: 0 0 100px;
+	width: 100px;
+}
+.foogallery-modal-info-fields-full {
+	-webkit-column-span: all;
+	column-span: all;
+	overflow: hidden;
+}
+#attachment-details-two-column-copy-file-name {
+	display: block;
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 #foogallery-img-modal-alternate-image-delete {
     background-color: #f6f7f7;
@@ -1226,6 +1248,11 @@ button[data-balloon]{overflow:visible}[data-balloon]{position:relative}[data-bal
 	width: 32px;
 	height: 32px;
 	margin-bottom: 8px;
+	line-height: 1;
+}
+
+.foogallery-add-actions .button.button-hero.button-primary .dashicons {
+	color : #fff;
 }
 
 .foogallery-add-actions .foogallery-add-button-label {
@@ -1263,4 +1290,21 @@ button[data-balloon]{overflow:visible}[data-balloon]{position:relative}[data-bal
 @keyframes fadeIn {
 	from { opacity: 0; transform: scale(0.98); }
 	to { opacity: 1; transform: scale(1); }
+}
+
+.attachments-browser .media-toolbar-secondary {
+	width: 100%
+}
+
+.media-modal-content .media-frame select.attachment-filters {
+	width: auto;
+	max-width: unset;
+}
+
+.foogallery-modal-toolbar .media-toolbar-secondary > .media-button.button-large {
+	height: 32px;
+}
+
+.foogallery-modal-toolbar .media-toolbar-secondary > p {
+	line-height: 32px;
 }

@@ -13,7 +13,7 @@ if ( ! class_exists( 'FooGallery_Extensions_Loader' ) ) {
 		 */
 		function load_active_extensions() {
 			$action = foo_safe_get( $_POST, 'action');
-			if ( 'deactivate' === $action || 'heartbeat' === $action ) { return; }
+			if ( 'deactivate' === $action ) { return; }
 
 			if ( ! function_exists( 'get_current_screen' ) ) {
 				require_once(ABSPATH . 'wp-admin/includes/screen.php');

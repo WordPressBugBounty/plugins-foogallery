@@ -99,6 +99,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
                         'section' => __( 'General', 'foogallery' ),
                         'desc'    => __( 'Choose the size of your thumbnails', 'foogallery' ),
                         'type'    => 'thumb_size',
+						'for'     => 'thumbnail_size_width',
                         'default' => array(
                             'width' => 640,
                             'height' => 360,
@@ -115,7 +116,6 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
                         'section' => __( 'General', 'foogallery' ),
                         'default' => 'image' ,
                         'type'    => 'thumb_link',
-                        'desc'	  => __( 'You can choose to either link each thumbnail to the full size image or to the image\'s attachment page', 'foogallery'),
                     ),
                     array(
                         'id'      => 'lightbox',

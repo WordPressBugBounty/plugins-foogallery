@@ -211,21 +211,22 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary' ) ) {
 
 		/**
 		 * Render the output for an item added from the media library
-		 * @param bool $attachment_post
+		 * @param FooGalleryAttachment $attachment_post
 		 */
 		public function render_attachment_item( $attachment_post = false ) {
 			if ( $attachment_post != false ) {
 				$attachment_id = $attachment_post->ID;
 				$attachment = wp_get_attachment_image_src( $attachment_id );
 				$extra_class = apply_filters( 'foogallery_admin_render_gallery_item_extra_classes' , '', $attachment_post );
+				$attachment_title = $attachment_post->title;
 			} else {
-				$attachment_id = $attachment = $extra_class = '';
+				$attachment_id = $attachment = $extra_class = $attachment_title = '';
 			}
 
 			$data_attribute = empty($attachment_id) ? '' : "data-attachment-id=\"{$attachment_id}\"";
 			$img_tag        = empty($attachment) ? '<img width="150" height="150" />' : "<img width=\"150\" height=\"150\" data-src=\"{$attachment[0]}\" />";
 			?>
-			<li class="attachment details" <?php echo $data_attribute; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attribute safely built above ?>>
+			<li aria-label="<?php esc_attr_e( $attachment_title ); ?>" class="attachment details" <?php echo $data_attribute; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attribute safely built above ?>>
 				<div class="attachment-preview type-image <?php echo esc_attr( $extra_class ); ?>">
 					<div class="thumbnail">
 						<div class="centered">

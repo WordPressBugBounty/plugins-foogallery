@@ -129,6 +129,11 @@ function foogallery_build_attachment_html_anchor_attributes( $foogallery_attachm
 	if ( 'page' === $link ) {
 		// get the URL to the attachment page.
 		$url = get_attachment_link( $foogallery_attachment->ID );
+	} elseif ( 'parent_post' === $link ) {
+		$url = '';
+		if ( ! empty( $foogallery_attachment->parent_post_id ) && get_post( $foogallery_attachment->parent_post_id ) ) {
+			$url = $foogallery_attachment->parent_post_url;
+		}
 	} elseif ( 'custom' === $link ) {
 		$url = foogallery_sanitize_attachment_custom_url( $args['custom_link'] );
 	} else {
@@ -147,6 +152,9 @@ function foogallery_build_attachment_html_anchor_attributes( $foogallery_attachm
 		$attr['href'] = foogallery_process_image_url( $url );
 		if ( ! empty( $foogallery_attachment->custom_target ) && 'default' !== $foogallery_attachment->custom_target ) {
 			$attr['target'] = $foogallery_attachment->custom_target;
+		}
+		if ( ! empty( $foogallery_attachment->custom_rel ) ) {
+			$attr['rel'] = $foogallery_attachment->custom_rel;
 		}
 	}
 
@@ -390,7 +398,14 @@ function foogallery_attachment_html_item_opening($foogallery_attachment, $args =
     }
 
     $attachment_item_figure_class = apply_filters( 'foogallery_attachment_html_item_figure_class', 'fg-item-inner', $foogallery_attachment, $args );
-	$html = '<div class="' . $class_list . '"><figure class="'. esc_attr( $attachment_item_figure_class ) . '">';
+	
+	$html_args = apply_filters( 'foogallery_attachment_html_item_attributes', array(
+		'class' => $class_list,
+	), $foogallery_attachment, $args );
+
+	$html = foogallery_html_opening_tag( 'div', $html_args );
+	
+	$html .= '<figure class="'. esc_attr( $attachment_item_figure_class ) . '">';
 	return apply_filters( 'foogallery_attachment_html_item_opening', $html, $foogallery_attachment, $args );
 }
 

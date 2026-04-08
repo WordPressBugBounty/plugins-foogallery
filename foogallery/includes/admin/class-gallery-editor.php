@@ -184,7 +184,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 					<button type="button" class="media-modal-close"><span class="media-modal-icon"><span class="screen-reader-text">Close media panel</span></span></button>
 					<div class="media-modal-content">
 						<div class="media-frame wp-core-ui hide-menu hide-router foogallery-meta-wrap">
-							<div class="media-frame-title">
+							<div class="media-frame-title foogallery-modal-title">
 								<h1>
 									<?php esc_html_e( 'Choose a gallery to insert', 'foogallery' ); ?>
 									<div class="foogallery-modal-reload-container">
@@ -193,7 +193,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 									</div>
 								</h1>
 							</div>
-							<div class="media-frame-content">
+							<div class="media-frame-content foogallery-modal-container">
 								<div class="attachments-browser">
 									<ul class="foogallery-attachment-container attachments" style="padding-left: 8px; top: 1em;">
 										<div class="foogallery-modal-loading"><?php esc_html_e( 'Loading galleries...', 'foogallery' ); ?></div>
@@ -220,7 +220,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 								<!-- end .attachments-browser -->
 							</div>
 							<!-- end .media-frame-content -->
-							<div class="media-frame-toolbar">
+							<div class="media-frame-toolbar foogallery-modal-toolbar">
 								<div class="media-toolbar">
 									<div class="media-toolbar-secondary">
 										<a href="#" class="foogallery-modal-cancel button media-button button-large button-secondary media-button-insert" title="<?php esc_attr_e( 'Cancel', 'foogallery' ); ?>"><?php esc_html_e( 'Cancel', 'foogallery' ); ?></a>

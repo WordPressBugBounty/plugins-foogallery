@@ -211,9 +211,27 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 									?>
                                 </div>
                             </td>
-						<?php } else { ?>
+						<?php } else { 
+							$for_attribute = 'FooGallerySettings_' . $template['slug'] . '_' . $field['id'];
+							$radio_types = array( 'radio', 'checkboxlist', 'icon', 'htmlicon' );
+							if ( in_array( $field_type, $radio_types ) ) {
+								$for_attribute .= '0';
+							}
+							if ( isset( $field['for'] ) ) {
+								if ( 'none' === $field['for'] ) {
+									$for_attribute = '';
+								} else {
+									$for_attribute = 'FooGallerySettings_' . $template['slug'] . '_' . $field['for'];
+								}
+							}
+							if ( !empty( $for_attribute ) ) {
+								$for_html = ' for="' . esc_attr( $for_attribute ) . '"';
+							} else {
+								$for_html = '';
+							}
+							?>
 							<th>
-								<label data-setting="<?php echo esc_attr( $field['id'] ); ?>" for="FooGallerySettings_<?php echo $template['slug'] . '_' . $field['id']; ?>"><?php echo $field['title']; ?></label>
+								<label data-setting="<?php echo esc_attr( $field['id'] ); ?>"<?php echo $for_html; ?>><?php esc_html_e( $field['title'] ); ?></label>
 								<?php if ( $is_promo ) { ?>
                                     <span data-balloon-length="large" data-balloon-pos="right" data-balloon="<?php echo esc_attr($field['promo']); ?>"><i class="dashicons dashicons-star-filled"></i></span>
 								<?php } ?>

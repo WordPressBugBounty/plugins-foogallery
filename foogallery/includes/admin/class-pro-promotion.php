@@ -17,6 +17,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			'foogallery-polaroid'          => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/polaroid-gallery/',
 			'foogallery-grid'              => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/grid-gallery/',
 			'foogallery-slider'            => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/slider-gallery/',
+			'foogallery-spotlight'         => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/spotlight-gallery/',
 			'foogallery-videos'            => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/video-gallery/',
 			'foogallery-social'            => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/social/',
 			'foogallery-exif'              => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/exif-data/',
@@ -89,6 +90,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 					add_filter( 'foogallery_override_gallery_template_fields-polaroid_promo', array( $this, 'remove_all_fields_from_promo_gallery_template' ), 999, 2 );
 					add_filter( 'foogallery_override_gallery_template_fields-grid_promo', array( $this, 'remove_all_fields_from_promo_gallery_template' ), 999, 2 );
 					add_filter( 'foogallery_override_gallery_template_fields-slider_promo', array( $this, 'remove_all_fields_from_promo_gallery_template' ), 999, 2 );
+					add_filter( 'foogallery_override_gallery_template_fields-spotlight_promo', array( $this, 'remove_all_fields_from_promo_gallery_template' ), 999, 2 );
 
 					//presets
 					add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_preset_promo_fields' ), 99, 2 );
@@ -1015,6 +1017,40 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'class'   => 'foogallery_promo_prostarter',
 						'keep_in_promo' => true,
 						'cta' => $this->build_cta_buttons( 'foogallery-slider' )
+					)
+				)
+			);
+
+			$gallery_templates[] = array(
+				'slug'                  => 'spotlight_promo',
+				'name'                  => __( 'Spotlight PRO', 'foogallery' ),
+				'preview_support'       => false,
+				'common_fields_support' => false,
+				'lazyload_support'      => false,
+				'paging_support'        => false,
+				'thumbnail_dimensions'  => false,
+				'filtering_support'     => false,
+				'class'                 => 'is-pro',
+				'icon'                  => '<svg viewBox="0 0 24 24">
+		<rect x="3" y="4" width="18" height="17"/>
+		<polygon points="5,11 7,9 7,13" />
+		<polygon points="19,11 17,9 17,13" />
+		<circle cx="8" cy="17" r="0.8"/>
+		<circle cx="12" cy="17" r="0.8"/>
+		<circle cx="16" cy="17" r="0.8"/>
+	  </svg>',
+				'fields'                => array(
+					array(
+						'id'            => 'spotlight_promo',
+						'title'         => __( 'Spotlight PRO Gallery Layout', 'foogallery' ),
+						'desc'          => __( 'Available in all PRO plans, the Spotlight PRO gallery layout offers a clean and effective way to showcase images inline without opening them in a lightbox. Scroll through gallery images with navigational arrows and dots for a modern, focused presentation.', 'foogallery' ) . '<br /><br />' .
+											'<img src="https://assets.fooplugins.com/foogallery/foogallery-spotlight-gallery.png" /><br /><br />' .
+						                   $this->build_promo_trial_html( 'spotlight', __( 'PRO Starter', 'foogallery' ) ) . '<br /><br />',
+						'section'       => __( 'General', 'foogallery' ),
+						'type'          => 'promo',
+						'class'         => 'foogallery_promo_prostarter',
+						'keep_in_promo' => true,
+						'cta'           => $this->build_cta_buttons( 'foogallery-spotlight' )
 					)
 				)
 			);

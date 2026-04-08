@@ -38,6 +38,9 @@ if ( ! class_exists( 'FooGallery_Admin' ) ) {
 			// include PRO promotion.
 			new FooGallery_Pro_Promotion();
 			new FooGallery_Trial_Mode();
+
+			// Command Palette integration (WP 6.3+).
+			new FooGallery_Command_Palette();
 		}
 
 		function init() {

@@ -3,8 +3,8 @@ Contributors: fooplugins, bradvin, steveush
 Donate link: https://fooplugins.com
 Tags: gallery, image-gallery, photo-gallery, responsive-gallery, lightbox
 Requires at least: 5.3
-Tested up to: 6.9
-Stable tag: 3.1.13
+Tested up to: 7.0
+Stable tag: 3.1.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -289,6 +289,34 @@ Yes. FooGallery does not collect visitor data, and admin tracking is optional.
 Please update in order for FooGallery to work in WP 5.5+!
 
 == Changelog ==
+
+= 3.1.26 =
+
+This release introduces a new datasouce for Infinite Uploads, compatability for WP 7.0, and other improvements.
+
+* Date Updated : 30 Mar 2026
+* Added : FooGallery custom post types now support show_in_rest.
+* Added : Add support for admin Command Pallete - does a search for existing foogalleries.
+* Added : Added align and activePosition settings to carousel layout.
+* Added : Added new "Parent / Uploaded Post" option for the Thumbnail Link setting, with fallback to the full size image when no parent post exists.
+* Added : Added new Download button in lightbox. Enable it under Lightbox -> Controls.
+* Fix : Fix for all jQuery migrate warnings in the console.
+* Fix : Fixed lightbox CSS priority on some sites, where stylesheet ordering was wrong.
+* Fix : Fix for lightbox rendering in Safari.
+* Fix : Bug with imageviewer gallery layout stretching in certain site layouts.
+* Update : Improved the attachment modal metadata area, including uploaded post info and a cleaner filename layout.
+* Update : Admin CSS updates to accommodate admin style changes in WP 7.0
+* Update : lighbox now adds alt tag of the attachment to the image when shown in the lightbox.
+
+= 3.1.16 =
+
+This release introduces some new gallery layout settings & better ImageMagick support.
+
+* Date Updated : 13 Feb 2026
+* Added : Added a new "Custom Rel" field for attachments, which is output on anchor tags in the gallery.
+* Added : Added new setting to Responsive Layout to force number of columns.
+* Added : Added support for background fill when using ImageMagick to upscale small images to thumbnail size setting.
+* Update : Renamed "Upscale Small Images" setting to "Background Fill", and enable it by default.
 
 = 3.1.13 =
 

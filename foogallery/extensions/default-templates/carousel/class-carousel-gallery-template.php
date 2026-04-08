@@ -167,6 +167,8 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			$options['template']['autoplay']['time'] = intval( $autoplay_time );
 			$options['template']['autoplay']['interaction'] = $autoplay_interaction;
 			$options['template']['centerOnClick'] = $centerOnClick;
+			$options['template']['align'] = foogallery_gallery_template_setting( 'align', 'center' );
+			$options['template']['activePosition'] = foogallery_gallery_template_setting( 'activePosition', 'center' );
 
 			return $options;
 		}
@@ -223,6 +225,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
 						'type'     => 'thumb_size_no_crop',
+						'for'     => 'thumbnail_dimensions_width',
 						'default' => array(
 							'width' => 200,
 							'height' => 200,
@@ -240,6 +243,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'section'  => __( 'General', 'foogallery' ),
 						'default'  => array( 'min' => -40, 'max' => -20, 'units' => '%' ),
 						'type'     => 'carousel_gutter',
+						'for'      => 'gutter_min',
 						'row_data' => array(
 							'data-foogallery-change-selector' => ':input',
 							'data-foogallery-preview'         => 'shortcode'
@@ -287,6 +291,40 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'choices' => array(
 							'true' => __( 'Center The Clicked Item', 'foogallery' ),
 							'false' => __( 'Open The Item In Lightbox', 'foogallery' ),
+						),
+						'row_data' => array(
+							'data-foogallery-change-selector' => 'input',
+							'data-foogallery-preview'         => 'shortcode'
+						)
+					),
+					array(
+						'id'      => 'align',
+						'title'   => __( 'Alignment', 'foogallery' ),
+						'desc'    => __( 'Visual alignment of the entire visible item set. Use Left or Right to align the whole set to that side.', 'foogallery' ),
+						'section' => __( 'General', 'foogallery' ),
+						'default' => 'center',
+						'type'    => 'radio',
+						'choices' => array(
+							'left'   => __( 'Left', 'foogallery' ),
+							'center' => __( 'Center', 'foogallery' ),
+							'right'  => __( 'Right', 'foogallery' ),
+						),
+						'row_data' => array(
+							'data-foogallery-change-selector' => 'input',
+							'data-foogallery-preview'         => 'shortcode'
+						)
+					),
+					array(
+						'id'      => 'activePosition',
+						'title'   => __( 'Active Item Position', 'foogallery' ),
+						'desc'    => __( 'Position of the active item in the visible sequence. Use Start or End to keep the active item anchored to that side during navigation.', 'foogallery' ),
+						'section' => __( 'General', 'foogallery' ),
+						'default' => 'center',
+						'type'    => 'radio',
+						'choices' => array(
+							'start'  => __( 'Start', 'foogallery' ),
+							'center' => __( 'Center', 'foogallery' ),
+							'end'    => __( 'End', 'foogallery' ),
 						),
 						'row_data' => array(
 							'data-foogallery-change-selector' => 'input',
@@ -390,7 +428,6 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'section' => __( 'General', 'foogallery' ),
 						'default' => 'image',
 						'type'    => 'thumb_link',
-						'desc'    => __( 'You can choose to link each thumbnail to the full size image, the image\'s attachment page, a custom URL, or you can choose to not link to anything.', 'foogallery' ),
 					),
 					array(
 						'id'      => 'lightbox',

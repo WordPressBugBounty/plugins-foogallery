@@ -155,6 +155,12 @@ if ( ! class_exists( 'FooGallery_Debug' ) ) {
 				<?php echo esc_html( $gallery->gallery_template ); ?>
 				<h3>Datasource</h3>
 				<?php echo esc_html( $gallery->datasource_name ); ?>
+				<?php if ( isset( $gallery->datasource_value ) ) : ?>
+				<h3><?php esc_html_e( 'Datasource Data', 'foogallery' ); ?></h3>
+				<div style="width:100%; max-height: 300px; overflow: auto;">
+					<pre><?php echo esc_html( wp_json_encode( $gallery->datasource_value, JSON_PRETTY_PRINT ) ); ?></pre>
+				</div>
+				<?php endif; ?>
 				<h3>Attachments</h3>
 				<?php echo esc_html( $gallery->attachment_id_csv() ); ?>
 				<h3>Settings</h3>

@@ -399,7 +399,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 			<?php
 			foreach ( $sorting_options as $sorting_key => $sorting_label ) { ?>
 				<p>
-				<input type="radio" value="<?php echo esc_attr( $sorting_key ); ?>" <?php checked( $sorting_key === $gallery->sorting ); ?> id="FooGallerySettings_GallerySort_<?php echo esc_attr( $sorting_key ); ?>" name="<?php echo esc_attr( FOOGALLERY_META_SORT ); ?>" />
+				<input type="radio" value="<?php echo esc_attr( $sorting_key ); ?>" <?php checked( $sorting_key === $gallery->sorting ); ?> id="FooGallerySettings_GallerySort_<?php echo esc_attr( $sorting_key ); ?>" name="<?php echo esc_attr( FOOGALLERY_META_SORT ); ?>" data-foogallery-preview="include" />
 				<label for="FooGallerySettings_GallerySort_<?php echo esc_attr( $sorting_key ); ?>"><?php echo esc_html( $sorting_label ); ?></label>
 				</p><?php
 			} ?>

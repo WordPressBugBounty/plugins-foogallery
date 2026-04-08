@@ -22,7 +22,7 @@ if ( ! class_exists( 'FooGallery_Albums_Extension' ) ) {
 				new FooGallery_Admin_Album_MetaBoxes();
 
 				//add some global settings for albums
-				add_filter( 'foogallery_admin_settings_override', array($this, 'add_album_settings' ) );
+				add_filter( 'foogallery_admin_settings_override', array($this, 'add_album_settings' ), 5 );
 
 				add_action( 'foogallery_uninstall', array($this, 'uninstall' ) );
 			}
@@ -139,6 +139,25 @@ if ( ! class_exists( 'FooGallery_Albums_Extension' ) ) {
 		function add_album_settings( $settings ) {
 
 			$settings['tabs']['albums'] = __( 'Albums', 'foogallery' );
+
+			$roles         = get_editable_roles();
+			$role_choices = array(
+				'inherit' => __( 'Inherit from gallery creator role', 'foogallery' ),
+			);
+
+			foreach ( $roles as $role_slug => $role_data ) {
+				$role_choices[ $role_slug ] = $role_data['name'];
+			}
+
+			$settings['settings'][] = array(
+				'id'      => 'album_creator_role',
+				'title'   => __( 'Album Creator Role', 'foogallery' ),
+				'desc'    => __( 'Set the default role for album creators.', 'foogallery' ),
+				'type'    => 'select',
+				'choices' => $role_choices,
+				'default' => 'inherit',
+				'tab'     => 'albums',
+			);
 
 			$settings['settings'][] = array(
 				'id'      => 'album_gallery_slug',
