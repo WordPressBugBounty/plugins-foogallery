@@ -277,7 +277,7 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 
 		public function render_sorting_metabox( $post ) {
 			$album = $this->get_album( $post );
-			$sorting_options = foogallery_sorting_options(); ?>
+			$sorting_options = foogallery_sorting_options( 'album' ); ?>
 			<p>
 				<?php esc_html_e('Change the way galleries are sorted within your album. By default, they are sorted in the order you see them.', 'foogallery'); ?>
 			</p>
@@ -540,7 +540,7 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 					echo '<h2>' . esc_html__( 'Invalid Gallery!', 'foogallery' ) . '</h2>';
 				}
 			}
-			die();
+			wp_die( '', '', array( 'response' => null ) );
 		}
 
 		public function ajax_save_gallery_details() {

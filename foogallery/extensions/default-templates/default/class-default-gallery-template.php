@@ -39,7 +39,24 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 
 			//alter the crop value if needed
 			add_filter( 'foogallery_render_gallery_template_field_value', array( $this, 'alter_field_value'), 10, 4 );
+
+			// handle aliases for default template settings
+			add_filter( 'foogallery_gallery_template_argument_alias', array( $this, 'handle_alias' ), 10, 2 );
 			// @formatter:on
+		}
+
+		/**
+		 * Handle aliases for gallery template settings saved in meta.
+		 *
+		 * @param string $key The key of the setting.
+		 * @param string $template The template slug.
+		 * @return string
+		 */
+		function handle_alias( $key, $template ) {
+			if ( 'spacing' === $key && self::TEMPLATE_ID === $template ) {
+				return 'gap';
+			}
+			return $key;
 		}
 
 		/**
@@ -133,9 +150,10 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 					array(
 						'id'       => 'thumbnail_dimensions',
 						'title'    => __( 'Thumbnail Size', 'foogallery' ),
-						'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
-						'type'     => 'thumb_size_no_crop',
+							'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
+							'section'  => __( 'General', 'foogallery' ),
+							'alias'    => 'thumbnail_size',
+							'type'     => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
 						'default'  => self::THUMBNAIL_DIMENSIONS_DEFAULT,
 						'row_data' => array(
@@ -146,10 +164,11 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 					array(
 						'id'       => 'layout',
 						'title'    => __( 'Columns', 'foogallery' ),
-						'desc'     => __( 'Auto will use all available space. Otherwise, you can force the number of columns to show on desktop.', 'foogallery' ),
+						'desc'     => __( 'The number of columns to use. Auto will use all available space. Otherwise, you can force the number of columns to show on desktop.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
 						'default'  => '',
 						'type'     => 'radio',
+						'alias'    => 'columns',
 						'class'    => 'foogallery-radios-stacked',
 						'choices'  => array(
 							''   => __( 'Auto', 'foogallery' ),
@@ -200,6 +219,7 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 						'title'    => __( 'Thumbnail Gap', 'foogallery' ),
 						'desc'     => __( 'The spacing or gap between thumbnails in the gallery.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
+						'alias'    => 'gap',
 						'type'     => 'slider',
 						'min'      => 0,
 						'max'      => 100,

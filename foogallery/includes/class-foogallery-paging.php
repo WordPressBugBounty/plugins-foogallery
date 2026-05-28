@@ -11,10 +11,10 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 		}
 
         function load_feature() {
-            if ( is_admin() ) {
-                //add extra fields to the templates that support paging
-                add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_paging_fields' ), 10, 2 );
-            }
+            // Register paging field definitions in every request context so
+            // non-admin consumers, including abilities, can resolve and save
+            // layout settings against the same schema as wp-admin.
+            add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_paging_fields' ), 10, 2 );
 
             add_action( 'foogallery_located_template', array( $this, 'determine_paging' ), 10, 1 );
 

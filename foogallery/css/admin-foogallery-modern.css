@@ -127,3 +127,7 @@ body.wp-admin .foogallery-vertical-child-tab {
 body.wp-admin .foogallery-vertical-tab .foogallery-tab-text {
     vertical-align: bottom;
 }
+
+body.wp-admin .foogallery-modal-wrapper .media-toolbar-secondary {
+	align-items: flex-start;
+}

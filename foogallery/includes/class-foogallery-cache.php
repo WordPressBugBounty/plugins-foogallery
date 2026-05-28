@@ -219,7 +219,7 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 				$this->clear_all_gallery_caches();
 
 				esc_html_e('The cache for all galleries has been cleared!', 'foogallery' );
-				die();
+				wp_die( '', '', array( 'response' => null ) );
 			}
 		}
 

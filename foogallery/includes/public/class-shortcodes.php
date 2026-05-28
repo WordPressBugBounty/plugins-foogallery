@@ -24,6 +24,7 @@ if ( ! class_exists( 'FooGallery_Shortcodes' ) ) {
 				'id'      => 0,
 				'gallery' => '',
 			) );
+			$args = $this->normalize_shortcode_args( $args );
 
 			$args = apply_filters( 'foogallery_shortcode_atts', $args );
 
@@ -37,6 +38,92 @@ if ( ! class_exists( 'FooGallery_Shortcodes' ) ) {
 			$output_string = ob_get_contents();
 			ob_end_clean();
 			return $output_string;
+		}
+
+		/**
+		 * Normalize supported gallery shortcode aliases to their canonical arguments.
+		 *
+		 * @param array $args Parsed shortcode arguments.
+		 *
+		 * @return array
+		 */
+		function normalize_shortcode_args( $args ) {
+			if ( ! is_array( $args ) ) {
+				return $args;
+			}
+
+			if ( ! array_key_exists( 'template', $args ) && array_key_exists( 'layout', $args ) ) {
+				$args['template'] = $args['layout'];
+			}
+
+			$args = $this->normalize_shortcode_thumbnail_size_arg( $args, 'thumbnail_size' );
+			$args = $this->normalize_shortcode_thumbnail_size_arg( $args, 'thumbnail_dimensions' );
+
+			if ( array_key_exists( 'thumbnail_size', $args ) && is_array( $args['thumbnail_size'] ) && ! array_key_exists( 'thumbnail_dimensions', $args ) ) {
+				$args['thumbnail_dimensions'] = $args['thumbnail_size'];
+			} else if ( array_key_exists( 'thumbnail_dimensions', $args ) && is_array( $args['thumbnail_dimensions'] ) && ! array_key_exists( 'thumbnail_size', $args ) ) {
+				$args['thumbnail_size'] = $args['thumbnail_dimensions'];
+			}
+
+			if ( array_key_exists( 'thumbnail_size', $args ) && is_array( $args['thumbnail_size'] ) && ! array_key_exists( 'crop', $args['thumbnail_size'] ) ) {
+				$args['thumbnail_size']['crop'] = '0';
+			}
+
+			if ( ! array_key_exists( 'thumbnail_width', $args ) && array_key_exists( 'thumbnail_size', $args ) && is_array( $args['thumbnail_size'] ) && array_key_exists( 'width', $args['thumbnail_size'] ) ) {
+				$args['thumbnail_width'] = $args['thumbnail_size']['width'];
+			}
+
+			return $args;
+		}
+
+		/**
+		 * Normalize a compound thumbnail size shortcode argument.
+		 *
+		 * @param array  $args Parsed shortcode arguments.
+		 * @param string $key Argument key.
+		 *
+		 * @return array
+		 */
+		function normalize_shortcode_thumbnail_size_arg( $args, $key ) {
+			if ( ! array_key_exists( $key, $args ) || is_array( $args[ $key ] ) ) {
+				return $args;
+			}
+
+			$thumbnail_size = $this->parse_shortcode_thumbnail_size( $args[ $key ] );
+
+			if ( false !== $thumbnail_size ) {
+				$args[ $key ] = $thumbnail_size;
+			}
+
+			return $args;
+		}
+
+		/**
+		 * Parse a compound thumbnail size shortcode attribute.
+		 *
+		 * @param string $thumbnail_size Thumbnail size in the form WIDTHxHEIGHT or WIDTHxHEIGHTxcrop.
+		 *
+		 * @return array|false
+		 */
+		function parse_shortcode_thumbnail_size( $thumbnail_size ) {
+			if ( ! is_string( $thumbnail_size ) ) {
+				return false;
+			}
+
+			if ( 1 !== preg_match( '/^(\d+)x(\d+)(?:x(crop))?$/i', trim( $thumbnail_size ), $matches ) ) {
+				return false;
+			}
+
+			$args = array(
+				'width'  => absint( $matches[1] ),
+				'height' => absint( $matches[2] ),
+			);
+
+			if ( ! empty( $matches[3] ) ) {
+				$args['crop'] = '1';
+			}
+
+			return $args;
 		}
 
 		function render_foogallery_enqueue() {

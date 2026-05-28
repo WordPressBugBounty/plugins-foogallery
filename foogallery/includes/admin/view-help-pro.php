@@ -70,7 +70,12 @@ $foogallery_pro_features = foogallery_pro_features();
 		                <h4><?php esc_html_e( 'Available in:', 'foogallery' ); ?></h4>
 		                <?php
 		                $available_plans = array();
-		                foreach ( $feature['plans'] as $plan ) {
+		                $feature_plans = isset( $feature['plans'] ) && is_array( $feature['plans'] ) ? $feature['plans'] : array();
+		                foreach ( $feature_plans as $plan ) {
+			                if ( ! isset( $foogallery_plans[ $plan ] ) ) {
+				                continue;
+			                }
+
 			                $available_plans[] = '<span class="fgah-plan-' . esc_attr( $plan ) . '">' . esc_html( $foogallery_plans[ $plan ] ) . '</span>';
 		                }
 		                echo wp_kses_post( implode( ' ', $available_plans ) );

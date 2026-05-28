@@ -477,7 +477,7 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 					echo foogallery_generate_export_json( $galleries ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output
 				}
 			}
-			die();
+			wp_die( '', '', array( 'response' => null ) );
 		}
 
 		/**

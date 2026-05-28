@@ -14,41 +14,61 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 			add_action( 'foogallery_thumbnail_generation_test', array( $this, 'save_test_results' ) );
 			add_action( 'wp_ajax_foogallery_admin_rating_notice_dismiss', array( $this, 'admin_rating_notice_dismiss' ) );
 
-			add_action( 'admin_notices', array( $this, 'display_foobar_notice' ) );
-			add_action( 'wp_ajax_foogallery_admin_foobar_notice_dismiss', array( $this, 'admin_foobar_notice_dismiss' ) );
+			add_action( 'admin_notices', array( $this, 'display_fooconvert_notice' ) );
+			add_action( 'wp_ajax_foogallery_admin_fooconvert_notice_dismiss', array( $this, 'admin_fooconvert_notice_dismiss' ) );
+		}
+
+		function get_thumb_test_option() {
+			$option = get_option( FOOGALLERY_OPTION_THUMB_TEST );
+
+			if ( ! is_array( $option ) ) {
+				return false;
+			}
+
+			return $option;
 		}
 
 		function should_run_tests() {
-			$option       = get_option( FOOGALLERY_OPTION_THUMB_TEST );
+			$option       = $this->get_thumb_test_option();
 			$option_value = $this->generate_option_value();
 
 			if ( $option === false ) {
-				//we have never run tests before
+				//we have never run tests before, or the saved option is malformed.
 				return true;
-			} else {
-				if ( is_array( $option ) && array_key_exists( 'key', $option ) ) {
-					$option_key = $option['key'];
-					if ( $option_value !== $option_key ) {
-						//either the PHP version or Host has changed. In either case, we should run tests again!
-						return true;
-					}
-				}
+			}
+
+			if ( ! array_key_exists( 'key', $option ) || $option_value !== $option['key'] ) {
+				//either the PHP version or Host has changed. In either case, we should run tests again!
+				return true;
+			}
+
+			if (
+				! array_key_exists( 'results', $option ) ||
+				! is_array( $option['results'] ) ||
+				! array_key_exists( 'success', $option['results'] )
+			) {
+				return true;
 			}
 
 			return false;
 		}
 
 		function should_show_alert() {
-			$option = get_option( FOOGALLERY_OPTION_THUMB_TEST );
+			$option = $this->get_thumb_test_option();
 
-			if ( isset( $option ) && array_key_exists( 'results', $option ) ) {
-				$results = $option['results'];
-
-				//should show the alert if the tests were not a success
-				return ! $results['success'];
+			if (
+				false === $option ||
+				! array_key_exists( 'results', $option ) ||
+				! is_array( $option['results'] ) ||
+				! array_key_exists( 'success', $option['results'] )
+			) {
+				return false;
 			}
 
-			return false;
+			$results = $option['results'];
+
+			//should show the alert if the tests were not a success
+			return ! (bool) $results['success'];
 		}
 
 		function generate_option_value() {
@@ -69,9 +89,20 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 		 * Dismiss the admin rating notice forever
 		 */
 		function admin_rating_notice_dismiss() {
-			if ( check_admin_referer( 'foogallery_admin_rating_notice_dismiss' ) ) {
-				update_option( 'foogallery_admin_rating_notice_dismiss', 'hide' );
+			if ( ! check_ajax_referer( 'foogallery_admin_rating_notice_dismiss', false, false ) ) {
+				wp_send_json_error( array(
+					'message' => __( 'Invalid security token.', 'foogallery' ),
+				), 403 );
 			}
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array(
+					'message' => __( 'Insufficient permissions.', 'foogallery' ),
+				), 403 );
+			}
+
+			update_option( 'foogallery_admin_rating_notice_dismiss', 'hide' );
+			wp_send_json_success();
 		}
 
 		function should_show_rating_message() {
@@ -211,60 +242,59 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 			}
 		}
 
-		function display_foobar_notice() {
-			if ( $this->should_display_foobar_notice() ) {
+		function display_fooconvert_notice() {
+			if ( $this->should_display_fooconvert_notice() ) {
 
-				$install_foobar = wp_nonce_url( add_query_arg( array(
+				$install_fooconvert = wp_nonce_url( add_query_arg( array(
 					'action' => 'install-plugin',
-					'plugin' => 'foobar-notifications-lite',
-				), admin_url( 'update.php' ) ), 'install-plugin_foobar-notifications-lite' );
+					'plugin' => 'fooconvert',
+				), admin_url( 'update.php' ) ), 'install-plugin_fooconvert' );
 				?>
 				<script type="text/javascript">
 					(function( $ ) {
 						$( document ).ready( function() {
-							$( '.foogallery-foobar-notice.is-dismissible' )
+							$( '.foogallery-fooconvert-notice.is-dismissible' )
 								.on( 'click', '.notice-dismiss', function( e ) {
 									e.preventDefault();
 									$.post( ajaxurl, {
-										action: 'foogallery_admin_foobar_notice_dismiss',
+										action: 'foogallery_admin_fooconvert_notice_dismiss',
 										url: "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>",
-										_wpnonce: "<?php echo esc_attr( wp_create_nonce( 'foogallery_admin_foobar_notice_dismiss' )); ?>"
+										_wpnonce: "<?php echo esc_attr( wp_create_nonce( 'foogallery_admin_fooconvert_notice_dismiss' )); ?>"
 									} );
 								} );
 						} );
 					})( jQuery );
 				</script>
 				<style>
-                    .foogallery-foobar-notice {
-                        border-left-color: #ff4800;
+                    .foogallery-fooconvert-notice {
+                        border-left-color: #7c3aed;
                     }
 
-                    .foogallery-foobar-notice .dashicons-megaphone {
-                        color: #ff4800;
+                    .foogallery-fooconvert-notice .dashicons-format-chat {
+                        color: #7c3aed;
                     }
 				</style>
-				<div class="foogallery-foobar-notice notice notice-success is-dismissible">
+				<div class="foogallery-fooconvert-notice notice is-dismissible">
 					<p>
-						<strong><span class="dashicons dashicons-megaphone"></span> Do you want to grow your business?</strong>
-						FooBar can help!
+						<strong><span class="dashicons dashicons-format-chat"></span> <?php esc_html_e( 'Are you looking for a Popup Builder for the block editor?', 'foogallery' ); ?></strong>
+						<?php esc_html_e( 'FooConvert can help!', 'foogallery' ); ?>
 						<br/>
-						FooBar is a free plugin to help grow your business by showing sticky notification bars with
-						call-to-actions. Add unlimited notifications to your site to increase visitor engagement and get your message across!
+						<?php esc_html_e( 'FooConvert is a free plugin for building bars, flyouts, and overlays in the WordPress block editor. Create conversion-focused campaigns with triggers, display rules, lead capture, and analytics.', 'foogallery' ); ?>
 						<br/>
 						<br/>
 						<a class="button button-primary button-large" target="_blank"
-						   href="<?php echo wp_kses_post( $install_foobar ); ?>">Install FooBar</a>
+						   href="<?php echo esc_url( $install_fooconvert ); ?>"><?php esc_html_e( 'Install FooConvert', 'foogallery' ); ?></a>
 						<a class="button" target="_blank"
-						   href="https://wordpress.org/plugins/foobar-notifications-lite/">View Details</a>
+						   href="https://wordpress.org/plugins/fooconvert/"><?php esc_html_e( 'View Details', 'foogallery' ); ?></a>
 					</p>
 				</div>
 				<?php
 			}
 		}
 
-		function should_display_foobar_notice() {
-			//do not show the notice to people who have foobar installed and activated
-			if ( class_exists( 'FooPlugins\FooBar\Init' ) ) {
+		function should_display_fooconvert_notice() {
+			//do not show the notice to people who have FooConvert installed and activated
+			if ( class_exists( 'FooPlugins\FooConvert\Init' ) ) {
 				return false;
 			}
 
@@ -285,10 +315,14 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 					if ( $screen->post_type === FOOGALLERY_CPT_GALLERY || $screen->post_type === FOOGALLERY_CPT_ALBUM || $screen->id === FOOGALLERY_ADMIN_MENU_SETTINGS_SLUG ) {
 
 						//first try to get the saved option
-						$show_message = get_option( 'foogallery_admin_foobar_notice_dismiss', 0 );
+						$show_message = get_option( 'foogallery_admin_fooconvert_notice_dismiss', 0 );
 
 						if ( 'hide' === $show_message ) {
 							return false; //never show - user has dismissed
+						}
+
+						if ( ! $this->has_fooconvert_notice_update_grace_period_elapsed() ) {
+							return false;
 						}
 
 						if ( 'show' === $show_message ) {
@@ -309,7 +343,7 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 
 								if ( strtotime( $oldest_gallery->post_date ) < strtotime( '-7 days' ) ) {
 									//The oldest gallery is older than 7 days - so show the admin notice
-									update_option( 'foogallery_admin_foobar_notice_dismiss', 'show' );
+									update_option( 'foogallery_admin_fooconvert_notice_dismiss', 'show' );
 
 									return true;
 								}
@@ -323,12 +357,38 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 		}
 
 		/**
-		 * Dismiss the admin foobar notice forever
+		 * Check whether enough time has passed since the latest FooGallery update.
+		 *
+		 * @return bool
 		 */
-		function admin_foobar_notice_dismiss() {
-			if ( check_admin_referer( 'foogallery_admin_foobar_notice_dismiss' ) ) {
-				update_option( 'foogallery_admin_foobar_notice_dismiss', 'hide', false );
+		function has_fooconvert_notice_update_grace_period_elapsed() {
+			$updated_at = class_exists( 'FooGallery_Version_Check' ) ? FooGallery_Version_Check::get_last_update_time() : 0;
+
+			if ( 0 === $updated_at ) {
+				return false;
 			}
+
+			return ( time() - $updated_at ) >= ( 3 * DAY_IN_SECONDS );
+		}
+
+		/**
+		 * Dismiss the admin FooConvert notice forever
+		 */
+		function admin_fooconvert_notice_dismiss() {
+			if ( ! check_ajax_referer( 'foogallery_admin_fooconvert_notice_dismiss', false, false ) ) {
+				wp_send_json_error( array(
+					'message' => __( 'Invalid security token.', 'foogallery' ),
+				), 403 );
+			}
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array(
+					'message' => __( 'Insufficient permissions.', 'foogallery' ),
+				), 403 );
+			}
+
+			update_option( 'foogallery_admin_fooconvert_notice_dismiss', 'hide', false );
+			wp_send_json_success();
 		}
 	}
 }

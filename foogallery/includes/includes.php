@@ -15,6 +15,16 @@ require_once FOOGALLERY_PATH . 'includes/class-foogallery-widget.php';
 require_once FOOGALLERY_PATH . 'gutenberg/class-foogallery-gutenberg.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-debug.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-attachment-type.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/functions.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-abilities.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-list-galleries.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-get-gallery.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-get-gallery-layout-schema.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-list-gallery-layouts.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-media-search.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-create-gallery.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-update-gallery.php';
+require_once FOOGALLERY_PATH . 'includes/abilities/class-ability-update-gallery-attachments.php';
 
 // Include built-in thumbnail generation files.
 require_once FOOGALLERY_PATH . 'includes/thumbs/includes.php';
@@ -40,6 +50,7 @@ require_once FOOGALLERY_PATH . 'includes/class-foogallery-common-fields.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-lazyload.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-paging.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-license-constant-handler.php';
+require_once FOOGALLERY_PATH . 'includes/class-foogallery-attachment-filename.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-attachment-custom-class.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-extensions-compatibility.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-crop-position.php';

@@ -213,6 +213,24 @@
 	cursor: pointer;
 }
 
+.foogallery_metabox_field-htmlicon {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.foogallery-shortcode-choice-group-htmlicon {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.foogallery-shortcode-choice-group-htmlicon > label {
+	margin-right: 0;
+	margin-bottom: 0;
+}
+
 .foogallery_template_field_id-lightbox_custom_button_theme .foogallery_metabox_field-htmlicon label,
 .foogallery_template_field_id-lightbox_custom_button_highlight .foogallery_metabox_field-htmlicon label
 {
@@ -263,6 +281,11 @@
 	background: #efefef;
 }
 
+.foogallery-shortcode-helper-action {
+	margin: 10px 0 0;
+	text-align: center;
+}
+
 .wp-list-table .foogallery-shortcode {
 	cursor: pointer;
 	font-size: 1em;
@@ -275,6 +298,66 @@
 .foogallery-shortcode-message {
 	font-style: italic;
 	color: #2EA2CC !important;
+}
+
+.foogallery_template_field th label[data-setting] {
+	display: block;
+}
+
+.foogallery-shortcode-argument-helper {
+	display: none;
+	margin-top: 4px;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.foogallery-show-argument-helpers .foogallery-shortcode-argument-helper {
+	display: block;
+}
+
+.foogallery-shortcode-argument-helper code {
+	font-size: 10px;
+	line-height: 1.4;
+}
+
+.foogallery-shortcode-choice-helper {
+	display: none;
+	margin-top: 4px;
+	margin-left: 22px;
+	font-weight: 400;
+	cursor: pointer;
+}
+
+.foogallery-show-argument-helpers .foogallery-shortcode-choice-helper {
+	display: block;
+}
+
+.foogallery-shortcode-choice-helper code {
+	font-size: 10px;
+	line-height: 1.4;
+}
+
+.foogallery-shortcode-choice-helper-radio {
+	display: none;
+	margin-top: 0;
+	margin-left: 6px;
+	vertical-align: middle;
+}
+
+.foogallery-show-argument-helpers .foogallery-shortcode-choice-helper-radio {
+	display: inline-block;
+}
+
+.foogallery-shortcode-choice-helper-htmlicon {
+	display: none;
+	margin-top: 4px;
+	margin-left: 0;
+	line-height: 1.4;
+	cursor: pointer;
+}
+
+.foogallery-show-argument-helpers .foogallery-shortcode-choice-helper-htmlicon {
+	display: block;
 }
 
 .foogallery-help {
@@ -501,6 +584,23 @@ tr.foogallery_template_field[data-foogallery-invisible] {
 
 .foogallery_metabox_field-select select {
 	min-width: 250px;
+}
+
+.foogallery-shortcode-select-helper {
+	display: none;
+	margin-left: 8px;
+	font-weight: 400;
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+.foogallery-show-argument-helpers .foogallery-shortcode-select-helper {
+	display: inline-block;
+}
+
+.foogallery-shortcode-select-helper code {
+	font-size: 10px;
+	line-height: 1.4;
 }
 
 .foogallery-thumbsize-crop {

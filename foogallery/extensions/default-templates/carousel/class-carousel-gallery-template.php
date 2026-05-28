@@ -24,6 +24,9 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			//build up the arguments needed for rendering this template
 			add_filter( 'foogallery_gallery_template_arguments-carousel', array( $this, 'build_gallery_template_arguments' ) );
 
+			// handle aliases for carousel template settings
+			add_filter( 'foogallery_gallery_template_argument_alias', array( $this, 'handle_alias' ), 10, 2 );
+
 			//add the data options needed for grid pro
 			add_filter( 'foogallery_build_container_data_options-carousel', array( $this, 'add_data_options' ), 10, 3 );
 
@@ -38,6 +41,27 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			// add il8n for the template
 			add_filter( 'foogallery_il8n', array( $this, 'add_il8n' ) );
 			// @formatter:on
+		}
+
+		/**
+		 * Handle aliases for gallery template settings saved in meta.
+		 *
+		 * @param string $key The key of the setting.
+		 * @param string $template The template slug.
+		 * @return string
+		 */
+		function handle_alias( $key, $template ) {
+			if ( self::TEMPLATE_ID !== $template ) {
+				return $key;
+			}
+
+			$aliases = array(
+				'maxItems'      => 'max_items',
+				'centerOnClick' => 'center_on_click',
+				'activePosition' => 'active_position',
+			);
+
+			return array_key_exists( $key, $aliases ) ? $aliases[ $key ] : $key;
 		}
 
 		/**
@@ -222,9 +246,10 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					array(
 						'id'       => 'thumbnail_dimensions',
 						'title'    => __( 'Thumbnail Size', 'foogallery' ),
-						'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
-						'type'     => 'thumb_size_no_crop',
+							'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
+							'section'  => __( 'General', 'foogallery' ),
+							'alias'    => 'thumbnail_size',
+							'type'     => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
 						'default' => array(
 							'width' => 200,
@@ -251,6 +276,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					),
 					array(
 						'id'       => 'maxItems',
+						'alias'    => 'max_items',
 						'title'    => __( 'Max Items To Show', 'foogallery' ),
 						'desc'     => __( 'The total number of items displayed in the carousel. This should be an ODD number as the active item is the center and the remainder make up each side.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
@@ -282,6 +308,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					),
 					array(
 						'id'       => 'centerOnClick',
+						'alias'    => 'center_on_click',
 						'title'    => __( 'Side Items Click', 'foogallery' ),
 						'desc'     => __( 'What happens when an item in the carousel is clicked.', 'foogallery' ),
 						'section'  => __( 'General', 'foogallery' ),
@@ -316,6 +343,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					),
 					array(
 						'id'      => 'activePosition',
+						'alias'   => 'active_position',
 						'title'   => __( 'Active Item Position', 'foogallery' ),
 						'desc'    => __( 'Position of the active item in the visible sequence. Use Start or End to keep the active item anchored to that side during navigation.', 'foogallery' ),
 						'section' => __( 'General', 'foogallery' ),

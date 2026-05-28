@@ -102,6 +102,39 @@ jQuery(document).ready(function($) {
         });
     };
 
+    FOOGALLERY.bindClearThumbnailCacheButton = function() {
+        $('.foogallery_clear_thumbnail_cache').on('click', function(e) {
+            e.preventDefault();
+
+            var $button = $(this),
+                $container = $('#foogallery_clear_thumbnail_cache_container'),
+                $spinner = $('#foogallery_clear_thumbnail_cache_spinner'),
+                data = 'action=foogallery_clear_thumbnail_cache' +
+                '&_wpnonce=' + $button.data('nonce') +
+                '&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val());
+
+            $spinner.addClass('is-active');
+            $button.prop('disabled', true);
+
+            $.ajax({
+                type: "POST",
+                url: ajaxurl,
+                data: data,
+                dataType: "json",
+                success: function(response) {
+                    FOOGALLERY.renderSettingsAjaxResponse($container, response);
+                },
+                error: function(xhr) {
+                    FOOGALLERY.renderSettingsAjaxResponse($container, xhr.responseJSON);
+                },
+                complete: function() {
+                    $spinner.removeClass('is-active');
+                    $button.prop('disabled', false);
+                }
+            });
+        });
+    };
+
     FOOGALLERY.bindTestThumbnailButton = function() {
         $('.foogallery_thumb_generation_test').on('click', function(e) {
             e.preventDefault();
@@ -291,6 +324,7 @@ jQuery(document).ready(function($) {
     $(function() { //wait for ready
         FOOGALLERY.loadImageOptimizationContent();
         FOOGALLERY.bindClearCssOptimizationButton();
+        FOOGALLERY.bindClearThumbnailCacheButton();
         FOOGALLERY.bindTestThumbnailButton();
         FOOGALLERY.bindApplyRetinaDefaults();
         FOOGALLERY.bindUninstallButton();

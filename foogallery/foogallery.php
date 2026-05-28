@@ -3,7 +3,7 @@
 /*
 Plugin Name: FooGallery
 Description: FooGallery is the most intuitive and extensible gallery management tool ever created for WordPress
-Version:     3.1.26
+Version:     3.1.32
 Author:      FooPlugins
 Plugin URI:  https://fooplugins.com/foogallery-wordpress-gallery-plugin/
 Author URI:  https://fooplugins.com
@@ -24,8 +24,13 @@ if ( function_exists( 'foogallery_fs' ) ) {
         define( 'FOOGALLERY_PATH', plugin_dir_path( __FILE__ ) );
         define( 'FOOGALLERY_URL', plugin_dir_url( __FILE__ ) );
         define( 'FOOGALLERY_FILE', __FILE__ );
-        define( 'FOOGALLERY_VERSION', '3.1.26' );
+        define( 'FOOGALLERY_VERSION', '3.1.32' );
         define( 'FOOGALLERY_SETTINGS_VERSION', '2' );
+        if ( file_exists( FOOGALLERY_PATH . 'vendor-scoped/scoper-autoload.php' ) ) {
+            require_once FOOGALLERY_PATH . 'vendor-scoped/scoper-autoload.php';
+        } elseif ( file_exists( FOOGALLERY_PATH . 'vendor-scoped/autoload.php' ) ) {
+            require_once FOOGALLERY_PATH . 'vendor-scoped/autoload.php';
+        }
         require_once FOOGALLERY_PATH . 'includes/constants.php';
         require_once FOOGALLERY_PATH . 'includes/functions.php';
         // Create a helper function for easy SDK access.
@@ -140,6 +145,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 new FooGallery_LazyLoad();
                 new FooGallery_Paging();
                 new FooGallery_Thumbnail_Dimensions();
+                new FooGallery_Attachment_Filename();
                 new FooGallery_Attachment_Custom_Class();
                 new FooGallery_Compatibility();
                 new FooGallery_Extensions_Compatibility();
@@ -154,11 +160,14 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 new FooGallery_Default_Templates();
                 // init the default media library datasource.
                 new FooGallery_Datasource_MediaLibrary();
+                // Initialize the FooGallery abilities bridge for WordPress core.
+                new FooGallery_Abilities();
                 new FooGallery_Attachment_Type();
                 $pro_code_included = false;
                 if ( !$pro_code_included ) {
                     add_filter( 'foogallery_extensions_for_view', array($this, 'add_foogallery_pro_features') );
                 }
+                add_filter( 'foogallery_extensions_for_view', array($this, 'add_foogallery_addon_features'), 20 );
                 // init Gutenberg!
                 new FooGallery_Gutenberg();
                 // init advanced settings.
@@ -238,7 +247,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 $extensions[] = array(
                     'slug'               => 'foogallery-protection',
                     'categories'         => array('Premium'),
-                    'title'              => foogallery__( 'Protection', 'foogallery' ),
+                    'title'              => foogallery__( 'Watermarking & Protection', 'foogallery' ),
                     'description'        => $pro_features['protection']['desc'],
                     'external_link_text' => foogallery__( 'Read documentation', 'foogallery' ),
                     'external_link_url'  => $pro_features['protection']['link'],
@@ -269,6 +278,57 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'source'             => 'upgrade',
                 );
                 return $extensions;
+            }
+
+            function add_foogallery_addon_features( $extensions ) {
+                $addon_features = array(array(
+                    'slug'               => 'foogallery-user-uploads',
+                    'categories'         => array('Add-ons', 'Premium'),
+                    'title'              => foogallery__( 'User Uploads', 'foogallery' ),
+                    'description'        => foogallery__( 'Allow visitors to upload images and videos into galleries. Includes image moderation, form field customization, email notifications and more.', 'foogallery' ),
+                    'external_link_text' => foogallery__( 'Learn More', 'foogallery' ),
+                    'external_link_url'  => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/user-uploads/',
+                    'addon_link_url'     => foogallery_fs()->addon_url( 'foogallery-user-uploads' ),
+                    'dashicon'           => 'dashicons-upload',
+                    'tags'               => array('Add-on', 'Premium'),
+                    'source'             => 'addon',
+                ), array(
+                    'slug'               => 'foogallery-social',
+                    'categories'         => array('Add-ons', 'Premium'),
+                    'title'              => foogallery__( 'Social', 'foogallery' ),
+                    'description'        => foogallery__( 'Allow your visitors to like, comment and share images to social networks.', 'foogallery' ),
+                    'external_link_text' => foogallery__( 'Learn More', 'foogallery' ),
+                    'external_link_url'  => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/social/',
+                    'addon_link_url'     => foogallery_fs()->addon_url( 'foogallery-social' ),
+                    'dashicon'           => 'dashicons-share',
+                    'tags'               => array('Add-on', 'Premium'),
+                    'source'             => 'addon',
+                ), array(
+                    'slug'              => 'foogallery-proofing',
+                    'categories'        => array('Add-ons', 'Premium'),
+                    'title'             => foogallery__( 'Client Proofing', 'foogallery' ),
+                    'description'       => foogallery__( 'Create private proofing sessions so clients can select, reject, comment on, and submit gallery images for review.', 'foogallery' ),
+                    'addon_link_url'    => foogallery_fs()->addon_url( 'foogallery-proofing' ),
+                    'external_link_url' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/client-proofing/',
+                    'dashicon'          => 'dashicons-visibility',
+                    'tags'              => array('Add-on', 'Premium'),
+                    'source'            => 'addon',
+                ));
+                foreach ( $addon_features as $addon_feature ) {
+                    if ( !$this->feature_exists_for_view( $extensions, $addon_feature['slug'] ) ) {
+                        $extensions[] = $addon_feature;
+                    }
+                }
+                return $extensions;
+            }
+
+            private function feature_exists_for_view( $extensions, $slug ) {
+                foreach ( $extensions as $extension ) {
+                    if ( isset( $extension['slug'] ) && $slug === $extension['slug'] ) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             function add_freemius_activation_menu() {

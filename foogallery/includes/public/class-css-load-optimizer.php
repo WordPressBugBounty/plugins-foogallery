@@ -82,9 +82,9 @@ if (!class_exists('class-css-load-optimizer.php')) {
                             $cache_buster_key = $handle;
                             if ( is_array( $style ) ) {
                                 $cache_buster_key = $this->create_cache_buster_key( $handle, $style['ver'], array_key_exists( 'site', $style ) ? $style['site'] : '' );
-                                wp_enqueue_style( $handle, $style['src'], $style['deps'], $style['ver'], $style['media'] );
+                                wp_enqueue_style( $handle, $this->normalize_stylesheet_src_scheme( $style['src'] ), $style['deps'], $style['ver'], $style['media'] );
                             } else {
-                                wp_enqueue_style( $handle, $style );
+                                wp_enqueue_style( $handle, $this->normalize_stylesheet_src_scheme( $style ) );
                             }
 
                             $enqueued_foogallery_styles[$handle] = $cache_buster_key;
@@ -140,7 +140,7 @@ if (!class_exists('class-css-load-optimizer.php')) {
                 if ( is_array( $enqueued_foogallery_styles ) && ! array_key_exists( $style_handle, $enqueued_foogallery_styles ) ) {
 
                     $style = array(
-                        'src'   => $src,
+                        'src'   => $this->normalize_stylesheet_src_scheme( $src ),
                         'deps'  => $deps,
                         'ver'   => $ver,
                         'media' => $media,
@@ -169,6 +169,144 @@ if (!class_exists('class-css-load-optimizer.php')) {
 	     */
         function create_cache_buster_key( $name, $version, $site = '' ) {
             return "{$site}::{$name}_{$version}";
+        }
+
+	    /**
+	     * Normalize cached stylesheet URLs to the configured front-end site scheme.
+	     *
+	     * The optimizer stores full URLs in post meta. If the same page is ever rendered under
+	     * a different request scheme, WordPress can build plugin URLs with that scheme and the
+	     * stale cached URL may later be emitted on the canonical front end.
+	     *
+	     * @param string $src The stylesheet URL.
+	     *
+	     * @return string
+	     */
+        function normalize_stylesheet_src_scheme( $src ) {
+            if ( ! is_string( $src ) || ! preg_match( '#^https?://#i', $src ) ) {
+                return $src;
+            }
+
+            if ( 'on' === foogallery_get_setting( 'force_https' ) ) {
+                return set_url_scheme( $src, 'https' );
+            }
+
+            $home_url_parts = wp_parse_url( home_url( '/' ) );
+            if ( ! is_array( $home_url_parts ) || empty( $home_url_parts['scheme'] ) ) {
+                return $src;
+            }
+
+            $scheme = strtolower( $home_url_parts['scheme'] );
+            if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+                return $src;
+            }
+
+            if ( ! $this->matches_site_url_host_and_port( $src ) || ! $this->matches_local_asset_url_root( $src ) ) {
+                return $src;
+            }
+
+            return set_url_scheme( $src, $scheme );
+        }
+
+	    /**
+	     * Check if a stylesheet URL is on the configured home or site host.
+	     *
+	     * @param string $src The stylesheet URL.
+	     *
+	     * @return bool
+	     */
+        function matches_site_url_host_and_port( $src ) {
+            $src_parts = wp_parse_url( $src );
+            if ( ! is_array( $src_parts ) || empty( $src_parts['host'] ) ) {
+                return false;
+            }
+
+            foreach ( array_unique( array( home_url( '/' ), site_url( '/' ) ) ) as $site_url ) {
+                $site_url_parts = wp_parse_url( $site_url );
+                if ( ! is_array( $site_url_parts ) || empty( $site_url_parts['host'] ) ) {
+                    continue;
+                }
+
+                if ( strtolower( $src_parts['host'] ) !== strtolower( $site_url_parts['host'] ) ) {
+                    continue;
+                }
+
+                $src_port      = array_key_exists( 'port', $src_parts ) ? (int) $src_parts['port'] : null;
+                $site_url_port = array_key_exists( 'port', $site_url_parts ) ? (int) $site_url_parts['port'] : null;
+                if ( $src_port === $site_url_port ) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+	    /**
+	     * Check if a stylesheet URL is under a local WordPress asset root.
+	     *
+	     * @param string $src The stylesheet URL.
+	     *
+	     * @return bool
+	     */
+        function matches_local_asset_url_root( $src ) {
+            $roots = array(
+                plugins_url( '/' ),
+                get_stylesheet_directory_uri(),
+                get_template_directory_uri(),
+            );
+
+            if ( defined( 'FOOGALLERY_URL' ) ) {
+                $roots[] = FOOGALLERY_URL;
+            }
+
+            $upload_dir = wp_upload_dir();
+            if ( ! empty( $upload_dir['baseurl'] ) ) {
+                $roots[] = trailingslashit( $upload_dir['baseurl'] ) . 'foogallery/';
+            }
+
+            foreach ( array_unique( $roots ) as $root ) {
+                if ( $this->matches_url_root_ignoring_scheme( $src, $root ) ) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+	    /**
+	     * Check if a URL matches a root URL while ignoring the scheme only.
+	     *
+	     * @param string $url  The URL to check.
+	     * @param string $root The root URL.
+	     *
+	     * @return bool
+	     */
+        function matches_url_root_ignoring_scheme( $url, $root ) {
+            $url_parts  = wp_parse_url( $url );
+            $root_parts = wp_parse_url( $root );
+
+            if ( ! is_array( $url_parts ) || ! is_array( $root_parts ) || empty( $url_parts['host'] ) || empty( $root_parts['host'] ) ) {
+                return false;
+            }
+
+            if ( strtolower( $url_parts['host'] ) !== strtolower( $root_parts['host'] ) ) {
+                return false;
+            }
+
+            $url_port  = array_key_exists( 'port', $url_parts ) ? (int) $url_parts['port'] : null;
+            $root_port = array_key_exists( 'port', $root_parts ) ? (int) $root_parts['port'] : null;
+            if ( $url_port !== $root_port ) {
+                return false;
+            }
+
+            $url_path  = isset( $url_parts['path'] ) ? $url_parts['path'] : '/';
+            $root_path = isset( $root_parts['path'] ) ? trailingslashit( $root_parts['path'] ) : '/';
+
+            if ( '/' === $root_path ) {
+                return false;
+            }
+
+            return 0 === strpos( $url_path, $root_path );
         }
 
 	    /**

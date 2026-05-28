@@ -289,16 +289,22 @@ function foogallery_gallery_template_setting(  $key, $default = ''  ) {
     global $current_foogallery_arguments;
     global $current_foogallery_template;
     $settings_key = "{$current_foogallery_template}_{$key}";
-    if ( $current_foogallery_arguments && array_key_exists( $key, $current_foogallery_arguments ) ) {
-        //try to get the value from the arguments
-        $value = $current_foogallery_arguments[$key];
+    $arguments_key = apply_filters( 'foogallery_gallery_template_argument_alias', $key, $current_foogallery_template );
+    if ( $current_foogallery_arguments && array_key_exists( $arguments_key, $current_foogallery_arguments ) ) {
+        //try to get the value from the arguments using the alias
+        $value = $current_foogallery_arguments[$arguments_key];
     } else {
-        if ( !empty( $current_foogallery ) && $current_foogallery->settings && array_key_exists( $settings_key, $current_foogallery->settings ) ) {
-            //then get the value out of the saved gallery settings
-            $value = $current_foogallery->settings[$settings_key];
+        if ( $current_foogallery_arguments && array_key_exists( $key, $current_foogallery_arguments ) ) {
+            //try to get the value from the arguments using the original key
+            $value = $current_foogallery_arguments[$key];
         } else {
-            //otherwise set it to the default
-            $value = $default;
+            if ( !empty( $current_foogallery ) && $current_foogallery->settings && array_key_exists( $settings_key, $current_foogallery->settings ) ) {
+                //then get the value out of the saved gallery settings
+                $value = $current_foogallery->settings[$settings_key];
+            } else {
+                //otherwise set it to the default
+                $value = $default;
+            }
         }
     }
     $value = apply_filters( 'foogallery_gallery_template_setting-' . $key, $value );
@@ -483,6 +489,87 @@ function foogallery_build_class_attribute_render_safe(  $gallery  ) {
 }
 
 /**
+ * Removes custom attribute overrides from render arguments.
+ *
+ * Custom gallery container attributes must only come from saved gallery settings.
+ *
+ * @param mixed $args Render arguments.
+ * @return mixed
+ */
+function foogallery_strip_custom_attribute_render_args(  $args  ) {
+    if ( !is_array( $args ) ) {
+        return $args;
+    }
+    unset($args['custom_attribute_key'], $args['custom_attribute_value']);
+    return $args;
+}
+
+/**
+ * Returns true when a value is a syntactically safe HTML attribute name.
+ *
+ * @param mixed $key Attribute key.
+ * @return bool
+ */
+function foogallery_is_safe_html_attribute_key(  $key  ) {
+    if ( !is_string( $key ) ) {
+        return false;
+    }
+    $key = trim( $key );
+    if ( '' === $key ) {
+        return false;
+    }
+    if ( preg_match( '/[\\x00-\\x1F\\x7F\\s"\'=<>`]/', $key ) ) {
+        return false;
+    }
+    if ( preg_match( '/^on/i', $key ) ) {
+        return false;
+    }
+    return 1 === preg_match( '/^[A-Za-z_:][A-Za-z0-9_:\\.-]*$/', $key );
+}
+
+/**
+ * Sanitizes a custom gallery container attribute key.
+ *
+ * By default, user-configured custom attributes are limited to data-* attributes.
+ * Trusted code can allow additional safe attribute names through the
+ * foogallery_custom_attribute_key_allowed filter.
+ *
+ * @param mixed $key     Attribute key.
+ * @param mixed $gallery Gallery context.
+ * @return string
+ */
+function foogallery_sanitize_custom_attribute_key(  $key, $gallery = null  ) {
+    if ( !is_scalar( $key ) ) {
+        return '';
+    }
+    $key = strtolower( trim( (string) wp_unslash( $key ) ) );
+    if ( !foogallery_is_safe_html_attribute_key( $key ) ) {
+        return '';
+    }
+    $allowed = 1 === preg_match( '/^data-[a-z0-9_-]+$/', $key );
+    $allowed = apply_filters(
+        'foogallery_custom_attribute_key_allowed',
+        $allowed,
+        $key,
+        $gallery
+    );
+    return ( $allowed ? $key : '' );
+}
+
+/**
+ * Sanitizes a custom gallery container attribute value.
+ *
+ * @param mixed $value Attribute value.
+ * @return string
+ */
+function foogallery_sanitize_custom_attribute_value(  $value  ) {
+    if ( !is_scalar( $value ) ) {
+        return '';
+    }
+    return foogallery_sanitize_javascript( sanitize_text_field( wp_unslash( (string) $value ) ) );
+}
+
+/**
  * Builds up the attributes that are appended to a gallery template container
  *
  * @param $gallery    FooGallery
@@ -502,8 +589,12 @@ function foogallery_build_container_attributes_safe(  $gallery, $attributes  ) {
     //clean up the attributes to make them safe for output
     $html = '';
     foreach ( $attributes as $key => $value ) {
+        $key = ( is_string( $key ) ? trim( $key ) : '' );
+        if ( !foogallery_is_safe_html_attribute_key( $key ) ) {
+            continue;
+        }
         $safe_value = foogallery_esc_attr( $value );
-        $html .= "{$key}=\"{$safe_value}\" ";
+        $html .= esc_attr( $key ) . '="' . $safe_value . '" ';
     }
     return apply_filters(
         'foogallery_build_container_attributes_html',
@@ -554,8 +645,10 @@ function foogallery_render_gallery(  $gallery_id, $args = array()  ) {
 
 /**
  * Returns the available sorting options that can be chosen for galleries and albums
+ *
+ * @param string $context Sorting context.
  */
-function foogallery_sorting_options() {
+function foogallery_sorting_options(  $context = 'gallery'  ) {
     return apply_filters( 'foogallery_sorting_options', array(
         ''              => __( 'Default', 'foogallery' ),
         'date_desc'     => __( 'Date created - newest first', 'foogallery' ),
@@ -565,7 +658,7 @@ function foogallery_sorting_options() {
         'title_asc'     => __( 'Title - alphabetically', 'foogallery' ),
         'title_desc'    => __( 'Title - reverse', 'foogallery' ),
         'rand'          => __( 'Random', 'foogallery' ),
-    ) );
+    ), $context );
 }
 
 function foogallery_sorting_get_posts_orderby_arg(  $sorting_option  ) {
@@ -600,6 +693,92 @@ function foogallery_sorting_get_posts_order_arg(  $sorting_option  ) {
             break;
     }
     return apply_filters( 'foogallery_sorting_get_posts_order_arg', $order_arg, $sorting_option );
+}
+
+/**
+ * Returns the effective gallery sort, including shortcode overrides.
+ *
+ * @param FooGallery $gallery Gallery instance.
+ *
+ * @return string
+ */
+function foogallery_sorting_get_effective_sort(  $gallery  ) {
+    $sort = ( isset( $gallery->sorting ) ? $gallery->sorting : '' );
+    global $current_foogallery_arguments;
+    if ( isset( $current_foogallery_arguments ) && is_array( $current_foogallery_arguments ) && isset( $current_foogallery_arguments['sort'] ) ) {
+        $shortcode_sort = sanitize_text_field( $current_foogallery_arguments['sort'] );
+        if ( array_key_exists( $shortcode_sort, foogallery_sorting_options() ) ) {
+            $sort = $shortcode_sort;
+        }
+    }
+    return apply_filters( 'foogallery_sorting_effective_sort', $sort, $gallery );
+}
+
+/**
+ * Returns true when query paging args must be applied after PHP sorting.
+ *
+ * @param string $sorting_option Selected sorting option.
+ *
+ * @return bool
+ */
+function foogallery_sorting_should_defer_query_args(  $sorting_option  ) {
+    return apply_filters( 'foogallery_sorting_should_defer_query_args', false, $sorting_option );
+}
+
+/**
+ * Stores and removes query paging args that must be applied after PHP sorting.
+ *
+ * @param array  $query_args     Attachment query args.
+ * @param string $sorting_option Selected sorting option.
+ *
+ * @return array
+ */
+function foogallery_sorting_defer_query_args(  $query_args, $sorting_option  ) {
+    global $foogallery_deferred_attachment_query_args;
+    $foogallery_deferred_attachment_query_args = null;
+    if ( !foogallery_sorting_should_defer_query_args( $sorting_option ) || !is_array( $query_args ) ) {
+        return $query_args;
+    }
+    $foogallery_deferred_attachment_query_args = array(
+        'posts_per_page' => ( isset( $query_args['posts_per_page'] ) ? intval( $query_args['posts_per_page'] ) : -1 ),
+        'offset'         => ( isset( $query_args['offset'] ) ? intval( $query_args['offset'] ) : 0 ),
+        'page'           => ( isset( $query_args['page'] ) ? intval( $query_args['page'] ) : 0 ),
+        'paged'          => ( isset( $query_args['paged'] ) ? intval( $query_args['paged'] ) : 0 ),
+    );
+    $query_args['posts_per_page'] = -1;
+    unset($query_args['offset'], $query_args['page'], $query_args['paged']);
+    return $query_args;
+}
+
+/**
+ * Applies deferred query paging args after PHP sorting.
+ *
+ * @param FooGalleryAttachment[] $attachments    Array of attachment objects.
+ * @param string                 $sorting_option Selected sorting option.
+ *
+ * @return FooGalleryAttachment[]
+ */
+function foogallery_sorting_apply_deferred_query_args(  $attachments, $sorting_option  ) {
+    if ( !foogallery_sorting_should_defer_query_args( $sorting_option ) || empty( $attachments ) || !is_array( $attachments ) ) {
+        return $attachments;
+    }
+    global $foogallery_deferred_attachment_query_args;
+    if ( empty( $foogallery_deferred_attachment_query_args ) || !is_array( $foogallery_deferred_attachment_query_args ) ) {
+        return $attachments;
+    }
+    $posts_per_page = max( -1, intval( $foogallery_deferred_attachment_query_args['posts_per_page'] ) );
+    $offset = max( 0, intval( $foogallery_deferred_attachment_query_args['offset'] ) );
+    $page = max( intval( $foogallery_deferred_attachment_query_args['page'] ), intval( $foogallery_deferred_attachment_query_args['paged'] ) );
+    if ( $posts_per_page > 0 && $page > 1 ) {
+        $offset += ($page - 1) * $posts_per_page;
+    }
+    if ( $posts_per_page > 0 ) {
+        return array_slice( $attachments, $offset, $posts_per_page );
+    }
+    if ( $offset > 0 ) {
+        return array_slice( $attachments, $offset );
+    }
+    return $attachments;
 }
 
 /**
@@ -735,6 +914,9 @@ function foogallery_get_caption_title_for_attachment(  $attachment_post, $source
         case 'alt':
             $caption = trim( get_post_meta( $attachment_post->ID, '_wp_attachment_image_alt', true ) );
             break;
+        case 'filename':
+            $caption = ( class_exists( 'FooGallery_Attachment_Filename' ) ? FooGallery_Attachment_Filename::get_filename( $attachment_post ) : '' );
+            break;
         default:
             $caption = trim( $attachment_post->post_excerpt );
     }
@@ -771,6 +953,9 @@ function foogallery_get_caption_by_source(  $attachment, $source, $caption_type 
             break;
         case 'alt':
             $caption = trim( $attachment->alt );
+            break;
+        case 'filename':
+            $caption = ( class_exists( 'FooGallery_Attachment_Filename' ) ? FooGallery_Attachment_Filename::get_filename( $attachment ) : '' );
             break;
         case 'caption':
         default:
@@ -825,6 +1010,9 @@ function foogallery_get_caption_desc_for_attachment(  $attachment_post, $source 
             break;
         case 'alt':
             $caption = trim( get_post_meta( $attachment_post->ID, '_wp_attachment_image_alt', true ) );
+            break;
+        case 'filename':
+            $caption = ( class_exists( 'FooGallery_Attachment_Filename' ) ? FooGallery_Attachment_Filename::get_filename( $attachment_post ) : '' );
             break;
         default:
             $caption = trim( $attachment_post->post_content );
@@ -1129,11 +1317,10 @@ function foogallery_sort_template_fields(  $a, $b  ) {
 function foogallery_build_default_settings_for_gallery_template(  $template_name  ) {
     $fields = foogallery_get_fields_for_template( $template_name );
     $settings = array();
-    //loop through the fields and build up an array of keys and default values
+    // Loop through the fields and build up an array of keys and default values.
     foreach ( $fields as $field ) {
-        $default = ( array_key_exists( 'default', $field ) ? $field['default'] : false );
-        if ( !empty( $default ) ) {
-            $settings["{$template_name}_{$field['id']}"] = $default;
+        if ( array_key_exists( 'default', $field ) && null !== $field['default'] ) {
+            $settings["{$template_name}_{$field['id']}"] = $field['default'];
         }
     }
     return $settings;
@@ -1659,48 +1846,30 @@ function foogallery_sanitize_html(  $text  ) {
 }
 
 /**
- * Filter out JavaScript-related keywords and inline scripts from an input string
+ * Filter out executable JavaScript patterns and inline scripts from an input string.
  *
  * @param string $input
  * @return string
  */
 function foogallery_sanitize_javascript(  $input  ) {
-    // list of JavaScript-related attributes to filter out
-    $javascript_attributes = array(
-        'innerHTML',
-        'document\\.write',
-        'eval',
-        'Function\\(',
-        'setTimeout',
-        'setInterval',
-        'new Function\\(',
-        'onmouseover',
-        'onmouseout',
-        'onpointerenter',
-        'onclick',
-        'onload',
-        'onchange',
-        'onerror',
-        '<script>',
-        '<\\/script>',
-        'encodeURIComponent',
-        'decodeURIComponent',
-        'JSON\\.parse',
-        'outerHTML',
-        'innerHTML',
-        'XMLHttpRequest',
-        'createElement',
-        'appendChild',
-        'RegExp',
-        'String\\.fromCharCode',
-        'encodeURI',
-        'decodeURI',
-        'javascript:'
+    if ( !is_string( $input ) ) {
+        return '';
+    }
+    $javascript_patterns = array(
+        '/<\\/?script\\b[^>]*>/i',
+        '/\\bnew\\s+Function\\s*\\(/i',
+        '/\\bdocument\\s*\\.\\s*write\\s*\\(/i',
+        '/\\beval\\s*(?:\\?\\.\\s*)?\\(/i',
+        '/\\beval\\s*\\)\\s*\\(/i',
+        '/\\beval\\s*\\.\\s*(?:call|apply|bind)\\s*\\(/i',
+        '/\\[\\s*[\'"]eval[\'"]\\s*\\]\\s*(?:\\?\\.\\s*)?\\(/i',
+        '/\\b(?:Function|setTimeout|setInterval|encodeURIComponent|decodeURIComponent|JSON\\s*\\.\\s*parse|XMLHttpRequest|createElement|appendChild|RegExp|String\\s*\\.\\s*fromCharCode|encodeURI|decodeURI)\\s*\\(/i',
+        '/\\b(?:innerHTML|outerHTML)\\s*=/i',
+        '/\\bon(?:mouseover|mouseout|pointerenter|click|load|change|error)\\b\\s*=?/i',
+        '/javascript\\s*:/i'
     );
-    $pattern = '/' . implode( '|', $javascript_attributes ) . '/i';
-    // Use regex to replace potentially dangerous strings with an empty string
-    $input = preg_replace( $pattern, '', $input );
-    return $input;
+    $sanitized = preg_replace( $javascript_patterns, '', $input );
+    return ( is_string( $sanitized ) ? $sanitized : '' );
 }
 
 /**
@@ -2303,6 +2472,76 @@ function foogallery_feature_enabled(  $feature  ) {
 }
 
 /**
+ * Register a candidate runtime for the Protection feature.
+ *
+ * Each candidate should provide:
+ * - id
+ * - priority
+ * - enabled_callback
+ * - bootstrap_callback
+ *
+ * @param array $candidate Runtime candidate.
+ * @return bool
+ */
+function foogallery_protection_register_runtime(  $candidate  ) {
+    global $foogallery_protection_runtime_candidates;
+    if ( !is_array( $candidate ) || empty( $candidate['id'] ) || empty( $candidate['bootstrap_callback'] ) ) {
+        return false;
+    }
+    if ( !isset( $foogallery_protection_runtime_candidates ) || !is_array( $foogallery_protection_runtime_candidates ) ) {
+        $foogallery_protection_runtime_candidates = array();
+    }
+    $candidate = array_merge( array(
+        'priority'         => 10,
+        'enabled_callback' => '__return_true',
+        'label'            => $candidate['id'],
+    ), $candidate );
+    $foogallery_protection_runtime_candidates[sanitize_key( $candidate['id'] )] = $candidate;
+    return true;
+}
+
+/**
+ * Returns the current Protection runtime owner.
+ *
+ * @return array|null
+ */
+function foogallery_protection_runtime_owner() {
+    global $foogallery_protection_runtime_owner;
+    return ( isset( $foogallery_protection_runtime_owner ) ? $foogallery_protection_runtime_owner : null );
+}
+
+/**
+ * Boots the highest-priority enabled Protection runtime.
+ *
+ * @return array|null
+ */
+function foogallery_protection_boot_runtime() {
+    global $foogallery_protection_runtime_booted, $foogallery_protection_runtime_candidates, $foogallery_protection_runtime_owner;
+    if ( !empty( $foogallery_protection_runtime_booted ) ) {
+        return foogallery_protection_runtime_owner();
+    }
+    $foogallery_protection_runtime_booted = true;
+    if ( empty( $foogallery_protection_runtime_candidates ) || !is_array( $foogallery_protection_runtime_candidates ) ) {
+        return null;
+    }
+    uasort( $foogallery_protection_runtime_candidates, function ( $a, $b ) {
+        return intval( $b['priority'] ) <=> intval( $a['priority'] );
+    } );
+    foreach ( $foogallery_protection_runtime_candidates as $candidate ) {
+        $enabled = ( is_callable( $candidate['enabled_callback'] ) ? call_user_func( $candidate['enabled_callback'], $candidate ) : true );
+        if ( !$enabled || !is_callable( $candidate['bootstrap_callback'] ) ) {
+            continue;
+        }
+        $foogallery_protection_runtime_owner = $candidate;
+        call_user_func( $candidate['bootstrap_callback'], $candidate );
+        do_action( 'foogallery_protection_runtime_booted', $candidate );
+        return $candidate;
+    }
+    return null;
+}
+
+add_action( 'plugins_loaded', 'foogallery_protection_boot_runtime', 20 );
+/**
  * Returns an array of the pro features available in FooGallery.
  *
  * @return array
@@ -2513,7 +2752,12 @@ function foogallery_is_preview() {
  *
  * @return FooGalleryAttachment[] Sorted array of attachment objects.
  */
-function foogallery_sort_attachments(  $attachments, $orderby, $order  ) {
+function foogallery_sort_attachments(
+    $attachments,
+    $orderby,
+    $order,
+    $sort = ''
+) {
     if ( empty( $attachments ) ) {
         return $attachments;
     }
@@ -2594,7 +2838,8 @@ function foogallery_sort_attachments(  $attachments, $orderby, $order  ) {
         'foogallery_sort_attachments',
         $attachments,
         $orderby,
-        $order
+        $order,
+        $sort
     );
 }
 

@@ -212,7 +212,8 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
                                 </div>
                             </td>
 						<?php } else { 
-							$for_attribute = 'FooGallerySettings_' . $template['slug'] . '_' . $field['id'];
+							$for_attribute  = 'FooGallerySettings_' . $template['slug'] . '_' . $field['id'];
+							$setting_helper = ! empty( $field['alias'] ) ? $field['alias'] : $field['id'];
 							$radio_types = array( 'radio', 'checkboxlist', 'icon', 'htmlicon' );
 							if ( in_array( $field_type, $radio_types ) ) {
 								$for_attribute .= '0';
@@ -231,7 +232,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 							}
 							?>
 							<th>
-								<label data-setting="<?php echo esc_attr( $field['id'] ); ?>"<?php echo $for_html; ?>><?php esc_html_e( $field['title'] ); ?></label>
+								<label data-setting="<?php echo esc_attr( $setting_helper ); ?>"<?php echo $for_html; ?>><?php esc_html_e( $field['title'] ); ?></label>
 								<?php if ( $is_promo ) { ?>
                                     <span data-balloon-length="large" data-balloon-pos="right" data-balloon="<?php echo esc_attr($field['promo']); ?>"><i class="dashicons dashicons-star-filled"></i></span>
 								<?php } ?>

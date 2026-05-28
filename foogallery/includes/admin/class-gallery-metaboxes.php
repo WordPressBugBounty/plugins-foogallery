@@ -75,6 +75,40 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 			return $settings;
 		}
 
+		/**
+		 * Clear the cached thumbnails for a gallery.
+		 *
+		 * @param FooGallery|int $foogallery The gallery object or ID.
+		 *
+		 * @return bool Whether a local thumbnail cache was cleared.
+		 */
+		public static function clear_gallery_thumbnail_cache( $foogallery ) {
+			if ( ! ( $foogallery instanceof FooGallery ) ) {
+				$foogallery = FooGallery::get_by_id( absint( $foogallery ) );
+			}
+
+			if ( ! $foogallery ) {
+				return false;
+			}
+
+			$engine = foogallery_thumb_active_engine();
+			if ( ! $engine->has_local_cache() ) {
+				return false;
+			}
+
+			ob_start();
+
+			foreach ( $foogallery->attachments() as $attachment ) {
+				if ( ! empty( $attachment->url ) ) {
+					$engine->clear_local_cache_for_file( $attachment->url );
+				}
+			}
+
+			ob_end_clean();
+
+			return true;
+		}
+
 		function register_extension( $extensions_list ) {
             $extensions_list[] = array(
 				'slug' => 'foogallery-custom-css',
@@ -326,16 +360,11 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 		}
 
 		public function render_gallery_shortcode_metabox( $post ) {
-			$gallery = $this->get_gallery( $post );
-			$shortcode = $gallery->shortcode();
-			?>
-			<p class="foogallery-shortcode">
-				<input type="text" id="foogallery_copy_shortcode" size="<?php echo absint( strlen( $shortcode ) ) + 2; ?>" value="<?php echo esc_attr( $shortcode ); ?>" readonly="readonly" />
-			</p>
-			<p>
-				<?php esc_html_e( 'Paste the above shortcode into a post or page to show the gallery.', 'foogallery' ); ?>
-			</p>
-			<script>
+			$gallery                = $this->get_gallery( $post );
+			$shortcode              = $gallery->shortcode();
+			$show_helpers_label     = __( 'Show Shortcode Helpers', 'foogallery' );
+			$hide_helpers_label     = __( 'Hide Shortcode Helpers', 'foogallery' );
+			?><script>
 				jQuery(function($) {
 					var shortcodeInput = document.querySelector('#foogallery_copy_shortcode');
 					shortcodeInput.addEventListener('click', function () {
@@ -353,6 +382,27 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 					}, false);
 				});
 			</script>
+			<p class="foogallery-shortcode">
+				<input type="text" id="foogallery_copy_shortcode" size="<?php echo absint( strlen( $shortcode ) ) + 2; ?>" value="<?php echo esc_attr( $shortcode ); ?>" readonly="readonly" />
+			</p>
+			<p>
+				<?php esc_html_e( 'Paste the above shortcode into a post or page to show the gallery.', 'foogallery' ); ?>
+			</p>
+			<p class="foogallery-shortcode-helper-action">
+				<button
+					type="button"
+					class="button button-secondary"
+					id="foogallery_toggle_shortcode_helpers"
+					data-show-label="<?php echo esc_attr( $show_helpers_label ); ?>"
+					data-hide-label="<?php echo esc_attr( $hide_helpers_label ); ?>"
+					aria-expanded="false"
+				>
+					<?php echo esc_html( $show_helpers_label ); ?>
+				</button>
+			</p>
+			<p class="foogallery-help">
+				<?php esc_html_e( 'Shortcode helpers show the argument names and option values next to each setting so they can be copied for use in your shortcodes.', 'foogallery' ); ?>
+			</p>
 			<?php
 		}
 
@@ -598,18 +648,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 				);
 			}
 
-			$engine = foogallery_thumb_active_engine();
-
-			if ( $engine->has_local_cache() ) {
-				ob_start();
-
-				//loop through all images, get the full sized file
-				foreach ( $foogallery->attachments() as $attachment ) {
-					$engine->clear_local_cache_for_file( $attachment->url );
-				}
-
-				ob_end_clean();
-
+			if ( self::clear_gallery_thumbnail_cache( $foogallery ) ) {
 				wp_send_json_success(
 					array( 'message' => __( 'The thumbnail cache has been cleared!', 'foogallery' ) )
 				);

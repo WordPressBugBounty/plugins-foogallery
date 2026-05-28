@@ -23,6 +23,8 @@ class FooGallery_Template_Loader {
 		global $current_foogallery_arguments;
 		global $current_foogallery_template;
 
+		$args = foogallery_strip_custom_attribute_render_args( $args );
+
 		//set the arguments
 		$current_foogallery_arguments = $args;
 
@@ -283,7 +285,7 @@ class FooGallery_Template_Loader {
 		$attachment_ids = $this->get_arg( $args, 'attachment_ids', false );
 
 		if ( $attachment_ids ) {
-			$template = $this->get_arg( $args, 'template', foogallery_get_default( 'gallery_template' ) );
+			$template = $this->get_arg( $args, 'template', foogallery_default_gallery_template() );
 
 			if ( !is_array( $attachment_ids ) ) {
                 $attachment_ids = explode( ',', $attachment_ids);

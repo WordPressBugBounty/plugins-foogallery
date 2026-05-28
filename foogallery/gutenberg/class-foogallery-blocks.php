@@ -82,7 +82,8 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 			}
 
 			$block_js_data = apply_filters('foogallery_gutenberg_block_js_data', array(
-				"editGalleryUrl" => $this->get_edit_gallery_url()
+				"editGalleryUrl" => $this->get_edit_gallery_url(),
+				"dynamicOptions" => $this->get_dynamic_gallery_options()
 			));
 
 			$inline_script = 'if ( typeof window.lodash === "undefined" && typeof window._ !== "undefined" ) { window.lodash = window._; }';
@@ -93,6 +94,48 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 				'foogallery-block-js',
 				$inline_script,
 				'before'
+			);
+		}
+
+
+		/**
+		 * Get options used by the dynamic block inspector controls.
+		 *
+		 * @return array
+		 */
+		function get_dynamic_gallery_options() {
+			$templates = array();
+			$gallery_templates = foogallery_gallery_templates();
+
+			if ( is_array( $gallery_templates ) ) {
+				foreach ( $gallery_templates as $gallery_template ) {
+					if ( ! is_array( $gallery_template ) || ! isset( $gallery_template['slug'] ) ) {
+						continue;
+					}
+
+					$slug = sanitize_key( $gallery_template['slug'] );
+					if ( empty( $slug ) ) {
+						continue;
+					}
+
+					$templates[ $slug ] = isset( $gallery_template['name'] ) ? sanitize_text_field( $gallery_template['name'] ) : $slug;
+				}
+			}
+
+			$default_template = foogallery_default_gallery_template();
+			if ( empty( $default_template ) || ! isset( $templates[ $default_template ] ) ) {
+				$default_template = 'default';
+			}
+
+			$lightboxes = foogallery_gallery_template_field_lightbox_choices();
+			if ( ! is_array( $lightboxes ) ) {
+				$lightboxes = array();
+			}
+
+			return array(
+				'templates' => $templates,
+				'lightboxes' => $lightboxes,
+				'defaultTemplate' => $default_template,
 			);
 		}
 
@@ -135,15 +178,35 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 				register_block_type(
 					'fooplugins/foogallery', array(
 					'attributes' => array(
-						'id' => array(
-							'type' => 'number',
-							'default' => 0
+							'id' => array(
+								'type' => 'number',
+								'default' => 0
+							),
+							'attachment_ids' => array(
+								'type' => 'array',
+								'default' => array()
+							),
+							'template' => array(
+								'type' => 'string',
+								'default' => ''
+							),
+							'lightbox' => array(
+								'type' => 'string',
+								'default' => ''
+							),
+							'paging_type' => array(
+								'type' => 'string',
+								'default' => ''
+							),
+							'filtering_type' => array(
+								'type' => 'string',
+								'default' => ''
+							),
+							'className' => array(
+								'type' => 'string'
+							),
 						),
-						'className' => array(
-							'type' => 'string'
-						),
-					),
-					'render_callback' => array( $this, 'render_block' ),
+						'render_callback' => array( $this, 'render_block' ),
 				));
 			}
 		}
@@ -156,6 +219,32 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 		 * @return false|string|null
 		 */
 		function render_block( $attributes ) {
+			$attributes = is_array( $attributes ) ? $attributes : array();
+			$attributes['id'] = isset( $attributes['id'] ) ? absint( $attributes['id'] ) : 0;
+			$attachment_ids = array();
+			if ( isset( $attributes['attachment_ids'] ) && is_array( $attributes['attachment_ids'] ) ) {
+				$attachment_ids = array_values( array_filter( array_map( 'absint', $attributes['attachment_ids'] ) ) );
+			}
+
+			$is_dynamic_gallery = ! empty( $attachment_ids );
+
+			if ( $is_dynamic_gallery ) {
+				$attributes['attachment_ids'] = $attachment_ids;
+
+				foreach ( array( 'template', 'lightbox', 'paging_type', 'filtering_type' ) as $key ) {
+					if ( ! array_key_exists( $key, $attributes ) ) {
+						continue;
+					}
+
+					$attributes[ $key ] = sanitize_key( $attributes[ $key ] );
+					if ( '' === $attributes[ $key ] ) {
+						unset( $attributes[ $key ] );
+					}
+				}
+			} else {
+				unset( $attributes['attachment_ids'], $attributes['template'], $attributes['lightbox'], $attributes['paging_type'], $attributes['filtering_type'] );
+			}
+
 			//create new instance of template engine
 			$engine = new FooGallery_Template_Loader();
 

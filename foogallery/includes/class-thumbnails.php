@@ -207,10 +207,15 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			return $test_thumb_url;
 		}
 
-		static function find_first_image_in_media_library() {
-			static $cached = null;
-			if ( null !== $cached ) {
-				return $cached;
+		static function find_first_image_in_media_library( $min_width = 50, $min_height = 50 ) {
+			static $cached = array();
+
+			$min_width  = absint( $min_width );
+			$min_height = absint( $min_height );
+			$cache_key  = $min_width . 'x' . $min_height;
+
+			if ( array_key_exists( $cache_key, $cached ) ) {
+				return $cached[ $cache_key ];
 			}
 
 			// Try a small set of recent images with minimal query overhead.
@@ -218,7 +223,7 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 				'post_type'              => 'attachment',
 				'post_mime_type'         => 'image',
 				'post_status'            => 'inherit',
-				'posts_per_page'         => 5,
+				'posts_per_page'         => 25,
 				'orderby'                => 'date',
 				'order'                  => 'DESC',
 				'fields'                 => 'ids',
@@ -229,27 +234,63 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 
 			$query_images = new WP_Query( $args );
 			if ( empty( $query_images->posts ) ) {
-				$cached = false;
-				return $cached;
+				$cached[ $cache_key ] = false;
+				return $cached[ $cache_key ];
 			}
 			foreach ( $query_images->posts as $image_id ) {
 				$local_path = get_attached_file( $image_id );
-				if ( $local_path && file_exists( $local_path ) ) {
-					$cached = wp_get_attachment_url( $image_id );
-					return $cached;
+				$image_url  = wp_get_attachment_url( $image_id );
+
+				if ( empty( $image_url ) || ! self::image_meets_minimum_test_dimensions( $image_id, $local_path, $min_width, $min_height ) ) {
+					continue;
 				}
 
-				$image_url = wp_get_attachment_url( $image_id );
+				if ( $local_path && file_exists( $local_path ) ) {
+					$cached[ $cache_key ] = $image_url;
+					return $cached[ $cache_key ];
+				}
+
 				if ( ! empty( $image_url ) ) {
 					if ( self::image_file_exists( $image_url ) || self::image_file_exists( $image_url, true ) ) {
-						$cached = $image_url;
-						return $cached;
+						$cached[ $cache_key ] = $image_url;
+						return $cached[ $cache_key ];
 					}
 				}
 			}
 
-			$cached = false;
-			return $cached;
+			$cached[ $cache_key ] = false;
+			return $cached[ $cache_key ];
+		}
+
+		/**
+		 * Checks whether an attachment is large enough to be useful for test pages.
+		 *
+		 * @param int         $image_id   Attachment ID.
+		 * @param string|bool $local_path Local file path.
+		 * @param int         $min_width  Minimum width.
+		 * @param int         $min_height Minimum height.
+		 *
+		 * @return bool
+		 */
+		static function image_meets_minimum_test_dimensions( $image_id, $local_path, $min_width, $min_height ) {
+			if ( $min_width <= 0 && $min_height <= 0 ) {
+				return true;
+			}
+
+			$metadata = wp_get_attachment_metadata( $image_id );
+			if ( isset( $metadata['width'], $metadata['height'] ) ) {
+				return intval( $metadata['width'] ) >= $min_width && intval( $metadata['height'] ) >= $min_height;
+			}
+
+			if ( $local_path && file_exists( $local_path ) ) {
+				$size = function_exists( 'wp_getimagesize' ) ? wp_getimagesize( $local_path ) : @getimagesize( $local_path );
+
+				if ( isset( $size[0], $size[1] ) ) {
+					return intval( $size[0] ) >= $min_width && intval( $size[1] ) >= $min_height;
+				}
+			}
+
+			return true;
 		}
 
 		/**

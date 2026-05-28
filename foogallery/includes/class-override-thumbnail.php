@@ -81,12 +81,6 @@ if ( ! class_exists( 'FooGallery_Override_Thumbnail' ) ) {
                 );
             }
 
-			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array(
-					'message' => __( 'You do not have permission!', 'foogallery' ),
-				), 403 );
-			}
-
             $img_id = isset( $_POST['img_id'] ) ? absint( wp_unslash( $_POST['img_id'] ) ) : 0;
 
             if ( ! $img_id ) {

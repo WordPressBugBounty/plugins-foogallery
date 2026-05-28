@@ -96,9 +96,10 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                     array(
                         'id'      => 'thumbnail_dimensions',
                         'title'   => __( 'Thumbnail Size', 'foogallery' ),
-                        'desc'    => __( 'Choose the size of your thumbnails.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
-                        'type'    => 'thumb_size_no_crop',
+	                        'desc'    => __( 'Choose the size of your thumbnails.', 'foogallery' ),
+	                        'section' => __( 'General', 'foogallery' ),
+	                        'alias'   => 'thumbnail_size',
+	                        'type'    => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
                         'default' => array(
                             'width' => 250,

@@ -16,6 +16,26 @@
       "type": "number",
       "default": 0
     },
+    "attachment_ids": {
+      "type": "array",
+      "default": []
+    },
+    "template": {
+      "type": "string",
+      "default": ""
+    },
+    "lightbox": {
+      "type": "string",
+      "default": ""
+    },
+    "paging_type": {
+      "type": "string",
+      "default": ""
+    },
+    "filtering_type": {
+      "type": "string",
+      "default": ""
+    },
     "className": {
       "type": "string"
     }

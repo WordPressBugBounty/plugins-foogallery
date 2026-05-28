@@ -15,20 +15,18 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 
 			add_action( 'wp_ajax_foogallery_attachment_modal_open', array( $this, 'ajax_open_modal' ) );
 			add_action( 'wp_ajax_foogallery_attachment_modal_save', array( $this, 'ajax_save_modal' ) );
-
-            add_action( 'wp_ajax_foogallery_attachment_modal_taxonomy_add', array( $this, 'ajax_add_taxonomy' ) );
-
+			add_action( 'wp_ajax_foogallery_attachment_modal_taxonomy_add', array( $this, 'ajax_add_taxonomy' ) );
 			add_action( 'foogallery_attachment_modal_tabs_view', array( $this, 'display_tab_main' ), 10 );
 			add_action( 'foogallery_attachment_modal_tabs_view', array( $this, 'display_tab_taxonomies' ), 20 );
 			add_action( 'foogallery_attachment_modal_tabs_view', array( $this, 'display_tab_thumbnails' ), 30 );
-            add_action( 'foogallery_attachment_modal_tabs_view', array( $this, 'display_tab_advanced' ), 200 );
+			add_action( 'foogallery_attachment_modal_tabs_view', array( $this, 'display_tab_advanced' ), 200 );
 
-            add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_main' ), 10, 1 );
-            add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_taxonomies' ), 20, 1 );
-            add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_thumbnails' ), 30, 1 );
-            add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_advanced' ), 60, 1 );
+			add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_main' ), 10, 1 );
+			add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_taxonomies' ), 20, 1 );
+			add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_thumbnails' ), 30, 1 );
+			add_action( 'foogallery_attachment_modal_tab_content', array( $this, 'display_tab_content_advanced' ), 60, 1 );
 
-            add_action( 'foogallery_attachment_modal_before_thumbnail', array( $this, 'display_attachment_info' ), 10, 1 );
+			add_action( 'foogallery_attachment_modal_before_thumbnail', array( $this, 'display_attachment_info' ), 10, 1 );
 
 			add_filter( 'foogallery_attachment_modal_data', array( $this, 'foogallery_attachment_modal_data_main' ), 10, 4 );
 			add_filter( 'foogallery_attachment_modal_data', array( $this, 'foogallery_attachment_modal_data_taxonomies' ), 20, 4 );
@@ -1090,5 +1088,6 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
             </div>
             <?php
 		}
+
 	}
 }

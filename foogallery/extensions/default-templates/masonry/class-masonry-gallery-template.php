@@ -41,9 +41,48 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
 			// Adjust the default settings for this layout
 			add_filter( 'foogallery_override_gallery_template_fields_defaults-masonry', array( $this, 'field_defaults' ), 10, 1 );
 
+			// handle aliases for masonry template settings
+			add_filter( 'foogallery_gallery_template_argument_alias', array( $this, 'handle_alias' ), 10, 2 );
+			add_filter( 'foogallery_gallery_template_setting-thumbnail_width', array( $this, 'handle_thumbnail_width_alias_value' ) );
+
 			// add a style block for the gallery based on the field settings.
 			add_action( 'foogallery_template_style_block-masonry', array( $this, 'add_css' ), 10, 2 );
         }
+
+		/**
+		 * Handle aliases for masonry template settings.
+		 *
+		 * @param string $key The key of the setting.
+		 * @param string $template The template slug.
+		 *
+		 * @return string
+		 */
+		function handle_alias( $key, $template ) {
+			global $current_foogallery_arguments;
+
+			if ( 'thumbnail_width' === $key && self::template_id === $template && is_array( $current_foogallery_arguments ) && ! array_key_exists( 'thumbnail_width', $current_foogallery_arguments ) ) {
+				return 'thumbnail_size';
+			}
+
+			return $key;
+		}
+
+		/**
+		 * Convert an aliased thumbnail_size array to masonry's thumbnail_width value.
+		 *
+		 * @param mixed $value The setting value.
+		 *
+		 * @return mixed
+		 */
+		function handle_thumbnail_width_alias_value( $value ) {
+			global $current_foogallery_template;
+
+			if ( self::template_id === $current_foogallery_template && is_array( $value ) && array_key_exists( 'width', $value ) ) {
+				return $value['width'];
+			}
+
+			return $value;
+		}
 
 		/**
 		 * Override the classes for the layout
@@ -102,6 +141,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         'title'   => __( 'Thumbnail Width', 'foogallery' ),
                         'desc'    => __( 'Choose the width of your thumbnails. Thumbnails will be generated on the fly and cached once generated', 'foogallery' ),
                         'section' => __( 'General', 'foogallery' ),
+                        'alias'   => 'thumbnail_size',
                         'type'    => 'number',
                         'class'   => 'small-text',
                         'default' => 250,

@@ -33,7 +33,10 @@ if ( ! class_exists( 'FooGallery_PostTypes' ) ) {
             add_filter( 'bulk_post_updated_messages', array( $this, 'update_bulk_messages' ), 10, 2 );
 
             //clear capabilities after option update.
-            add_action( 'update_option_foogallery', array( $this, 'clear_capabilities' ), 10, 3 );      
+            add_action( 'update_option_foogallery', array( $this, 'clear_capabilities' ), 10, 3 );
+
+            // Keep galleries in the classic editor when editor support is enabled for descriptions.
+            add_filter( 'use_block_editor_for_post_type', array( $this, 'force_classic_editor' ), 10, 2 );
         }
 
         /**
@@ -68,11 +71,28 @@ if ( ! class_exists( 'FooGallery_PostTypes' ) ) {
                 'rest_base'     => 'foogallery',
                 'menu_icon'     => 'dashicons-format-gallery',
                 'supports'      => array( 'title', 'thumbnail' ),
+                'map_meta_cap'  => true,
                 'capabilities'  => FooGallery_PostTypes::GALLERY_CAPABILITIES
             );
 
             $args = apply_filters( 'foogallery_gallery_posttype_register_args', $args );
             register_post_type( FOOGALLERY_CPT_GALLERY, $args );
+        }
+
+        /**
+         * Force galleries to use the classic editor.
+         *
+         * @param bool   $use_block_editor Whether the post type should use the block editor.
+         * @param string $post_type        The post type being checked.
+         *
+         * @return bool
+         */
+        public function force_classic_editor( $use_block_editor, $post_type ) {
+            if ( FOOGALLERY_CPT_GALLERY === $post_type ) {
+                return false;
+            }
+
+            return $use_block_editor;
         }
 
         /**

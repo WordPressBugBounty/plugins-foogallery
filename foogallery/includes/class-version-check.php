@@ -21,15 +21,48 @@ if ( ! class_exists( 'FooGallery_Version_Check' ) ) {
 		 * Perform a check to see if the plugin has been updated
 		 */
 		public function perform_check() {
-			if ( get_site_option( FOOGALLERY_OPTION_VERSION ) != FOOGALLERY_VERSION ) {
+			if ( self::get_stored_version() != FOOGALLERY_VERSION ) {
 				//This code will run every time the plugin is updated
 
 				//perform all our housekeeping
 				$this->perform_housekeeping();
 
 				//set the current version, so that this does not run again until the next update!
-				update_site_option( FOOGALLERY_OPTION_VERSION, FOOGALLERY_VERSION );
+				update_site_option( FOOGALLERY_OPTION_VERSION, array(
+					'version'    => FOOGALLERY_VERSION,
+					'updated_at' => time(),
+				) );
 			}
+		}
+
+		/**
+		 * Get the stored FooGallery version.
+		 *
+		 * @return string
+		 */
+		public static function get_stored_version() {
+			$version_data = get_site_option( FOOGALLERY_OPTION_VERSION );
+
+			if ( is_array( $version_data ) && isset( $version_data['version'] ) ) {
+				return $version_data['version'];
+			}
+
+			return $version_data;
+		}
+
+		/**
+		 * Get the last FooGallery update timestamp.
+		 *
+		 * @return int
+		 */
+		public static function get_last_update_time() {
+			$version_data = get_site_option( FOOGALLERY_OPTION_VERSION );
+
+			if ( is_array( $version_data ) && isset( $version_data['updated_at'] ) ) {
+				return absint( $version_data['updated_at'] );
+			}
+
+			return 0;
 		}
 
 		/**

@@ -16,6 +16,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			// Ajax calls.
 			add_action( 'wp_ajax_foogallery_clear_css_optimizations', array( $this, 'ajax_clear_css_optimizations' ) );
+			add_action( 'wp_ajax_foogallery_clear_thumbnail_cache', array( $this, 'ajax_clear_thumbnail_cache' ) );
 			add_action( 'wp_ajax_foogallery_thumb_generation_test', array( $this, 'ajax_thumb_generation_test' ) );
 			add_action( 'wp_ajax_foogallery_apply_retina_defaults', array( $this, 'ajax_apply_retina_defaults' ) );
 			add_action( 'wp_ajax_foogallery_uninstall', array( $this, 'ajax_uninstall' ) );
@@ -283,6 +284,14 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 					'desc'    => __( 'The image quality to be used when resizing JPEG images.', 'foogallery' ),
 					'type'    => 'text',
 					'default' => '90',
+					'tab'     => 'thumb'
+				);
+
+				$settings[] = array(
+					'id'      => 'clear_thumbnail_cache',
+					'title'   => __( 'Clear Thumbnail Cache', 'foogallery' ),
+					'desc'    => __( 'Clear all the previously cached thumbnails that have been generated across every gallery on your site.', 'foogallery' ),
+					'type'    => 'clear_thumbnail_cache_button',
 					'tab'     => 'thumb'
 				);
 			}
@@ -659,6 +668,11 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_clear_css_optimizations' ) ); ?>" class="button-primary foogallery_clear_css_optimizations" value="<?php esc_attr_e( 'Clear CSS Optimization Cache', 'foogallery' ); ?>">
 					<span id="foogallery_clear_css_cache_spinner" style="position: absolute" class="spinner"></span>
 				</div>
+			<?php } else if ( 'clear_thumbnail_cache_button' === $args['type'] ) { ?>
+				<div id="foogallery_clear_thumbnail_cache_container">
+					<input type="button" data-nonce="<?php echo esc_attr( wp_create_nonce( 'foogallery_clear_thumbnail_cache' ) ); ?>" class="button-primary foogallery_clear_thumbnail_cache" value="<?php esc_attr_e( 'Clear Thumbnail Cache', 'foogallery' ); ?>">
+					<span id="foogallery_clear_thumbnail_cache_spinner" style="position: absolute" class="spinner"></span>
+				</div>
 			<?php } else if ( 'uninstall' === $args['type'] ) { ?>
 				<div id="foogallery_uninstall_container">
 					<?php
@@ -760,6 +774,66 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			wp_send_json_success(
 				array( 'html' => esc_html__( 'The CSS optimization cache was successfully cleared!', 'foogallery' ) )
+			);
+		}
+
+		/**
+		 * AJAX endpoint for clearing thumbnail cache across all galleries.
+		 */
+		function ajax_clear_thumbnail_cache() {
+			if ( ! check_ajax_referer( 'foogallery_clear_thumbnail_cache', '_wpnonce', false ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Invalid security token.', 'foogallery' ) ),
+					403
+				);
+			}
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Insufficient permissions.', 'foogallery' ) ),
+					403
+				);
+			}
+
+			$engine = foogallery_thumb_active_engine();
+			if ( ! $engine->has_local_cache() ) {
+				wp_send_json_success(
+					array( 'html' => esc_html__( 'There was no thumbnail cache to clear.', 'foogallery' ) )
+				);
+			}
+
+			$galleries = foogallery_get_all_galleries(
+				false,
+				array(
+					'post_status' => 'any',
+				)
+			);
+
+			$gallery_clear_count = 0;
+			foreach ( $galleries as $gallery ) {
+				FooGallery_Admin_Gallery_MetaBoxes::clear_gallery_thumbnail_cache( $gallery );
+				$gallery_clear_count++;
+			}
+
+			if ( 0 === $gallery_clear_count ) {
+				wp_send_json_success(
+					array( 'html' => esc_html__( 'There were no galleries found to clear.', 'foogallery' ) )
+				);
+			}
+
+			/* translators: %s: number of galleries cleared. */
+			$message = sprintf(
+				_n(
+					'1 gallery successfully cleared of cached thumbnails.',
+					'%s galleries successfully cleared of cached thumbnails.',
+					$gallery_clear_count,
+					'foogallery'
+				),
+				absint( $gallery_clear_count )
+			);
+
+			wp_send_json_success(
+				array( 'html' => esc_html( $message ) )
 			);
 		}
 

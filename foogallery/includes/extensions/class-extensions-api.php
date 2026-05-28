@@ -108,6 +108,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 				foreach ( $extra_extensions as $extension ) {
 					if ( ! in_array( $extension['slug'], $this->extension_slugs ) ) {
 						$this->extensions[] = $extension;
+						$this->extension_slugs[] = $extension['slug'];
 					}
 				}
 			}
@@ -539,6 +540,47 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 */
 		public function get_active_extensions() {
 			return get_option( FOOGALLERY_EXTENSIONS_ACTIVATED_OPTIONS_KEY, array() );
+		}
+
+		/**
+		 * Return extensions that should be loaded on startup.
+		 *
+		 * This mirrors is_active() so explicit active/deactivated overrides and
+		 * default/plugin-backed extensions cannot drift from the runtime loader.
+		 *
+		 * @return array<string,string>
+		 */
+		public function get_loadable_extensions() {
+			$loadable_extensions = $this->get_active_extensions();
+			if ( ! is_array( $loadable_extensions ) ) {
+				$loadable_extensions = array();
+			}
+
+			$overrides = $this->get_overrides();
+			if ( ! is_array( $overrides ) ) {
+				$overrides = array();
+			}
+
+			foreach ( $overrides as $slug => $status ) {
+				if ( 'deactivated' === $status ) {
+					unset( $loadable_extensions[ $slug ] );
+				}
+			}
+
+			foreach ( $this->get_all() as $extension ) {
+				$slug  = foo_safe_get( $extension, 'slug' );
+				$class = foo_safe_get( $extension, 'class' );
+
+				if ( empty( $slug ) || empty( $class ) ) {
+					continue;
+				}
+
+				if ( $this->is_active( $slug ) && $this->is_downloaded( $extension ) ) {
+					$loadable_extensions[ $slug ] = $class;
+				}
+			}
+
+			return $loadable_extensions;
 		}
 
         /**

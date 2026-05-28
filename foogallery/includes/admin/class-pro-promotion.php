@@ -13,6 +13,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			'foogallery-captions'          => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/custom-captions/',
 			'foogallery-lightbox'          => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/pro-lightbox/',
 			'foogallery-thumbnail-filters' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/filter-effects/',
+			'foogallery-colors'            => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/color-sorting-gallery/',
 			'foogallery-loaded-effects'    => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/animated-loaded-effects/',
 			'foogallery-polaroid'          => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/polaroid-gallery/',
 			'foogallery-grid'              => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/grid-gallery/',
@@ -98,6 +99,10 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 
 					//Instagram filters
 					add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_appearance_promo_fields' ), 20, 2 );
+
+					//Colors
+					add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_colors_promo_fields' ), 20, 2 );
+					add_filter( 'foogallery_gallery_settings_metabox_section_icon', array( $this, 'add_starter_section_icons' ) );
 				}
 
 				if ( $show_expert_promos ) {
@@ -751,6 +756,58 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 		}
 
 		/**
+		 * Add Colors fields to the gallery templates.
+		 *
+		 * @uses "foogallery_override_gallery_template_fields"
+		 *
+		 * @param array $fields Gallery template fields.
+		 * @param array $template Current gallery template.
+		 *
+		 * @return array
+		 */
+		function add_colors_promo_fields( $fields, $template ) {
+			unset( $template );
+
+			$fields[] = array(
+				'id'            => 'promo_colors',
+				'title'         => __( 'PRO Starter Feature : Colors', 'foogallery' ),
+				'section'       => __( 'Colors', 'foogallery' ),
+				'section_order' => 5,
+				'desc'          => __( 'Extract dominant colors and palettes from your gallery images, then use those colors to create more art-directed galleries:', 'foogallery' ) .
+				                   '<ul class="ul-disc"><li><strong>' . __( 'Color Extraction', 'foogallery' ) . '</strong> - ' . __( 'extract dominant color metadata and palettes for each gallery image.', 'foogallery' ) .
+				                   '</li><li><strong>' . __( 'Color Sorting', 'foogallery' ) . '</strong> - ' . __( 'sort galleries by hue, saturation, lightness, or an overall color index.', 'foogallery' ) .
+				                   '</li><li><strong>' . __( 'Item Backgrounds', 'foogallery' ) . '</strong> - ' . __( 'apply each item\'s dominant color as an opaque or theme-aware tinted background.', 'foogallery' ) .
+				                   '</li><li><strong>' . __( 'Attachment Color Editing', 'foogallery' ) . '</strong> - ' . __( 'review extracted color values and fine-tune attachment colors from the gallery editor.', 'foogallery' ) .
+				                   '</li></ul>' . $this->build_promo_trial_html( 'colors', __( 'PRO Starter', 'foogallery' ) ) . '<br /><br />',
+				'class'         => 'foogallery_promo_prostarter',
+				'cta'           => $this->build_cta_buttons( 'foogallery-colors' ),
+				'type'          => 'promo',
+				'row_data'      => array(
+					'data-foogallery-change-selector' => 'input',
+					'data-foogallery-preview'         => 'shortcode',
+					'data-foogallery-value-selector'  => 'input:checked',
+				)
+			);
+
+			return $fields;
+		}
+
+		/**
+		 * Returns the Dashicon that can be used in starter settings tabs.
+		 *
+		 * @param string $section_slug Section slug.
+		 *
+		 * @return string
+		 */
+		function add_starter_section_icons( $section_slug ) {
+			if ( 'colors' === $section_slug ) {
+				return 'dashicons-art';
+			}
+
+			return $section_slug;
+		}
+
+		/**
 		 * Returns the Dashicon that can be used in the settings tabs
 		 *
 		 * @param $section_slug
@@ -787,9 +844,9 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 
 			$fields[] = array(
 				'id'       => 'filter_promo',
-				'title'    => __( 'PRO Starter Feature : Thumbnail Filters (Like Instagram!)', 'foogallery' ),
+				'title'    => __( 'PRO Starter Feature : Thumbnail Effects (Like Instagram!)', 'foogallery' ),
 				'section'  => __( 'Appearance', 'foogallery' ),
-				'desc'     => __( 'Apply a filter to your gallery thumbnails, just like you can in Instagram. Choose from 12 unique filters!', 'foogallery' )
+				'desc'     => __( 'Apply an effect to your gallery thumbnails, just like you can in Instagram. Choose from 12 unique effects!', 'foogallery' )
 	                . '<br /><br />' . $this->build_promo_trial_html( 'appearance', __( 'PRO Starter', 'foogallery' )  ) . '<br /><br />',
 				'type'     => 'promo',
 				'class'   => 'foogallery_promo_prostarter',

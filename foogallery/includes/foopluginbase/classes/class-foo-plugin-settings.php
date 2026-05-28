@@ -470,6 +470,14 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 		function validate_setting( $setting, &$input ) {
 			//validate a single setting
 
+			if ( $setting['type'] == 'checkbox' ) {
+				if ( ! empty( $input[ $setting['id'] ] ) ) {
+					$input[ $setting['id'] ] = 'on';
+				} else if ( isset( $setting['default'] ) && 'on' === $setting['default'] ) {
+					$input[ $setting['id'] ] = 'off';
+				}
+			}
+
 			if ( $setting['type'] == 'checkboxlist' ) {
 
 				unset( $checkboxarray);

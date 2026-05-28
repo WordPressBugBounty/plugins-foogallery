@@ -316,12 +316,16 @@ public function column_default( $item, $column_name ) {
     switch ( $column_name ) {
         case 'name':
 			$upgrade 	 = isset( $item['source'] ) && 'upgrade' === $item['source'];
+			$addon       = isset( $item['source'] ) && 'addon' === $item['source'];
             $downloaded  = isset( $item['downloaded'] ) && true === $item['downloaded'];
             $is_active   = isset( $item['is_active'] ) && true === $item['is_active'];
             $has_errors  = isset( $item['has_errors'] ) && true === $item['has_errors'];
             $actions     = '';
 			if ( array_key_exists( 'actions_disabled', $item ) && $item['actions_disabled'] === true ) {
 				//Do nothing - there should be no actions.
+			} elseif ( $addon ) {
+				$addon_url = isset( $item['addon_link_url'] ) ? $item['addon_link_url'] : foogallery_admin_addon_url();
+				$actions  .= '<a href="' . esc_url( $addon_url ) . '">' . esc_html__( 'View Addon', 'foogallery' ) . '</a>';
             } elseif ( $upgrade ) {
 				$actions     .= '<a href="' . esc_url( foogallery_fs()->checkout_url( WP_FS__PERIOD_ANNUALLY, true ) ) . '">' . __( 'Start FREE Trial', 'foogallery' ) . '</a>';
 			} elseif ( !$downloaded ) {

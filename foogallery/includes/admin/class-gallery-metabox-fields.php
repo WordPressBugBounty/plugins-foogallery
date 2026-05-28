@@ -30,6 +30,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 			$field['value'] = apply_filters( 'foogallery_render_gallery_template_field_value', $gallery->get_meta( $id, $default ), $field, $gallery, $template );
 
 			$field_class = empty($class) ? '' : ' class="' . $class . '"';
+			$field_disabled = ! empty( $field['disabled'] ) ? ' disabled="disabled"' : '';
 
 			$field['choices'] = apply_filters( 'foogallery_render_gallery_template_field_choices', $choices, $field, $gallery );
 
@@ -108,12 +109,12 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 					break;
 
 				case 'textarea':
-					echo '<textarea' . $field_class . ' id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" placeholder="' . $placeholder . '">' . esc_attr( $field['value'] ) . '</textarea>';
+					echo '<textarea' . $field_class . $field_disabled . ' id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" placeholder="' . $placeholder . '">' . esc_attr( $field['value'] ) . '</textarea>';
 
 					break;
 
 				case 'text':
-					echo '<input' . $field_class . ' type="text" id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" value="' . esc_attr( $field['value'] ) . '" />';
+					echo '<input' . $field_class . $field_disabled . ' type="text" id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" value="' . esc_attr( $field['value'] ) . '" />';
 
 					break;
 

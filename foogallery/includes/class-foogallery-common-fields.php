@@ -30,8 +30,36 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 
 			//override settings for older versions
 			add_filter( 'foogallery_settings_override', array( $this, 'override_settings_for_older_versions' ), 10, 3 );
+
+			// handle aliases for common fields
+			add_filter( 'foogallery_gallery_template_argument_alias', array( $this, 'handle_aliases' ), 10, 2 );
 		}
 
+		/**
+		 * Handle aliases for common fields.
+		 *
+		 * @param string $key The key of the field.
+		 * @param string $template The template slug.
+		 * @return string
+		 */
+		function handle_aliases( $key, $template ) {
+			if ( 'caption_invert_color' === $key ) {
+				return 'hover_effect_theme';
+			} else if ( 'hover_effect_caption_visibility' === $key ) {
+				return 'caption_visibility';
+			} else if ( 'thumbnail_dimensions' === $key ) {
+				return 'thumbnail_size';
+			}
+			return $key;
+		}
+
+		/**
+		 * Alter the gallery template field.
+		 *
+		 * @param array $field The field array.
+		 * @param object $gallery The gallery object.
+		 * @return array
+		 */
         function alter_gallery_template_field( $field, $gallery ) {
             if ( $field ) {
 
@@ -346,6 +374,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 					'title'    => __( 'Theme', 'foogallery' ),
 					'desc'     => __( 'Choose a color theme that will be used for the hover effect.', 'foogallery' ),
 					'section'  => __( 'Hover Effects', 'foogallery' ),
+					'alias'    => 'hover_effect_theme',
 					'type'     => 'radio',
 					'default'  => '',
 					'choices'  => apply_filters( 'foogallery_gallery_template_common_thumbnail_fields_caption_invert_color_choices', array(
@@ -508,6 +537,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 					'id'       => 'hover_effect_caption_visibility',
 					'title'    => __( 'Caption Visibility', 'foogallery' ),
 					'section'  => __( 'Captions', 'foogallery' ),
+					'alias'    => 'caption_visibility',
 					'default'  => 'fg-caption-hover',
 					'type'     => 'radio',
 					'choices'  => apply_filters(

@@ -20,7 +20,7 @@ if ( ! class_exists( 'FooGallery_Extensions_Loader' ) ) {
 			}
 
 			$api               = new FooGallery_Extensions_API();
-			$active_extensions = $api->get_active_extensions();
+			$active_extensions = $api->get_loadable_extensions();
 			foreach ( $active_extensions as $slug => $class ) {
 				try {
 					$this->load_extension( $slug, $class );
@@ -31,7 +31,55 @@ if ( ! class_exists( 'FooGallery_Extensions_Loader' ) ) {
 				}
 			}
 
+			$this->load_requested_album_extension( $api );
+
 			//What if no extensions were loaded?
+		}
+
+		/**
+		 * Load albums when the current admin request is already for an album.
+		 *
+		 * This keeps existing album edit/save requests from reaching WordPress core
+		 * with an unregistered post type when extension state options drift.
+		 *
+		 * @param FooGallery_Extensions_API $api The extensions API.
+		 */
+		private function load_requested_album_extension( $api ) {
+			if ( ! is_admin() || ! $this->is_album_admin_request() ) {
+				return;
+			}
+
+			$extension = $api->get_extension( 'albums' );
+			$class     = foo_safe_get( $extension, 'class' );
+
+			if ( ! empty( $class ) ) {
+				$this->load_extension( 'albums', $class );
+			}
+		}
+
+		/**
+		 * Determine whether the current admin request is for a FooGallery album.
+		 *
+		 * @return bool
+		 */
+		private function is_album_admin_request() {
+			$post_type = '';
+			if ( isset( $_REQUEST['post_type'] ) && ! is_array( $_REQUEST['post_type'] ) ) {
+				$post_type = sanitize_key( wp_unslash( $_REQUEST['post_type'] ) );
+			}
+
+			if ( FOOGALLERY_CPT_ALBUM === $post_type ) {
+				return true;
+			}
+
+			$post_id = 0;
+			if ( isset( $_REQUEST['post'] ) && ! is_array( $_REQUEST['post'] ) ) {
+				$post_id = absint( wp_unslash( $_REQUEST['post'] ) );
+			} elseif ( isset( $_REQUEST['post_ID'] ) && ! is_array( $_REQUEST['post_ID'] ) ) {
+				$post_id = absint( wp_unslash( $_REQUEST['post_ID'] ) );
+			}
+
+			return $post_id > 0 && FOOGALLERY_CPT_ALBUM === get_post_type( $post_id );
 		}
 
 		function load_extension( $slug, $class ) {

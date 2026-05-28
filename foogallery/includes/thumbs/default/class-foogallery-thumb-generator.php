@@ -88,6 +88,30 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator' ) ) {
 		}
 
 		/**
+		 * Returns the scheme that should be used for frontend image URLs.
+		 *
+		 * @return string|null
+		 */
+		private static function get_frontend_url_scheme() {
+			$scheme = wp_parse_url( get_option( 'home' ), PHP_URL_SCHEME );
+
+			if ( in_array( $scheme, array( 'http', 'https' ), true ) ) {
+				return $scheme;
+			}
+
+			return null;
+		}
+
+		/**
+		 * Returns the frontend home URL using the configured home URL scheme.
+		 *
+		 * @return string
+		 */
+		private static function get_frontend_home_url() {
+			return home_url( '', self::get_frontend_url_scheme() );
+		}
+
+		/**
 		 * Returns the path of an image URL
 		 *
 		 * @param $image_url
@@ -104,18 +128,22 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator' ) ) {
 
 				$upload_dir = wp_upload_dir();
 
-				$base_url = set_url_scheme( $upload_dir['baseurl'] );
+				$base_url = set_url_scheme( $upload_dir['baseurl'], self::get_frontend_url_scheme() );
 
 				if ( strpos( $image_url, $base_url ) !== false ) {
 					//it's in the uploads folder
 					$image_path = str_replace( $base_url, $upload_dir['basedir'], $image_url );
 				} else {
 
-					$image_path = str_replace( trailingslashit( home_url() ), self::get_home_path(), $image_url );
+					$image_path = str_replace(
+						trailingslashit( self::get_frontend_home_url() ),
+						self::get_home_path(),
+						$image_url
+					);
 				}
 
 				//check if the file is local
-				if ( strpos( $image_url, trailingslashit( home_url() ) ) === 0 ) {
+				if ( strpos( $image_url, trailingslashit( self::get_frontend_home_url() ) ) === 0 ) {
 					//strip all querystring params
 					$image_path = strtok( $image_path, '?' );
 
@@ -376,9 +404,17 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator' ) ) {
 			$upload_dir = wp_upload_dir();
 
 			if ( strpos( $path, $upload_dir['basedir'] ) !== false ) {
-				return str_replace( $upload_dir['basedir'], set_url_scheme( $upload_dir['baseurl'] ), $path );
+				return str_replace(
+					$upload_dir['basedir'],
+					set_url_scheme( $upload_dir['baseurl'], self::get_frontend_url_scheme() ),
+					$path
+				);
 			} else {
-				return str_replace( self::get_home_path(), trailingslashit( home_url() ), $path );
+				return str_replace(
+					self::get_home_path(),
+					trailingslashit( self::get_frontend_home_url() ),
+					$path
+				);
 			}
 		}
 

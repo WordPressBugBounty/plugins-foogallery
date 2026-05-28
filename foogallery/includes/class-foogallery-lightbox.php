@@ -1108,7 +1108,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				$thumbnail_link = foogallery_gallery_template_setting( 'thumbnail_link', '' );
 
 				//check if lightbox set to foogallery
-				if ( 'foogallery' === foogallery_gallery_template_setting( 'lightbox', '' ) && 'none' !== $thumbnail_link ) {
+				if ( 'foogallery' === foogallery_gallery_template_setting_lightbox() && 'none' !== $thumbnail_link ) {
 
 					$encoded_options = foogallery_json_encode( $this->get_options_from_settings() );
 

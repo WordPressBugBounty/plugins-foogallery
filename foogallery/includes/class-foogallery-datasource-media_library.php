@@ -274,7 +274,7 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary_Query_Helper' ) ) {
 			$attachments = array();
 
 			global $foogallery_force_sort;
-			$foogallery_force_sort = $foogallery->sorting;
+			$foogallery_force_sort = foogallery_sorting_get_effective_sort( $foogallery );
 
 			$attachment_query_args = array(
 				'post_type'      => 'attachment',
@@ -288,7 +288,7 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary_Query_Helper' ) ) {
 			}
 
 			//allow for others to override the query args
-			$attachment_query_args = apply_filters( 'foogallery_attachment_get_posts_args', $attachment_query_args );
+			$attachment_query_args = apply_filters( 'foogallery_attachment_get_posts_args', $attachment_query_args, $foogallery );
 
 			global $current_foogallery_arguments;
 
@@ -296,8 +296,8 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary_Query_Helper' ) ) {
 
 				//check if a sorting override has been applied
 				if ( isset( $current_foogallery_arguments['sort'] ) ) {
-					$attachment_query_args['orderby'] = foogallery_sorting_get_posts_orderby_arg( $current_foogallery_arguments['sort'] );
-					$attachment_query_args['order']   = foogallery_sorting_get_posts_order_arg( $current_foogallery_arguments['sort'] );
+					$attachment_query_args['orderby'] = foogallery_sorting_get_posts_orderby_arg( $foogallery_force_sort );
+					$attachment_query_args['order']   = foogallery_sorting_get_posts_order_arg( $foogallery_force_sort );
 				}
 
 				//check if a limit has been applied
@@ -315,6 +315,9 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary_Query_Helper' ) ) {
                     }
 				}
 			}
+
+			$attachment_query_args = apply_filters( 'foogallery_attachment_get_posts_args_after_overrides', $attachment_query_args, $foogallery );
+			$attachment_query_args = foogallery_sorting_defer_query_args( $attachment_query_args, $foogallery_force_sort );
 
 			//setup intercepting actions
 			add_action( 'pre_get_posts', array( $this, 'force_suppress_filters' ), PHP_INT_MAX );

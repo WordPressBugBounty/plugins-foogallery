@@ -66,9 +66,20 @@ if ( !class_exists( 'FooGallery_Autoptimize_Compatibility' ) ) {
          * Dismiss the admin notice
          */
         function admin_notice_dismiss() {
-            if ( check_admin_referer( 'foogallery_autoptimize_dismiss' ) ) {
-                delete_transient( FooGallery_Autoptimize_Compatibility::transient_key );
+            if ( ! check_ajax_referer( 'foogallery_autoptimize_dismiss', false, false ) ) {
+                wp_send_json_error( array(
+                    'message' => __( 'Invalid security token.', 'foogallery' ),
+                ), 403 );
             }
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( array(
+                    'message' => __( 'Insufficient permissions.', 'foogallery' ),
+                ), 403 );
+            }
+
+            delete_transient( FooGallery_Autoptimize_Compatibility::transient_key );
+            wp_send_json_success();
         }
     }
 }

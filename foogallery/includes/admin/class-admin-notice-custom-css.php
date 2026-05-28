@@ -218,12 +218,26 @@ if ( ! class_exists( 'FooGallery_Admin_Notice_CustomCSS' ) ) {
          * Ajax handler to dismiss the notice.
          */
         function dismiss_notice() {
-            if ( check_admin_referer( 'foogallery_admin_notice_dismiss-' . $this->notice_id ) ) {
-                // Just update the hide flag.
-                $option = $this->get_option();
-                $option['hide'] = true;
-                update_option( $this->option_name, $option, false );
+            if ( ! check_ajax_referer( 'foogallery_admin_notice_dismiss-' . $this->notice_id, false, false ) ) {
+                wp_send_json_error(
+                    array( 'message' => __( 'Invalid security token.', 'foogallery' ) ),
+                    403
+                );
             }
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                wp_send_json_error(
+                    array( 'message' => __( 'Insufficient permissions.', 'foogallery' ) ),
+                    403
+                );
+            }
+
+            // Just update the hide flag.
+            $option = $this->get_option();
+            $option['hide'] = true;
+            update_option( $this->option_name, $option, false );
+
+            wp_send_json_success();
         }
 
         /**
