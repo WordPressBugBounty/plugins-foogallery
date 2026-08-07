@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * Foo Functions - Screen
  * A bunch of common and useful functions related to WP_screen object

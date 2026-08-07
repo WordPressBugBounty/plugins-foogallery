@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery Compatibility Class for including all 3rd party plugin compatibilities
  * Created by bradvin

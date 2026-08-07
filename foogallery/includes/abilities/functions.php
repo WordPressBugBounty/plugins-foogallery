@@ -274,19 +274,20 @@ function foogallery_abilities_search_media_attachments( $search, $search_by = ar
 		);
 	}
 
-	$count_sql = "SELECT COUNT( DISTINCT p.ID ) FROM {$posts_table} p WHERE p.post_type = %s AND p.post_status <> %s AND ( {$sql_where} )";
-	$ids_sql   = "SELECT DISTINCT p.ID FROM {$posts_table} p WHERE p.post_type = %s AND p.post_status <> %s AND ( {$sql_where} ) ORDER BY p.post_date DESC, p.ID DESC LIMIT %d OFFSET %d";
-
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- The dynamic WHERE clause contains only hardcoded fragments selected by the strict search-field allowlist above.
 	$total = (int) $wpdb->get_var(
 		$wpdb->prepare(
-			$count_sql,
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The table name comes from wpdb and the WHERE clause contains only allowlisted hardcoded fragments; all values use placeholders.
+			"SELECT COUNT( DISTINCT p.ID ) FROM {$posts_table} p WHERE p.post_type = %s AND p.post_status <> %s AND ( {$sql_where} )",
 			array_merge( $base_params, $where_params )
 		)
 	);
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- The dynamic WHERE clause contains only hardcoded fragments selected by the strict search-field allowlist above.
 	$attachment_ids = $wpdb->get_col(
 		$wpdb->prepare(
-			$ids_sql,
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The table name comes from wpdb and the WHERE clause contains only allowlisted hardcoded fragments; all values use placeholders.
+			"SELECT DISTINCT p.ID FROM {$posts_table} p WHERE p.post_type = %s AND p.post_status <> %s AND ( {$sql_where} ) ORDER BY p.post_date DESC, p.ID DESC LIMIT %d OFFSET %d",
 			array_merge( $base_params, $where_params, array( $limit, $offset ) )
 		)
 	);
@@ -360,23 +361,7 @@ function foogallery_abilities_get_template( $layout ) {
  * @return int[]
  */
 function foogallery_abilities_normalize_attachment_ids( $attachment_ids ) {
-	if ( is_string( $attachment_ids ) ) {
-		$attachment_ids = array_filter( array_map( 'trim', explode( ',', $attachment_ids ) ) );
-	} elseif ( ! is_array( $attachment_ids ) ) {
-		$attachment_ids = array( $attachment_ids );
-	}
-
-	$normalized = array();
-
-	foreach ( $attachment_ids as $attachment_id ) {
-		$attachment_id = absint( $attachment_id );
-
-		if ( $attachment_id > 0 && ! in_array( $attachment_id, $normalized, true ) ) {
-			$normalized[] = $attachment_id;
-		}
-	}
-
-	return $normalized;
+	return foogallery_normalize_attachment_ids( $attachment_ids );
 }
 
 /**
@@ -387,31 +372,48 @@ function foogallery_abilities_normalize_attachment_ids( $attachment_ids ) {
  * @return int[]|WP_Error
  */
 function foogallery_abilities_validate_attachment_ids( $attachment_ids ) {
-	$attachment_ids = foogallery_abilities_normalize_attachment_ids( $attachment_ids );
-	$invalid_ids    = array();
-	$valid_ids      = array();
+	return foogallery_validate_attachment_ids( $attachment_ids );
+}
 
-	foreach ( $attachment_ids as $attachment_id ) {
-		$post = get_post( $attachment_id );
+/**
+ * Map a core gallery-management error to the existing Ability error namespace.
+ *
+ * Authorization is the caller's responsibility.
+ *
+ * @param WP_Error $error Core gallery-management error.
+ *
+ * @return WP_Error
+ */
+function foogallery_abilities_map_gallery_management_error( $error ) {
+	$error_code  = $error->get_error_code();
+	$code_map    = array(
+		'foogallery_invalid_gallery'                => 'foogallery_ability_invalid_gallery',
+		'foogallery_gallery_not_found'              => 'foogallery_ability_gallery_not_found',
+		'foogallery_invalid_source_gallery'         => 'foogallery_ability_invalid_source_gallery',
+		'foogallery_invalid_template'               => 'foogallery_ability_invalid_layout',
+		'foogallery_invalid_status'                 => 'foogallery_ability_invalid_status',
+		'foogallery_invalid_attachments'            => 'foogallery_ability_invalid_attachments',
+		'foogallery_unsupported_datasource'         => 'foogallery_ability_unsupported_datasource',
+		'foogallery_no_attachment_changes'          => 'foogallery_ability_no_attachment_changes',
+		'foogallery_conflicting_attachment_changes' => 'foogallery_ability_conflicting_attachment_changes',
+		'foogallery_invalid_attachment_changes'     => 'foogallery_ability_invalid_attachment_changes',
+	);
+	$message_map = array(
+		'foogallery_invalid_template'               => __( 'The requested gallery layout is not registered.', 'foogallery' ),
+		'foogallery_unsupported_datasource'         => __( 'This ability currently supports media-library-backed galleries only.', 'foogallery' ),
+		'foogallery_no_attachment_changes'          => __( 'Provide replace_attachment_ids, append_attachment_ids, remove_attachment_ids, or a combination of append/remove.', 'foogallery' ),
+		'foogallery_conflicting_attachment_changes' => __( 'replace_attachment_ids cannot be combined with append_attachment_ids or remove_attachment_ids. Use replace on its own, or use append/remove together.', 'foogallery' ),
+	);
 
-		if ( $post && 'attachment' === $post->post_type ) {
-			$valid_ids[] = $attachment_id;
-		} else {
-			$invalid_ids[] = $attachment_id;
-		}
+	if ( ! isset( $code_map[ $error_code ] ) ) {
+		return $error;
 	}
 
-	if ( ! empty( $invalid_ids ) ) {
-		return new WP_Error(
-			'foogallery_ability_invalid_attachments',
-			__( 'One or more attachment IDs are invalid.', 'foogallery' ),
-			array(
-				'invalid_attachment_ids' => $invalid_ids,
-			)
-		);
-	}
-
-	return $valid_ids;
+	return new WP_Error(
+		$code_map[ $error_code ],
+		isset( $message_map[ $error_code ] ) ? $message_map[ $error_code ] : $error->get_error_message( $error_code ),
+		$error->get_error_data( $error_code )
+	);
 }
 
 /**
@@ -1342,6 +1344,5 @@ function foogallery_abilities_prepare_gallery_details( $gallery, $include_attach
  * @return void
  */
 function foogallery_abilities_clear_gallery_cache( $gallery_id ) {
-	delete_post_meta( $gallery_id, FOOGALLERY_META_CACHE );
-	clean_post_cache( $gallery_id );
+	foogallery_clear_gallery_cache( $gallery_id );
 }

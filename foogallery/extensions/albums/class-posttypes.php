@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery Album Custom Post Types
  *
@@ -252,10 +256,12 @@ if ( ! class_exists( 'FooGallery_Albums_PostTypes' ) ) {
 					2  => __( 'Album custom field updated.', 'foogallery' ),
 					3  => __( 'Album custom field deleted.', 'foogallery' ),
 					4  => __( 'Album updated.', 'foogallery' ),
+					/* translators: %s: Revision date. */
 					5  => isset( $_GET['revision'] ) ? sprintf( __( 'Album restored to revision from %s.', 'foogallery' ), wp_post_revision_title( (int) $_GET['revision'], false ) ) : false,
 					6  => __( 'Album published.', 'foogallery' ),
 					7  => __( 'Album saved.', 'foogallery' ),
 					8  => __( 'Album submitted.', 'foogallery' ),
+					/* translators: %1$s: Scheduled publication date. */
 					9  => sprintf( __( 'Album scheduled for: <strong>%1$s</strong>.', 'foogallery' ), date_i18n( __( 'M j, Y @ G:i' ), strtotime( $post->post_date ) ) ),
 					10 => __( 'Album draft updated.', 'foogallery' ),
 				)
@@ -278,10 +284,15 @@ if ( ! class_exists( 'FooGallery_Albums_PostTypes' ) ) {
 			$bulk_messages[ FOOGALLERY_CPT_ALBUM ] = apply_filters(
 				'foogallery_album_posttype_bulk_update_messages',
 				array(
+					/* translators: %s: Number of albums. */
 					'updated'   => _n( '%s Album updated.', '%s Albums updated.', $bulk_counts['updated'], 'foogallery' ),
+					/* translators: %s: Number of albums. */
 					'locked'    => _n( '%s Album not updated, somebody is editing it.', '%s Albums not updated, somebody is editing them.', $bulk_counts['locked'], 'foogallery' ),
+					/* translators: %s: Number of albums. */
 					'deleted'   => _n( '%s Album permanently deleted.', '%s Albums permanently deleted.', $bulk_counts['deleted'], 'foogallery' ),
+					/* translators: %s: Number of albums. */
 					'trashed'   => _n( '%s Album moved to the Trash.', '%s Albums moved to the Trash.', $bulk_counts['trashed'], 'foogallery' ),
+					/* translators: %s: Number of albums. */
 					'untrashed' => _n( '%s Album restored from the Trash.', '%s Albums restored from the Trash.', $bulk_counts['untrashed'], 'foogallery' ),
 				)
 			);

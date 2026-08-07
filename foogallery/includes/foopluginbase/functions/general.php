@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * Foo Functions - General
  * A bunch of common and useful functions that don't fall into any specific category
@@ -21,6 +26,7 @@ if ( !function_exists( 'foo_check_php_version' ) ) {
 	function foo_check_php_version($plugin_title, $ver) {
 		$php_version = phpversion();
 		if ( version_compare( $php_version, $ver ) < 0 ) {
+			/* translators: %s: Value inserted at runtime. */
 			throw new Exception( sprintf( esc_html__( "%s requires at least version %s of PHP. You are running an older version (%s). Please update!", "foogallery" ), esc_html( $plugin_title ), esc_html( $ver ), esc_html( $php_version ) ) );
 		}
 	}
@@ -39,6 +45,7 @@ if ( !function_exists( 'foo_check_wp_version' ) ) {
 	function foo_check_wp_version($plugin_title, $ver) {
 		global $wp_version;
 		if ( version_compare( $wp_version, $ver ) < 0 ) {
+			/* translators: %s: Value inserted at runtime. */
 			throw new Exception( sprintf( esc_html__( "%s requires at least version %s of WordPress. You are running an older version (%s). Please update!", "foogallery" ), esc_html( $plugin_title ), esc_html( $ver ), esc_html( $wp_version ) ) );
 		}
 	}

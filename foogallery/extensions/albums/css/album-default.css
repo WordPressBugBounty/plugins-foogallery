@@ -55,7 +55,7 @@
 	line-height: 0;
 }
 
-.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-inner a {
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-inner > a {
 	display: inline-block;
 }
 
@@ -78,6 +78,49 @@
 .foogallery-album-gallery-list .foogallery-pile h3 span {
 	display: block;
 	font-size: 0.6em;
+}
+
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-caption {
+	background: #FFF;
+	position: absolute;
+	display: block;
+	bottom: 0;
+	padding: 5px 5px 0 5px;
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+	opacity: 0.8;
+	line-height: 1em;
+}
+
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-caption h3 {
+	background: transparent;
+	position: static;
+	padding: 0;
+	width: auto;
+	opacity: 1;
+}
+
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-title-link {
+	color: inherit;
+	text-decoration: none;
+}
+
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-description {
+	display: block;
+	font-size: 0.75em;
+	line-height: 1.25;
+	margin-top: 0.4em;
+	max-height: 5em;
+	overflow: hidden;
+}
+
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-description p {
+	margin: 0 0 0.4em;
+}
+
+.foogallery-album-gallery-list .foogallery-pile .foogallery-pile-description p:last-child {
+	margin-bottom: 0.4em;
 }
 
 .foogallery-album-gallery-list .foogallery-pile a {

@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 	/**
@@ -53,6 +57,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			$settings[] = array(
 				'id'      => 'clear_css_optimizations',
 				'title'   => __( 'Clear CSS Cache', 'foogallery' ),
+				/* translators: %s: Value inserted at runtime. */
 				'desc'    => sprintf( __( '%s optimizes the way it loads gallery stylesheets to improve page performance. This can lead to the incorrect CSS being loaded in some cases. Use this button to clear all the CSS optimizations that have been cached across all galleries.', 'foogallery' ), foogallery_plugin_name() ),
 				'type'    => 'clear_optimization_button',
 				'tab'     => 'general',
@@ -181,6 +186,10 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				'section' => __( 'Admin', 'foogallery' )
 			);
 
+			if ( ! function_exists( 'get_editable_roles' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/user.php';
+			}
+
 			$roles        = get_editable_roles();
 			$role_choices = array(
 				'' => __( 'Default', 'foogallery' )
@@ -203,6 +212,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			$settings[] = array(
 				'id'      => 'hide_editor_button',
 				'title'   => __( 'Classic Editor Button', 'foogallery' ),
+				/* translators: %s: Value inserted at runtime. */
 				'desc'    => sprintf( __( 'Either show or hide the "Add %s" button in the Classic editor.', 'foogallery' ), foogallery_plugin_name() ),
 				'default' => foogallery_get_default( 'hide_editor_button', 'on' ),
 				'type'    => 'select',
@@ -271,6 +281,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				$settings[] = array(
 					'id'    => 'thumb_image_library',
 					'title' => __( 'Thumbnail Image Library', 'foogallery' ),
+					/* translators: %s: Value inserted at runtime. */
 					'desc'  => sprintf( __( 'Currently active : %s.<br />Imagick supported : %s.<br />GD supported : %s.', 'foogallery' ), '<strong>' . $image_editor . '</strong>', $imagick_supported, $gd_supported ),
 					'type'  => 'html',
 					'tab'   => 'thumb'
@@ -296,6 +307,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				);
 			}
 
+			/* translators: %s: Value inserted at runtime. */
 			$image_optimization_html = sprintf( __('We recommend %s! An easy-to-use, lightweight WordPress plugin that optimizes images & PDFs.', 'foogallery'),
 				'<a href="https://shortpixel.com/homepage/affiliate/foowww" target="_blank">' . __('ShortPixel Image Optimizer' , 'foogallery') . '</a>' );
 
@@ -358,6 +370,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				$settings[] = array(
 					'id'    => 'thumb_generation_test',
 					'title' => __( 'Thumbnail Generation Test', 'foogallery' ),
+					/* translators: %s: Value inserted at runtime. */
 					'desc'  => sprintf( __( 'Test to see if %s can generate the thumbnails it needs. %s', 'foogallery' ), foogallery_plugin_name(), $thumb_test_html ),
 					'type'  => 'thumb_generation_test',
 					'tab'   => 'thumb'
@@ -492,6 +505,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				'id'      => 'language_images_count_plural_text',
 				'title'   => __( 'Image Count Many Text', 'foogallery' ),
 				'type'    => 'text',
+				/* translators: %s: Value inserted at runtime. */
 				'default' => __( '%s images', 'foogallery' ),
 				'section' => __( 'Admin', 'foogallery' ),
 				'tab'     => 'language'
@@ -529,14 +543,24 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
             $settings[] = array(
                 'id'      => 'enqueue_polyfills',
                 'title'   => __( 'Enqueue Polyfills', 'foogallery' ),
+                /* translators: %s: Value inserted at runtime. */
                 'desc'    => sprintf( __( '%s uses modern JavaScript API\'s which may not be supported in older browsers. Enable the enqueueing of polyfills for better backwards compatibility.', 'foogallery' ), foogallery_plugin_name() ),
                 'type'    => 'checkbox',
                 'tab'     => 'advanced'
             );
 
 			$settings[] = array(
+				'id'      => 'force_legacy_runtime_scripts',
+				'title'   => __( 'Force Legacy Runtime Loading', 'foogallery' ),
+				'desc'    => __( 'Always enqueue the FooGallery runtime scripts through WordPress immediately instead of using delayed runtime loading. Existing sites upgraded from older FooGallery versions keep this enabled automatically. Disable it to opt in to delayed runtime loading.', 'foogallery' ),
+				'type'    => 'checkbox',
+				'tab'     => 'advanced'
+			);
+
+			$settings[] = array(
 				'id'      => 'uninstall',
 				'title'   => __( 'Full Uninstall', 'foogallery' ),
+				/* translators: %s: Value inserted at runtime. */
 				'desc'    => sprintf( __( 'Run a full uninstall of %s, which includes removing all galleries, settings and metadata. This basically removes all traces of the plugin from your system. Please be careful - there is no undo!', 'foogallery' ), foogallery_plugin_name() ),
 				'type'    => 'uninstall',
 				'tab'     => 'advanced'
@@ -823,6 +847,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			/* translators: %s: number of galleries cleared. */
 			$message = sprintf(
+				/* translators: %s: Value inserted at runtime. */
 				_n(
 					'1 gallery successfully cleared of cached thumbnails.',
 					'%s galleries successfully cleared of cached thumbnails.',
@@ -905,6 +930,7 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 
 			/* translators: %s: number of galleries updated. */
 			$message = sprintf(
+				/* translators: %s: Value inserted at runtime. */
 				_n(
 					'1 gallery successfully updated to use the default retina settings.',
 					'%s galleries successfully updated to use the default retina settings.',

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  *
  * FooGallery helper functions for rendering HTML
@@ -82,8 +87,11 @@ function foogallery_build_attachment_html_image_attributes( $foogallery_attachme
 		$attr['class'] = 'fg-image';
 	}
 
-	// Always output the loading attribute on the img tags.
-	$attr['loading'] = 'eager';
+	// Always output the loading attribute on the img tags unless filtered off.
+	$loading = apply_filters( 'foogallery_attachment_html_image_loading_attribute', 'eager', $attr, $args, $foogallery_attachment );
+	if ( false !== $loading && null !== $loading && '' !== $loading ) {
+		$attr['loading'] = $loading;
+	}
 
 	return $attr;
 }
@@ -176,8 +184,10 @@ function foogallery_build_attachment_html_anchor_attributes( $foogallery_attachm
 
 	// set the ID attribute for the attachment.
 	if ( $foogallery_attachment->ID > 0 ) {
-		$attribute_key          = foogallery_get_setting( 'attachment_id_attribute', 'data-attachment-id' );
-		$attr[ $attribute_key ] = $foogallery_attachment->ID;
+		$attribute_key = foogallery_get_setting( 'attachment_id_attribute', 'data-attachment-id' );
+		if ( foogallery_is_safe_html_attribute_key( $attribute_key ) ) {
+			$attr[ trim( $attribute_key ) ] = $foogallery_attachment->ID;
+		}
 	}
 
 	// pull any custom attributes out the args.
@@ -605,19 +615,106 @@ function foogallery_render_script_block_for_json_items( $gallery, $attachments )
 }
 
 /**
+ * Renders a noscript fallback for JSON-paginated attachments.
+ *
+ * @param FooGallery             $gallery The gallery being rendered.
+ * @param FooGalleryAttachment[] $attachments The attachments omitted from the initial HTML.
+ */
+function foogallery_render_noscript_block_for_json_items( $gallery, $attachments ) {
+	if ( count( $attachments ) <= 0 ) {
+		return;
+	}
+
+	$enabled = apply_filters( 'foogallery_paging_noscript_fallback_enabled', true, $gallery, $attachments );
+	if ( ! $enabled ) {
+		return;
+	}
+
+	echo '<noscript><div class="foogallery-noscript" data-gallery-id="' . esc_attr( $gallery->ID ) . '">';
+
+	foreach ( $attachments as $attachment ) {
+		$item = foogallery_build_json_object_from_attachment( $attachment );
+		if ( false === $item || empty( $item->src ) ) {
+			continue;
+		}
+
+		$href = ! empty( $item->href ) ? $item->href : $item->src;
+
+		$image_attributes = array(
+			'src'      => $item->src,
+			'alt'      => isset( $item->alt ) ? $item->alt : '',
+			'loading'  => 'lazy',
+			'decoding' => 'async',
+		);
+
+		if ( ! empty( $item->srcset ) ) {
+			$image_attributes['srcset'] = $item->srcset;
+		}
+
+		if ( ! empty( $item->width ) ) {
+			$image_attributes['width'] = absint( $item->width );
+		}
+
+		if ( ! empty( $item->height ) ) {
+			$image_attributes['height'] = absint( $item->height );
+		}
+
+		echo '<figure class="fg-noscript-item">';
+		echo '<a class="fg-noscript-link" href="' . esc_url( $href ) . '">';
+		echo foogallery_html_opening_tag( 'img', $image_attributes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attributes escaped by foogallery_html_opening_tag().
+		echo '</a>';
+
+		$caption     = isset( $item->caption ) ? $item->caption : ( isset( $item->title ) ? $item->title : '' );
+		$description = isset( $item->description ) ? $item->description : '';
+
+		if ( ! empty( $caption ) || ! empty( $description ) ) {
+			echo '<figcaption class="fg-noscript-caption">';
+			if ( ! empty( $caption ) ) {
+				echo '<div class="fg-noscript-title">' . wp_kses_post( $caption ) . '</div>';
+			}
+			if ( ! empty( $description ) ) {
+				echo '<div class="fg-noscript-description">' . wp_kses_post( $description ) . '</div>';
+			}
+			echo '</figcaption>';
+		}
+
+		echo '</figure>';
+	}
+
+	echo '</div></noscript>';
+}
+
+/**
  * Generates the HTML for a tag
  *
- * @param $tag
- * @param $attributes
+ * @param string $tag        Tag name.
+ * @param array  $attributes Tag attributes.
  *
  * @return string
  */
 function foogallery_html_opening_tag( $tag, $attributes ) {
+	if ( ! is_string( $tag ) || ! is_array( $attributes ) ) {
+		return '';
+	}
+
+	$tag = strtolower( trim( $tag ) );
+	$allowed_tags = array(
+		'a',
+		'div',
+		'img',
+	);
+	if ( ! in_array( $tag, $allowed_tags, true ) ) {
+		return '';
+	}
+
 	$html = '<' . $tag;
 	foreach ( $attributes as $name => $value ) {
-		if ( empty( $name ) || empty( $value ) ) continue;
-		$name = str_replace(' ', '', $name); //ensure we have no spaces!
-		$html .= " $name=" . '"' . foogallery_esc_attr($value) . '"';
+		$name = is_string( $name ) ? trim( $name ) : '';
+		if ( ! foogallery_is_safe_html_attribute_key( $name ) || ! is_scalar( $value ) || empty( $value ) ) {
+			continue;
+		}
+
+		$html .= ' ' . $name . '="' . foogallery_esc_attr( (string) $value ) . '"';
 	}
 	$html .= '>';
 	return $html;

@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Gallery MetaBoxes class
  */
@@ -541,6 +545,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 			$example = '<code>#foogallery-gallery-' . $post->ID . ' { }</code>';
 			?>
 			<p>
+				<?php /* translators: %s: Value inserted at runtime. */ ?>
 				<?php printf( esc_html__( 'Add any custom CSS to target this specific gallery. For example %s', 'foogallery' ), $example ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $example contains intentional HTML code tag ?>
 			</p>
 			<table id="table_styling" class="form-table">

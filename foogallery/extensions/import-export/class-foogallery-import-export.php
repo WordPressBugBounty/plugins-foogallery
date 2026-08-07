@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery - Import Export Class
  */
@@ -269,6 +274,7 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 					if ( is_wp_error( $imported_attachment_id ) ) {
 						return array(
 							'complete' => false,
+							/* translators: %s: Attachment import error message. */
 							'message'  => sprintf( __( 'Attachment import failed: %s', 'foogallery' ), $imported_attachment_id->get_error_message() ),
 						);
 					}
@@ -276,6 +282,7 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 					$job['new_attachments'][ $old_id ] = intval( $imported_attachment_id );
 					return array(
 						'complete' => false,
+						/* translators: %s: Imported attachment URL. */
 						'message'  => sprintf( __( 'Imported attachment: %s', 'foogallery' ), $url ),
 					);
 				}
@@ -283,6 +290,7 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 				$job['new_attachments'][ $old_id ] = intval( $imported_attachment_id );
 				return array(
 					'complete' => false,
+					/* translators: %s: Existing attachment URL. */
 					'message'  => sprintf( __( 'Attachment already exists: %s', 'foogallery' ), $url ),
 				);
 			}
@@ -318,6 +326,7 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 			if ( false !== $search_gallery && $search_gallery->ID === intval( $gallery_id ) && $search_gallery->gallery_template === $template && $search_gallery->name === $name && 'publish' === $search_gallery->post_status ) {
 				return array(
 					'complete' => false,
+					/* translators: %s: Existing gallery name. */
 					'message'  => sprintf( __( 'Gallery already exists so skipping: %s', 'foogallery' ), $name ),
 				);
 			}
@@ -357,12 +366,14 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 			if ( is_wp_error( $new_gallery_id ) ) {
 				return array(
 					'complete' => false,
+					/* translators: 1: Gallery name, 2: Error message. */
 					'message'  => sprintf( __( 'Error creating gallery "%1$s": %2$s', 'foogallery' ), $name, $new_gallery_id->get_error_message() ),
 				);
 			}
 
 			return array(
 				'complete' => false,
+				/* translators: 1: Gallery name, 2: Gallery ID. */
 				'message'  => sprintf( __( 'Created gallery "%1$s" (ID: %2$s)', 'foogallery' ), $name, $new_gallery_id ),
 			);
 		}

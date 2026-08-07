@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Foogallery class for enqueuing the FooGallery_il8n variable into the page
  */

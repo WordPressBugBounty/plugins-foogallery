@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Demo Content class
  */
@@ -149,4 +154,3 @@ if ( ! class_exists( 'FooGallery_Admin_Demo_Content' ) ) {
 		}
 	}
 }
-

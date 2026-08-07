@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Get the FooGallery plugin instance.
  *
@@ -116,6 +120,7 @@ $premium_count = count( array_filter( $extensions, function ( $extension ) {
 </style>
 <div class="wrap foogallery-features">
 	<h2>
+		<?php /* translators: %s: Value inserted at runtime. */ ?>
 		<?php printf( esc_html__( '%s Features', 'foogallery' ), esc_html( foogallery_plugin_name() ) ); ?>
 		<span class="spinner"></span>
 	</h2>

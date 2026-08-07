@@ -206,6 +206,7 @@ class FooGalleryAlbum extends stdClass {
 			case 1:
 				return __( '1 gallery', 'foogallery' );
 			default:
+				/* translators: %s: Number of galleries. */
 				return sprintf( __( '%s galleries', 'foogallery' ), $count );
 		}
 	}

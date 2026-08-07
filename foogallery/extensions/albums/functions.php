@@ -1,5 +1,28 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! defined( 'FOOGALLERY_ALBUM_API_VERSION' ) ) {
+	define( 'FOOGALLERY_ALBUM_API_VERSION', '1.0.0' );
+}
+
+/**
+ * Checks whether the active Albums extension supports an API capability.
+ *
+ * The nested-items-v1 capability represents the complete first-version
+ * contract for filtering render arguments, declaring renderable items,
+ * handling template output, validating saves, and receiving save context.
+ *
+ * @param string $capability The capability to check.
+ *
+ * @return bool
+ */
+function foogallery_album_api_supports( $capability ) {
+	return 'nested-items-v1' === $capability;
+}
+
 /**
  * Builds up a FooGallery album shortcode
  *
@@ -194,11 +217,72 @@ function foogallery_album_templates() {
 					'3' => __( 'More Than Normal', 'foogallery' ),
 					'5' => __( 'High', 'foogallery' ),
 				)
+			),
+
+			array(
+				'id'      => 'caption_alignment',
+				'title'   => __( 'Caption Alignment', 'foogallery' ),
+				'section' => __( 'Gallery Settings', 'foogallery' ),
+				'desc'    => __( 'Choose the horizontal alignment for the image stack caption.', 'foogallery' ),
+				'type'    => 'select',
+				'default' => 'center',
+				'choices' => array(
+					'left'   => __( 'Left', 'foogallery' ),
+					'center' => __( 'Centre', 'foogallery' ),
+					'right'  => __( 'Right', 'foogallery' ),
+				)
 			)
 		)
 	);
 
+	if ( foogallery_album_gallery_descriptions_enabled() ) {
+		$gallery_description_caption_field = array(
+			'id'      => 'show_gallery_description_in_caption',
+			'title'   => __( 'Include Gallery Description In Caption', 'foogallery' ),
+			'desc'    => __( 'Display each gallery description in the album caption.', 'foogallery' ),
+			'section' => __( 'Gallery Settings', 'foogallery' ),
+			'type'    => 'checkbox',
+		);
+
+		foreach ( $album_templates as &$album_template ) {
+			if ( in_array( $album_template['slug'], array( 'default', 'stack' ), true ) ) {
+				$album_template['fields'][] = $gallery_description_caption_field;
+			}
+		}
+		unset( $album_template );
+	}
+
 	return apply_filters( 'foogallery_album_templates', $album_templates );
+}
+
+/**
+ * Check if gallery descriptions are enabled for albums.
+ *
+ * @return bool
+ */
+function foogallery_album_gallery_descriptions_enabled() {
+	return 'on' === foogallery_get_setting( 'enable_gallery_descriptions' );
+}
+
+/**
+ * Returns safely formatted gallery description HTML for album output.
+ *
+ * @param FooGallery $gallery The gallery object.
+ *
+ * @return string
+ */
+function foogallery_album_gallery_description_html( $gallery ) {
+	if ( ! foogallery_album_gallery_descriptions_enabled() ) {
+		return '';
+	}
+
+	if ( ! $gallery instanceof FooGallery || ! isset( $gallery->_post ) || empty( $gallery->_post->post_content ) ) {
+		return '';
+	}
+
+	$description = apply_filters( 'the_content', $gallery->_post->post_content );
+
+	return wp_kses_post( $description );
 }
 
 function foogallery_determine_best_link_format_default() {
@@ -358,8 +442,13 @@ function foogallery_album_uninstall() {
 
 	//delete all albums posts
 	global $wpdb;
-	$query = "SELECT p.ID FROM {$wpdb->posts} AS p WHERE p.post_type IN (%s)";
-	$gallery_post_ids = $wpdb->get_col( $wpdb->prepare( $query, FOOGALLERY_CPT_ALBUM ) );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall intentionally retrieves every matching ID immediately before deleting the posts.
+	$gallery_post_ids = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT p.ID FROM {$wpdb->posts} AS p WHERE p.post_type = %s",
+			FOOGALLERY_CPT_ALBUM
+		)
+	);
 
 	if ( !empty( $gallery_post_ids ) ) {
 		$deleted = 0;

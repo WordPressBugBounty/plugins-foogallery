@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class to handle preview scenarios, where rest/ajax calls are made from a gallery that is in preview mode.
  */

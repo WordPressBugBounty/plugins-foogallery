@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists('FooGallery_Attachment_Type') ) {
 
 	class FooGallery_Attachment_Type {

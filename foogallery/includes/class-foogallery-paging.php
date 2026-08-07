@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class used to handle paging for gallery templates
  */
@@ -484,6 +489,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					//get the attachments that are not on the first page
 					$attachments = array_slice( $gallery->attachments(), $page_size );
 					foogallery_render_script_block_for_json_items( $gallery, $attachments );
+					foogallery_render_noscript_block_for_json_items( $gallery, $attachments );
 				}
 			}
 		}

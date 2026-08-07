@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery_AdminBar Class
  * allows for really easy gallery editing from the front-end (when logged in)

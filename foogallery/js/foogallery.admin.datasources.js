@@ -13,6 +13,7 @@ jQuery(function ($) {
 
 		//set the datasource
 		$('#foogallery_datasource').val( activeDatasource );
+		$('#_foogallery_datasource_recovery_original, #_foogallery_datasource_recovery_value').val('');
 
 		//raise a general event so that other datasources can clean up
 		$(document).trigger('foogallery-datasource-changed', activeDatasource);

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * class for Rest API Routes within FooGallery
  *
@@ -73,10 +78,11 @@ if ( ! class_exists( 'FooGallery_Rest_Routes' ) ) {
 		public function get_galleries( $request ) {
 
 			$query_args = array(
-				'post_type'     => FOOGALLERY_CPT_GALLERY,
-				'post_status'   => array( 'publish', 'draft' ),
-				'cache_results' => false,
-				'nopaging'      => true,
+				'post_type'              => FOOGALLERY_CPT_GALLERY,
+				'post_status'            => array( 'publish', 'draft' ),
+				'cache_results'          => true,
+				'update_post_term_cache' => false,
+				'nopaging'               => true,
 			);
 
 			$limit = absint( foogallery_get_setting( 'limit_gallery_selector_block_editor', 0 ) );

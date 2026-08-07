@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 global $wp_version;
 /**
  * Get which version of GD is installed, if any.
@@ -35,7 +40,9 @@ function foogallery_gdversion() {
 if ( current_user_can( 'activate_plugins' ) ) {
 	$instance     = FooGallery_Plugin::get_instance();
 	$info         = $instance->get_plugin_info();
+	/* translators: %s: Value inserted at runtime. */
 	$title        = apply_filters( 'foogallery_admin_systeminfo_title', sprintf( __( '%s System Information', 'foogallery' ), foogallery_plugin_name() ) );
+	/* translators: %s: Value inserted at runtime. */
 	$support_text = apply_filters( 'foogallery_admin_systeminfo_supporttext', sprintf( __( 'Below is some information about your server configuration. You can use this info to help debug issues you may have with %s.' ), foogallery_plugin_name() ) );
 	$api          = new FooGallery_Extensions_API();
 
@@ -91,8 +98,8 @@ if ( current_user_can( 'activate_plugins' ) ) {
 	if ( foogallery_thumb_active_engine()->uses_image_editors() ) {
 		$image_editor = _wp_image_editor_choose( array( 'methods' => array( 'get_image' ) ) );
 		$test_image_url = foogallery_test_thumb_url();
-		$test_image_url_scheme = parse_url( $test_image_url ,PHP_URL_SCHEME );
-		$home_url_scheme = parse_url( home_url() ,PHP_URL_SCHEME );
+		$test_image_url_scheme = wp_parse_url( $test_image_url, PHP_URL_SCHEME );
+		$home_url_scheme       = wp_parse_url( home_url(), PHP_URL_SCHEME );
 
 		$debug_info[ __( 'PHP GD', 'foogallery' ) ] = extension_loaded( 'gd' ) && function_exists( 'gd_info' ) ? __( 'Loaded', 'foogallery' ) . ' (V' . foogallery_gdversion() . ')' : __( 'Not found!', 'foogallery' );
 		$debug_info[ __( 'PHP Imagick', 'foogallery' ) ] = extension_loaded( 'imagick' ) ? __( 'Loaded', 'foogallery' ) : __( 'Not found!', 'foogallery' );

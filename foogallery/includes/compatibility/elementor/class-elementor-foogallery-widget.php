@@ -33,7 +33,7 @@ class Elementor_FooGallery_Widget extends \Elementor\Widget_Base {
      * @return string Widget title.
      */
     public function get_title() {
-        return __( 'FooGallery', 'plugin-name' );
+        return __( 'FooGallery', 'foogallery' );
     }
 
     /**

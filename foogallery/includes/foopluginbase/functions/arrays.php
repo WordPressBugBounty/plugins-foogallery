@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * Foo Functions - Arrays
  * A bunch of common and useful functions related to arrays

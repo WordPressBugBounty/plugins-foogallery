@@ -1,5 +1,8 @@
 <?php
 
+if ( !defined( 'ABSPATH' ) ) {
+    exit;
+}
 /**
  * FooGallery global functions
  *
@@ -168,6 +171,7 @@ function foogallery_get_default_options() {
         'hide_editor_button'               => 'on',
         'thumb_resize_upscale_small'       => 'on',
         'thumb_resize_upscale_small_color' => 'auto',
+        'force_legacy_runtime_scripts'     => false,
     );
     // A handy filter to override the defaults.
     $defaults = apply_filters( 'foogallery_defaults', $defaults );
@@ -388,6 +392,7 @@ function foogallery_get_all_galleries(  $excludes = false, $extra_args = false  
     if ( empty( $gallery_posts ) ) {
         return array();
     }
+    update_meta_cache( 'post', wp_list_pluck( $gallery_posts, 'ID' ) );
     $galleries = array();
     foreach ( $gallery_posts as $post ) {
         $galleries[] = FooGallery::get( $post );
@@ -1057,7 +1062,7 @@ function foogallery_gallery_datasources() {
     $default_datasource = foogallery_default_datasource();
     $datasources[$default_datasource] = array(
         'id'     => $default_datasource,
-        'name'   => __( 'Media Library', 'foogalery' ),
+        'name'   => __( 'Media Library', 'foogallery' ),
         'label'  => __( 'From Media Library', 'foogallery' ),
         'public' => false,
     );
@@ -1181,8 +1186,8 @@ function foogallery_uninstall() {
     }
     //delete all gallery posts first
     global $wpdb;
-    $query = "SELECT p.ID FROM {$wpdb->posts} AS p WHERE p.post_type IN (%s)";
-    $gallery_post_ids = $wpdb->get_col( $wpdb->prepare( $query, FOOGALLERY_CPT_GALLERY ) );
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall intentionally retrieves every matching ID immediately before deleting the posts.
+    $gallery_post_ids = $wpdb->get_col( $wpdb->prepare( "SELECT p.ID FROM {$wpdb->posts} AS p WHERE p.post_type = %s", FOOGALLERY_CPT_GALLERY ) );
     if ( !empty( $gallery_post_ids ) ) {
         $deleted = 0;
         foreach ( $gallery_post_ids as $post_id ) {
@@ -1395,12 +1400,9 @@ function foogallery_current_gallery_attachments_for_rendering() {
  */
 function foogallery_get_attachment_id_by_url(  $url  ) {
     global $wpdb;
-    $query = "SELECT ID FROM {$wpdb->posts} WHERE guid=%s";
-    $attachment = $wpdb->get_col( $wpdb->prepare( $query, $url ) );
-    if ( count( $attachment ) > 0 ) {
-        return $attachment[0];
-    }
-    return null;
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- This exact GUID lookup must reflect the current attachment record.
+    $attachment_id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE guid = %s LIMIT 1", $url ) );
+    return ( null === $attachment_id ? null : $attachment_id );
 }
 
 /**
@@ -2057,6 +2059,8 @@ function foogallery_current_gallery_get_cached_value(  $cache_value  ) {
  */
 function foogallery_thumb_available_engines() {
     $shortpixel_link = '<a href="https://shortpixel.com/otp/af/foowww" target="_blank">' . __( 'ShortPixel Adaptive Images', 'foogallery' ) . '</a>';
+    /* translators: %s: Link to ShortPixel Adaptive Images. */
+    $shortpixel_description = sprintf( __( 'Uses %s to generate all your gallery thumbnails. They will be optimized and offloaded to the ShortPixel global CDN!', 'foogallery' ), $shortpixel_link );
     $engines = array(
         'default'    => array(
             'label'       => __( 'Default', 'foogallery' ),
@@ -2065,7 +2069,7 @@ function foogallery_thumb_available_engines() {
         ),
         'shortpixel' => array(
             'label'       => __( 'ShortPixel', 'foogallery' ),
-            'description' => sprintf( __( 'Uses %s to generate all your gallery thumbnails. They will be optimized and offloaded to the ShortPixel global CDN!', 'foogallery' ), $shortpixel_link ),
+            'description' => $shortpixel_description,
             'class'       => 'FooGallery_Thumb_Engine_Shortpixel',
         ),
     );
@@ -2199,100 +2203,244 @@ function foogallery_render_debug_array(  $array, $level = 0  ) {
 }
 
 /**
+ * Validates an attachment import URL and ensures every resolved address is public.
+ *
+ * WordPress safe HTTP requests protect redirect destinations as well. Imports do
+ * not follow redirects, but this additional check also rejects link-local and
+ * metadata-service ranges that older supported WordPress versions do not cover.
+ *
+ * @param mixed $url URL supplied by the import file.
+ * @return string|WP_Error The normalized URL, or an error when it is unsafe.
+ */
+function foogallery_validate_attachment_import_url(  $url  ) {
+    if ( !is_scalar( $url ) ) {
+        return new WP_Error('foogallery_import_attachment_invalid_url', __( 'The remote image URL is invalid.', 'foogallery' ));
+    }
+    $url = esc_url_raw( trim( (string) $url ), array('http', 'https') );
+    if ( '' === $url || false === wp_http_validate_url( $url ) ) {
+        return new WP_Error('foogallery_import_attachment_invalid_url', __( 'The remote image URL is invalid or unsafe.', 'foogallery' ));
+    }
+    $parsed_url = wp_parse_url( $url );
+    $host = ( isset( $parsed_url['host'] ) ? strtolower( trim( $parsed_url['host'], '.[]' ) ) : '' );
+    if ( '' === $host || 'localhost' === $host || preg_match( '/\\.(?:localhost|local|internal)$/', $host ) ) {
+        return new WP_Error('foogallery_import_attachment_unsafe_host', __( 'The remote image host is not publicly accessible.', 'foogallery' ));
+    }
+    if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+        $resolved_ips = array($host);
+    } else {
+        $resolved_ips = gethostbynamel( $host );
+    }
+    if ( !is_array( $resolved_ips ) || empty( $resolved_ips ) ) {
+        return new WP_Error('foogallery_import_attachment_unresolved_host', __( 'The remote image host could not be resolved.', 'foogallery' ));
+    }
+    foreach ( $resolved_ips as $resolved_ip ) {
+        $is_public_ip = filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE );
+        if ( false === $is_public_ip ) {
+            return new WP_Error('foogallery_import_attachment_unsafe_host', __( 'The remote image host is not publicly accessible.', 'foogallery' ));
+        }
+    }
+    return $url;
+}
+
+/**
+ * Normalizes an array of imported taxonomy term names.
+ *
+ * @param mixed $terms Imported terms.
+ * @return string[] Sanitized, unique term names.
+ */
+function foogallery_sanitize_imported_attachment_terms(  $terms  ) {
+    if ( !is_array( $terms ) ) {
+        return array();
+    }
+    $sanitized_terms = array();
+    foreach ( $terms as $term ) {
+        if ( !is_scalar( $term ) ) {
+            continue;
+        }
+        $term = sanitize_text_field( (string) $term );
+        if ( '' !== $term ) {
+            $sanitized_terms[] = $term;
+        }
+    }
+    return array_values( array_unique( $sanitized_terms ) );
+}
+
+/**
  * Insert a new attachment from a URL.
  *
  * @param array $attachment_data The image attachment data.
  *
- * @return false|int|WP_Error
+ * @return int|WP_Error
  */
 function foogallery_import_attachment(  $attachment_data  ) {
-    // Include image.php so we can call wp_generate_attachment_metadata().
+    if ( !is_array( $attachment_data ) || !isset( $attachment_data['url'] ) ) {
+        return new WP_Error('foogallery_import_attachment_invalid_data', __( 'The imported attachment data is invalid.', 'foogallery' ));
+    }
+    $url = foogallery_validate_attachment_import_url( $attachment_data['url'] );
+    if ( is_wp_error( $url ) ) {
+        return $url;
+    }
+    // Include the WordPress sideload and image metadata APIs.
+    require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/image.php';
-    // Get the contents of the picture.
-    $response = wp_remote_get( $attachment_data['url'] );
+    $url_path = wp_parse_url( $url, PHP_URL_PATH );
+    $source_filename = ( is_string( $url_path ) ? sanitize_file_name( rawurldecode( wp_basename( $url_path ) ) ) : '' );
+    if ( '' === $source_filename ) {
+        $source_filename = 'foogallery-import';
+    }
+    $temp_file = wp_tempnam( $source_filename );
+    if ( !$temp_file ) {
+        return new WP_Error('foogallery_import_attachment_temp_file_error', __( 'A temporary file could not be created for the remote image.', 'foogallery' ));
+    }
+    $max_file_size = (int) apply_filters( 'foogallery_import_attachment_max_file_size', 10 * MB_IN_BYTES, $url );
+    if ( $max_file_size < 1 ) {
+        $max_file_size = 10 * MB_IN_BYTES;
+    }
+    $timeout = (int) apply_filters( 'foogallery_import_attachment_timeout', 15, $url );
+    $timeout = max( 1, min( 30, $timeout ) );
+    $response = wp_safe_remote_get( $url, array(
+        'timeout'             => $timeout,
+        'redirection'         => 0,
+        'stream'              => true,
+        'filename'            => $temp_file,
+        'limit_response_size' => $max_file_size + 1,
+    ) );
     if ( is_wp_error( $response ) ) {
-        return $response;
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_download_failed', __( 'The remote image could not be downloaded safely.', 'foogallery' ));
     }
     $response_code = (int) wp_remote_retrieve_response_code( $response );
     if ( 200 !== $response_code ) {
-        return new WP_Error('foogallery_import_attachment_http_error', sprintf( __( 'Remote server returned HTTP %d.', 'foogallery' ), $response_code ));
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_http_error', sprintf( 
+            /* translators: %d: HTTP response code. */
+            __( 'The remote image server returned HTTP %d.', 'foogallery' ),
+            $response_code
+         ));
     }
-    $content_type = (string) wp_remote_retrieve_header( $response, 'content-type' );
-    if ( '' !== $content_type && 0 !== stripos( $content_type, 'image/' ) ) {
-        return new WP_Error('foogallery_import_attachment_invalid_content_type', sprintf( __( 'Remote URL did not return an image (content-type: %s).', 'foogallery' ), $content_type ));
+    $content_length = wp_remote_retrieve_header( $response, 'content-length' );
+    if ( is_array( $content_length ) ) {
+        $content_length = reset( $content_length );
     }
-    $contents = wp_remote_retrieve_body( $response );
-    if ( '' === $contents ) {
-        return new WP_Error('foogallery_import_attachment_empty_body', __( 'Remote server returned an empty response body.', 'foogallery' ));
+    $file_size = ( file_exists( $temp_file ) ? filesize( $temp_file ) : false );
+    if ( false === $file_size || $file_size < 1 ) {
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_empty_file', __( 'The remote image was empty.', 'foogallery' ));
     }
-    // Upload and get file data.
-    $upload = wp_upload_bits( basename( $attachment_data['url'] ), null, $contents );
-    if ( array_key_exists( 'error', $upload ) && false !== $upload['error'] ) {
-        return new WP_Error('foogallery_import_attachment_upload_fail', $upload['error']);
+    if ( is_scalar( $content_length ) && (int) $content_length > $max_file_size || $file_size > $max_file_size ) {
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_file_too_large', __( 'The remote image exceeds the allowed file size.', 'foogallery' ));
     }
-    $guid = $upload['url'];
-    $file = $upload['file'];
-    $file_type = wp_check_filetype( basename( $file ), null );
-    // Create attachment.
-    $attachment_args = array(
-        'ID'             => 0,
-        'guid'           => $guid,
-        'post_title'     => $attachment_data['title'],
-        'post_excerpt'   => $attachment_data['caption'],
-        'post_content'   => ( isset( $attachment_data['description'] ) ? $attachment_data['description'] : '' ),
-        'post_date'      => '',
-        'post_mime_type' => ( isset( $attachment_data['mime_type'] ) ? $attachment_data['mime_type'] : $file_type['type'] ),
+    $detected_mime = wp_get_image_mime( $temp_file );
+    $allowed_mimes = array();
+    foreach ( get_allowed_mime_types() as $extensions => $mime_type ) {
+        if ( 0 === strpos( $mime_type, 'image/' ) ) {
+            $allowed_mimes[$extensions] = $mime_type;
+        }
+    }
+    $detected_extension = '';
+    foreach ( $allowed_mimes as $extensions => $mime_type ) {
+        if ( $detected_mime === $mime_type ) {
+            $extension_parts = explode( '|', $extensions );
+            $detected_extension = reset( $extension_parts );
+            break;
+        }
+    }
+    if ( !$detected_mime || '' === $detected_extension ) {
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_invalid_image', __( 'The downloaded file is not a supported image.', 'foogallery' ));
+    }
+    $filename_base = sanitize_file_name( pathinfo( $source_filename, PATHINFO_FILENAME ) );
+    if ( '' === $filename_base ) {
+        $filename_base = 'foogallery-import';
+    }
+    $filename = $filename_base . '.' . $detected_extension;
+    $checked_filetype = wp_check_filetype_and_ext( $temp_file, $filename, $allowed_mimes );
+    if ( empty( $checked_filetype['ext'] ) || empty( $checked_filetype['type'] ) || $detected_mime !== $checked_filetype['type'] ) {
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_invalid_image', __( 'The downloaded file is not a supported image.', 'foogallery' ));
+    }
+    $file_array = array(
+        'name'     => $filename,
+        'tmp_name' => $temp_file,
     );
-    $attachment_args['meta_input'] = array();
-    if ( isset( $attachment_data['alt'] ) && !empty( $attachment_data['alt'] ) ) {
-        $attachment_args['meta_input']['_wp_attachment_image_alt'] = $attachment_data['alt'];
+    $upload = wp_handle_sideload( $file_array, array(
+        'test_form' => false,
+        'mimes'     => $allowed_mimes,
+    ) );
+    if ( isset( $upload['error'] ) ) {
+        wp_delete_file( $temp_file );
+        return new WP_Error('foogallery_import_attachment_upload_fail', __( 'The validated remote image could not be added to uploads.', 'foogallery' ));
     }
-    if ( isset( $attachment_data['custom_url'] ) && !empty( $attachment_data['custom_url'] ) ) {
-        $attachment_args['meta_input']['_foogallery_custom_url'] = foogallery_sanitize_attachment_custom_url( $attachment_data['custom_url'] );
-    }
-    if ( isset( $attachment_data['custom_target'] ) && !empty( $attachment_data['custom_target'] ) ) {
-        $attachment_args['meta_input']['_foogallery_custom_target'] = foogallery_sanitize_attachment_custom_target( $attachment_data['custom_target'] );
-    }
-    if ( isset( $attachment_data['video'] ) && !empty( $attachment_data['video'] ) ) {
-        $attachment_args['meta_input']['_foogallery_video_data'] = array(
-            'url' => $attachment_data['video'],
-        );
-    }
-    // Save the original URL, so that we do not import it again!
-    $attachment_args['meta_input']['_foogallery_imported_from'] = $attachment_data['url'];
-    // Insert the attachment.
+    $title = ( isset( $attachment_data['title'] ) && is_scalar( $attachment_data['title'] ) ? sanitize_text_field( (string) $attachment_data['title'] ) : $filename_base );
+    $caption = ( isset( $attachment_data['caption'] ) && is_scalar( $attachment_data['caption'] ) ? wp_kses_post( (string) $attachment_data['caption'] ) : '' );
+    $description = ( isset( $attachment_data['description'] ) && is_scalar( $attachment_data['description'] ) ? wp_kses_post( (string) $attachment_data['description'] ) : '' );
+    $attachment_args = wp_slash( array(
+        'guid'           => $upload['url'],
+        'post_title'     => ( '' !== $title ? $title : $filename_base ),
+        'post_excerpt'   => $caption,
+        'post_content'   => $description,
+        'post_mime_type' => $upload['type'],
+    ) );
     $attachment_id = wp_insert_attachment(
         $attachment_args,
-        $file,
+        $upload['file'],
         0,
         true
     );
     if ( is_wp_error( $attachment_id ) ) {
+        wp_delete_file( $upload['file'] );
         return $attachment_id;
     }
-    $attachment_meta = wp_generate_attachment_metadata( $attachment_id, $file );
-    wp_update_attachment_metadata( $attachment_id, $attachment_meta );
-    if ( isset( $attachment_data['tags'] ) && is_array( $attachment_data['tags'] ) && count( $attachment_data['tags'] ) > 0 ) {
-        if ( taxonomy_exists( FOOGALLERY_ATTACHMENT_TAXONOMY_TAG ) ) {
-            // Save tags.
-            wp_set_object_terms(
-                $attachment_id,
-                $attachment_data['tags'],
-                FOOGALLERY_ATTACHMENT_TAXONOMY_TAG,
-                false
-            );
+    $attachment_meta = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+    if ( is_array( $attachment_meta ) ) {
+        wp_update_attachment_metadata( $attachment_id, $attachment_meta );
+    }
+    if ( isset( $attachment_data['alt'] ) && is_scalar( $attachment_data['alt'] ) ) {
+        $alt = sanitize_text_field( (string) $attachment_data['alt'] );
+        if ( '' !== $alt ) {
+            update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt );
         }
     }
-    if ( isset( $attachment_data['categories'] ) && is_array( $attachment_data['categories'] ) && count( $attachment_data['categories'] ) > 0 ) {
-        if ( taxonomy_exists( FOOGALLERY_ATTACHMENT_TAXONOMY_CATEGORY ) ) {
-            // Save categories.
-            wp_set_object_terms(
-                $attachment_id,
-                $attachment_data['categories'],
-                FOOGALLERY_ATTACHMENT_TAXONOMY_CATEGORY,
-                false
-            );
+    if ( isset( $attachment_data['custom_url'] ) && is_scalar( $attachment_data['custom_url'] ) ) {
+        $custom_url = foogallery_sanitize_attachment_custom_url( (string) $attachment_data['custom_url'] );
+        if ( '' !== $custom_url ) {
+            update_post_meta( $attachment_id, '_foogallery_custom_url', $custom_url );
         }
+    }
+    if ( isset( $attachment_data['custom_target'] ) && is_scalar( $attachment_data['custom_target'] ) ) {
+        $custom_target = foogallery_sanitize_attachment_custom_target( (string) $attachment_data['custom_target'] );
+        if ( '' !== $custom_target ) {
+            update_post_meta( $attachment_id, '_foogallery_custom_target', $custom_target );
+        }
+    }
+    if ( isset( $attachment_data['video'] ) && is_scalar( $attachment_data['video'] ) ) {
+        $video_url = esc_url_raw( (string) $attachment_data['video'], array('http', 'https') );
+        if ( '' !== $video_url ) {
+            update_post_meta( $attachment_id, '_foogallery_video_data', array(
+                'url' => $video_url,
+            ) );
+        }
+    }
+    // Save the validated original URL so that it is not imported again.
+    update_post_meta( $attachment_id, '_foogallery_imported_from', $url );
+    $tags = ( isset( $attachment_data['tags'] ) ? foogallery_sanitize_imported_attachment_terms( $attachment_data['tags'] ) : array() );
+    if ( !empty( $tags ) && taxonomy_exists( FOOGALLERY_ATTACHMENT_TAXONOMY_TAG ) ) {
+        wp_set_object_terms(
+            $attachment_id,
+            $tags,
+            FOOGALLERY_ATTACHMENT_TAXONOMY_TAG,
+            false
+        );
+    }
+    $categories = ( isset( $attachment_data['categories'] ) ? foogallery_sanitize_imported_attachment_terms( $attachment_data['categories'] ) : array() );
+    if ( !empty( $categories ) && taxonomy_exists( FOOGALLERY_ATTACHMENT_TAXONOMY_CATEGORY ) ) {
+        wp_set_object_terms(
+            $attachment_id,
+            $categories,
+            FOOGALLERY_ATTACHMENT_TAXONOMY_CATEGORY,
+            false
+        );
     }
     return $attachment_id;
 }
@@ -2313,23 +2461,33 @@ function foogallery_get_full_size_image_data(  $attachment_id  ) {
     }
     // First try to get the image metadata.
     $image_data = wp_get_attachment_metadata( $attachment_id );
-    $width = $height = 0;
+    $width = 0;
+    $height = 0;
     if ( is_array( $image_data ) ) {
-        if ( array_key_exists( 'width', $image_data ) ) {
-            $width = $image_data['width'];
+        if ( isset( $image_data['width'] ) ) {
+            $width = absint( $image_data['width'] );
         }
-        if ( array_key_exists( 'height', $image_data ) ) {
-            $height = $image_data['height'];
+        if ( isset( $image_data['height'] ) ) {
+            $height = absint( $image_data['height'] );
         }
     } else {
-        $image_data = wp_get_attachment_image_src( $attachment_id, 'full' );
-        $width = $image_data[1];
-        $height = $image_data[2];
+        $image_src = wp_get_attachment_image_src( $attachment_id, 'full' );
+        if ( is_array( $image_src ) ) {
+            $width = ( isset( $image_src[1] ) ? absint( $image_src[1] ) : 0 );
+            $height = ( isset( $image_src[2] ) ? absint( $image_src[2] ) : 0 );
+        }
     }
-    // Do a last check for the height and width.
-    if ( $width === $height && 0 === $height ) {
-        // If nothing is stored in meta, then get the size from the physical file. Not ideal, but might be needed in some cases.
-        list( $width, $height ) = wp_getimagesize( $src );
+    // If metadata is missing, inspect only a readable local file. Front-end rendering must not fetch an attachment URL.
+    if ( 0 === $width && 0 === $height ) {
+        $attached_file = get_attached_file( $attachment_id );
+        if ( is_string( $attached_file ) && '' !== $attached_file && !wp_is_stream( $attached_file ) && is_readable( $attached_file ) ) {
+            // phpcs:ignore -- Compatibility is guarded by function_exists().
+            $image_size = ( function_exists( 'wp_getimagesize' ) ? wp_getimagesize( $attached_file ) : getimagesize( $attached_file ) );
+            if ( is_array( $image_size ) ) {
+                $width = ( isset( $image_size[0] ) ? absint( $image_size[0] ) : 0 );
+                $height = ( isset( $image_size[1] ) ? absint( $image_size[1] ) : 0 );
+            }
+        }
     }
     return array($src, $width, $height);
 }
@@ -2450,7 +2608,7 @@ function foogallery_sanitize_code(  $text  ) {
  */
 function foogallery_prepare_code(  $text  ) {
     if ( !empty( $text ) ) {
-        $text = html_entity_decode( $text );
+        $text = html_entity_decode( $text, ENT_COMPAT | ENT_HTML401, get_bloginfo( 'charset' ) );
         return apply_filters( 'foogallery_prepare_code', $text );
     }
     return false;
@@ -2849,6 +3007,7 @@ function foogallery_sort_attachments(
  * @return string
  */
 function foogallery_lightbox_name() {
+    /* translators: %s: Value inserted at runtime. */
     return sprintf( __( '%s Lightbox', 'foogallery' ), foogallery_plugin_name() );
 }
 
@@ -2927,3 +3086,5 @@ function foogallery_is_rest_request_from_admin() {
     }
     return false;
 }
+
+require_once __DIR__ . '/gallery-management-functions.php';

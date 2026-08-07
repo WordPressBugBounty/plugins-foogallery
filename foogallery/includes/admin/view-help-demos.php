@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc, $href ) {
 	$placeholder = foogallery_get_svg_placeholder_image( $width, $height );
 ?><div class="fg-item fg-type-image fg-idle">

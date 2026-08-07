@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Album MetaBoxes class
  */
@@ -86,18 +90,64 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 		}
 
 		public function save_album( $post_id ) {
+			$post_id = absint( $post_id );
+
 			// check autosave
 			if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 				return $post_id;
 			}
 
+			if ( FOOGALLERY_CPT_ALBUM !== get_post_type( $post_id ) ) {
+				return $post_id;
+			}
+
+			if ( ! current_user_can( 'edit_post', $post_id ) ) {
+				return $post_id;
+			}
+
+			$nonce_field = FOOGALLERY_CPT_ALBUM . '_nonce';
+
+			if ( ! isset( $_POST[ $nonce_field ] ) || ! is_scalar( $_POST[ $nonce_field ] ) ) {
+				return $post_id;
+			}
+
+			$nonce = sanitize_text_field( wp_unslash( $_POST[ $nonce_field ] ) );
+
 			// verify nonce
-			if ( array_key_exists( FOOGALLERY_CPT_ALBUM . '_nonce', $_POST ) &&
-			     wp_verify_nonce( $_POST[ FOOGALLERY_CPT_ALBUM . '_nonce' ], plugin_basename( FOOGALLERY_FILE ) )
+			if (
+				wp_verify_nonce( $nonce, plugin_basename( FOOGALLERY_FILE ) )
 			) {
 				//if we get here, we are dealing with the Album custom post type
 
-				$galleries = apply_filters( 'foogallery_save_album_galleries', explode( ',', $_POST[ FOOGALLERY_ALBUM_META_GALLERIES ] ) );
+				/**
+				 * Filters whether an album save is valid before any album meta is written.
+				 *
+				 * Extensions can inspect their submitted fields and return false or a
+				 * WP_Error to prevent the complete album meta save.
+				 *
+				 * @param bool|WP_Error $is_valid Whether the album save should proceed.
+				 * @param int           $post_id  The album post ID.
+				 * @param array         $request  The unsanitized submitted request data.
+				 */
+				$is_valid = apply_filters( 'foogallery_validate_album_save', true, $post_id, $_POST );
+
+				if ( ! $is_valid || is_wp_error( $is_valid ) ) {
+					return $post_id;
+				}
+
+				/**
+				 * Filters the direct gallery IDs before they are saved for an album.
+				 *
+				 * @param array $galleries The submitted direct gallery IDs.
+				 * @param int   $post_id   The album post ID.
+				 * @param array $request   The unsanitized submitted request data.
+				 */
+				$galleries = apply_filters(
+					'foogallery_save_album_galleries',
+					explode( ',', $_POST[ FOOGALLERY_ALBUM_META_GALLERIES ] ),
+					$post_id,
+					$_POST
+				);
 				update_post_meta( $post_id, FOOGALLERY_ALBUM_META_GALLERIES, $galleries );
 
 				if ( !empty( $_POST[FOOGALLERY_ALBUM_META_TEMPLATE] ) ) {
@@ -111,7 +161,14 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 				$settings = isset($_POST['_foogallery_settings']) ?
 					$_POST['_foogallery_settings'] : array();
 
-				$settings = apply_filters( 'foogallery_save_album_settings', $settings );
+				/**
+				 * Filters album settings before they are saved.
+				 *
+				 * @param array $settings The submitted album settings.
+				 * @param int   $post_id  The album post ID.
+				 * @param array $request  The unsanitized submitted request data.
+				 */
+				$settings = apply_filters( 'foogallery_save_album_settings', $settings, $post_id, $_POST );
 
 				if ( !empty( $settings ) ) {
 					update_post_meta( $post_id, FOOGALLERY_META_SETTINGS_OLD, $settings );
@@ -218,12 +275,14 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 						$images   = $gallery->image_count();
 						$selected = $album->includes_gallery( $gallery->ID ) ? ' selected' : '';
 						$title = $gallery->safe_name();
+						/* translators: %s: gallery title. */
+						$image_alt = sprintf( __( 'Preview of %s', 'foogallery' ), $title );
 						?>
 						<li class="foogallery-pile">
 							<div class="foogallery-gallery-select landscape<?php echo esc_attr( $selected ); ?>" data-foogallery-id="<?php echo esc_attr( $gallery->ID ); ?>">
 								<div style="display: table;">
 									<div style="display: table-cell; vertical-align: middle; text-align: center;">
-										<img src="<?php echo esc_url( $img_src ); ?>"/>
+										<img src="<?php echo esc_url( $img_src ); ?>" alt="<?php echo esc_attr( $image_alt ); ?>"/>
 										<h3>
                                             <?php echo esc_html( $title ); ?>
                                             <span><?php echo esc_html( $images ); ?></span>
@@ -374,6 +433,7 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 			$example = '<code>#foogallery-album-' . $post->ID . ' { }</code>';
 			?>
 			<p>
+				<?php /* translators: %s: Example CSS selector for this album. */ ?>
 				<?php printf( esc_html__( 'Add any custom CSS to target this specific album. For example %s', 'foogallery' ), wp_kses_post( $example ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</p>
 			<table id="table_styling" class="form-table">
@@ -390,6 +450,10 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 
 		public function include_required_scripts() {
 			if ( FOOGALLERY_CPT_ALBUM === foo_current_screen_post_type() ) {
+				if ( $this->gallery_descriptions_enabled() ) {
+					wp_enqueue_editor();
+				}
+
 				//include album selection script
 				$url = FOOGALLERY_ALBUM_URL . 'js/admin-foogallery-album.js';
 				wp_enqueue_script( 'admin-foogallery-album', $url, array( 'jquery', 'jquery-ui-core','jquery-ui-sortable' ), FOOGALLERY_VERSION );
@@ -406,6 +470,10 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 				$url = FOOGALLERY_URL . 'lib/spectrum/spectrum.css';
 				wp_enqueue_style( 'foogallery-spectrum', $url, array(), FOOGALLERY_VERSION );
 			}
+		}
+
+		private function gallery_descriptions_enabled() {
+			return 'on' === foogallery_get_setting( 'enable_gallery_descriptions' );
 		}
 
 		/**
@@ -454,7 +522,7 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 					<table class="gallery-detail-fields">
 						<tbody>
 							<?php foreach ( $fields as $field => $values ) {
-								$value = get_post_meta( $gallery->ID, $field, true );
+								$value = array_key_exists( 'value', $values ) ? $values['value'] : get_post_meta( $gallery->ID, $field, true );
 								$input_id = 'foogallery-gallery-detail-fields-' . $field;
 								switch ( $values['input'] ) {
 									case 'text':
@@ -463,6 +531,10 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 
 									case 'textarea':
 										$values['html'] = '<textarea id="' . $input_id . '" name="' . $field . '">' . esc_attr( foogallery_sanitize_javascript( $value ) ) . '</textarea>';
+										break;
+
+									case 'wysiwyg':
+										$values['html'] = '<textarea id="' . esc_attr( $input_id ) . '" class="foogallery-gallery-description-editor" name="' . esc_attr( $field ) . '">' . esc_textarea( $value ) . '</textarea>';
 										break;
 
 									case 'select':
@@ -569,6 +641,28 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 				return;
 			}
 
+			if ( 'gallery_description' === $field ) {
+				if ( ! $this->gallery_descriptions_enabled() ) {
+					return;
+				}
+
+				$value = wp_unslash( $_POST[$field] );
+				$value = is_scalar( $value ) ? wp_kses_post( (string) $value ) : '';
+
+				$result = wp_update_post( array(
+					'ID'           => $gallery->ID,
+					'post_content' => $value,
+				), true );
+
+				if ( is_wp_error( $result ) ) {
+					wp_send_json_error( array(
+						'message' => $result->get_error_message(),
+					), 500 );
+				}
+
+				return;
+			}
+
 			if ( 'custom_url' === $field || 'custom_target' === $field ) {
 				$value = wp_unslash( $_POST[$field] );
 
@@ -603,8 +697,19 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 					'label' => __( 'Gallery Title', 'foogallery' ),
 					'input' => 'html',
 					'html'  => '<strong>' . $gallery->safe_name() . ' <a href="' . $edit_url . '" target="_blank">' . __( 'Edit Gallery', 'foogallery' ) . '</a></strong>',
-				),
+				)
+			);
 
+			if ( $this->gallery_descriptions_enabled() ) {
+				$fields['gallery_description'] = array(
+					'label' => __( 'Gallery Description', 'foogallery' ),
+					'input' => 'wysiwyg',
+					'value' => isset( $gallery->_post ) ? $gallery->_post->post_content : '',
+					'help'  => __( 'Displayed under the gallery title and optionally in album captions.', 'foogallery' ),
+				);
+			}
+
+			$fields = array_merge( $fields, array(
 				'gallery_template' => array(
 					'label' => __( 'Gallery Layout', 'foogallery' ),
 					'input' => 'html',
@@ -629,7 +734,7 @@ if ( ! class_exists( 'FooGallery_Admin_Album_MetaBoxes' ) ) {
 					'help'    => __( 'Set a custom target for your gallery', 'foogallery' ),
 					'options' => $target_options
 				)
-			);
+			) );
 
 			return apply_filters( 'foogallery_gallery_detail_fields', $fields );
 		}

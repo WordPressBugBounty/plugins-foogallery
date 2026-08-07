@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class for the shortpixel adaptive image thumbnails.
  *
@@ -95,7 +99,7 @@ if ( ! class_exists( 'FooGallery_Thumb_Engine_Shortpixel' ) ) {
 		 */
 		function normalize_url( $url ) {
 			if ( ! empty( $url ) ) {
-				$parsed_site_url = parse_url( site_url() );
+				$parsed_site_url = wp_parse_url( site_url() );
 
 				$result = $url;
 
@@ -193,6 +197,7 @@ if ( ! class_exists( 'FooGallery_Thumb_Engine_Shortpixel' ) ) {
 					'title'   => __( 'ShortPixel AI Detected!', 'foogallery' ),
 					'type'    => 'html',
 					'section' => __( 'ShortPixel Settings', 'foogallery' ),
+					/* translators: %s: Value inserted at runtime. */
 					'desc'    => sprintf( __( 'Settings will be inherited from the %s.', 'foogallery' ), $spai_settings_link ),
 					'tab'     => 'thumb'
 				);

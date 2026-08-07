@@ -9,6 +9,16 @@
 class FooGallery_Album_Template_Loader {
 
 	/**
+	 * Active render depth shared by loader instances.
+	 *
+	 * The shortcode creates a new loader for each render, so this must be static
+	 * to distinguish a re-entrant render from a later top-level render.
+	 *
+	 * @var int
+	 */
+	private static $render_depth = 0;
+
+	/**
 	 * Locates and renders the album based on the template
 	 * Will look in the following locations
 	 *  wp-content/themes/{child-theme}/foogallery/album-{template}.php
@@ -18,79 +28,212 @@ class FooGallery_Album_Template_Loader {
 	 * @param $args array       Arguments passed in from the shortcode
 	 */
 	public function render_template( $args ) {
-		//do some work before we locate the template
-		global $current_foogallery_album;
-		global $current_foogallery_album_arguments;
-		global $current_foogallery_album_template;
+		$global_names     = array(
+			'current_foogallery_album',
+			'current_foogallery_album_arguments',
+			'current_foogallery_album_template',
+		);
+		$previous_globals = array();
 
-		//set the arguments
-		$current_foogallery_album_arguments = $args;
-
-		//load our album
-		$current_foogallery_album = $this->find_album( $args );
-
-		if ( false === $current_foogallery_album ) {
-			esc_html_e( 'Could not load the album!', 'foogallery' );
-			return;
+		foreach ( $global_names as $global_name ) {
+			$previous_globals[ $global_name ] = array(
+				'exists' => array_key_exists( $global_name, $GLOBALS ),
+				'value'  => array_key_exists( $global_name, $GLOBALS ) ? $GLOBALS[ $global_name ] : null,
+			);
 		}
 
-		//find the gallery template we will use to render the gallery
-		$current_foogallery_album_template = $this->get_arg( $args, 'template', $current_foogallery_album->album_template );
+		$is_nested = self::$render_depth > 0;
+		++self::$render_depth;
 
-		//set a default if we have no gallery template
-		if ( empty($current_foogallery_album_template) ) {
-			$current_foogallery_album_template = foogallery_get_default( 'album_template' );
-		}
+		try {
+			/**
+			 * Filters album template arguments before the album is resolved.
+			 *
+			 * Extensions can use this filter to resolve routing state and replace the
+			 * album ID used for the current render.
+			 *
+			 * @param array $args Arguments passed to the template loader.
+			 */
+			$render_args = apply_filters( 'foogallery_album_template_args', $args );
 
-		//if we still have not default, then use the first one we can find
-		if ( empty($current_foogallery_album_template) ) {
-			$available_templates = foogallery_album_templates();
-			$current_foogallery_album_template = $available_templates[0]['slug'];
-		}
+			$GLOBALS['current_foogallery_album_arguments'] = $render_args;
 
-		//check if we have any galleries
-		if ( ! $current_foogallery_album->has_galleries() ) {
-			//no galleries!
-			do_action( "foogallery_album_template_no_galleries-($current_foogallery_album_template)", $current_foogallery_album );
-		} else {
+			$album = $this->find_album( $render_args );
 
-			//create locator instance
+			$GLOBALS['current_foogallery_album'] = $album;
+
+			if ( false === $album ) {
+				esc_html_e( 'Could not load the album!', 'foogallery' );
+				$this->finish_render( $previous_globals, $is_nested );
+				return;
+			}
+
+			$template_slug = $this->get_arg( $render_args, 'template', $album->album_template );
+
+			if ( empty( $template_slug ) ) {
+				$template_slug = foogallery_get_default( 'album_template' );
+			}
+
+			if ( empty( $template_slug ) ) {
+				$available_templates = foogallery_album_templates();
+				$template_slug       = $available_templates[0]['slug'];
+			}
+
+			$this->set_render_globals( $album, $render_args, $template_slug );
+
+			/**
+			 * Filters whether the current album has items that can be rendered.
+			 *
+			 * Extensions can use this filter to make albums containing non-gallery
+			 * items, such as child albums, pass the empty album check.
+			 *
+			 * @param bool            $has_renderable_items Whether the album has renderable items.
+			 * @param FooGalleryAlbum $album               The album being rendered.
+			 * @param array           $args                Arguments passed in from the shortcode.
+			 * @param string          $template_slug       The resolved album template slug.
+			 */
+			$has_renderable_items = apply_filters(
+				'foogallery_album_has_renderable_items',
+				$album->has_galleries(),
+				$album,
+				$render_args,
+				$template_slug
+			);
+
+			if ( ! $has_renderable_items ) {
+				// Preserve the malformed legacy dynamic action for compatibility.
+				$this->set_render_globals( $album, $render_args, $template_slug );
+				do_action( "foogallery_album_template_no_galleries-($template_slug)", $album );
+
+				/**
+				 * Fires when an album has no renderable items.
+				 *
+				 * @param FooGalleryAlbum $album         The album being rendered.
+				 * @param array           $args          Arguments passed in from the shortcode.
+				 * @param string          $template_slug The resolved album template slug.
+				 */
+				$this->set_render_globals( $album, $render_args, $template_slug );
+				do_action( 'foogallery_album_template_no_galleries', $album, $render_args, $template_slug );
+				$this->set_render_globals( $album, $render_args, $template_slug );
+				do_action( "foogallery_album_template_no_galleries-{$template_slug}", $album, $render_args );
+				$this->set_render_globals( $album, $render_args, $template_slug );
+
+				$this->finish_render( $previous_globals, $is_nested );
+				return;
+			}
+
 			$instance_name = FOOGALLERY_SLUG . '_album_templates';
-			$loader = new Foo_Plugin_File_Locator_v1( $instance_name, FOOGALLERY_FILE, 'templates', FOOGALLERY_SLUG );
+			$loader        = new Foo_Plugin_File_Locator_v1( $instance_name, FOOGALLERY_FILE, 'templates', FOOGALLERY_SLUG );
 
-			//allow extensions to very easily add pickup locations for their files
 			$this->add_extension_pickup_locations( $loader, apply_filters( $instance_name . '_files', array() ) );
 
-			if ( false !== ($template_location = $loader->locate_file( "album-{$current_foogallery_album_template}.php" )) ) {
-
-				//we have found a template!
-				do_action( 'foogallery_located_album_template', $current_foogallery_album );
-				do_action( "foogallery_located_album_template-{$current_foogallery_album_template}", $current_foogallery_album );
-
-				//try to include some JS
-				if ( false !== ($js_location = $loader->locate_file( "album-{$current_foogallery_album_template}.js" )) ) {
-					wp_enqueue_script( "foogallery-album-template-{$current_foogallery_album_template}", $js_location['url'] );
-				}
-
-				//try to include some CSS
-				if ( false !== ($css_location = $loader->locate_file( "album-{$current_foogallery_album_template}.css" )) ) {
-					foogallery_enqueue_style( "foogallery-album-template-{$current_foogallery_album_template}", $css_location['url'] );
-				}
-
-				//finally include the actual php template!
-				if ( $template_location ) {
-					load_template( $template_location['path'], false );
-				}
-
-				//we have loaded all files, now let extensions do some stuff
-				do_action( "foogallery_loaded_album_template", $current_foogallery_album );
-				do_action( "foogallery_loaded_album_template-($current_foogallery_album_template)", $current_foogallery_album );
-
-			} else {
-				//we could not find a template!
+			$template_location = $loader->locate_file( "album-{$template_slug}.php" );
+			if ( false === $template_location ) {
 				esc_html_e( 'No album layout found!', 'foogallery' );
+				$this->finish_render( $previous_globals, $is_nested );
+				return;
+			}
+
+			$this->set_render_globals( $album, $render_args, $template_slug );
+			do_action( 'foogallery_located_album_template', $album );
+			$this->set_render_globals( $album, $render_args, $template_slug );
+			do_action( "foogallery_located_album_template-{$template_slug}", $album );
+			$this->set_render_globals( $album, $render_args, $template_slug );
+
+			$js_location = $loader->locate_file( "album-{$template_slug}.js" );
+			if ( false !== $js_location ) {
+				wp_enqueue_script( "foogallery-album-template-{$template_slug}", $js_location['url'] );
+			}
+
+			$css_location = $loader->locate_file( "album-{$template_slug}.css" );
+			if ( false !== $css_location ) {
+				foogallery_enqueue_style( "foogallery-album-template-{$template_slug}", $css_location['url'] );
+			}
+
+			/**
+			 * Filters whether an external renderer handled the album template.
+			 *
+			 * @param bool            $handled           Whether the template was handled externally.
+			 * @param FooGalleryAlbum $album             The album being rendered.
+			 * @param array           $args              Arguments passed in from the shortcode.
+			 * @param array           $template_location The located template path and URL.
+			 * @param string          $template_slug     The resolved album template slug.
+			 */
+			$handled = apply_filters(
+				'foogallery_load_album_template',
+				false,
+				$album,
+				$render_args,
+				$template_location,
+				$template_slug
+			);
+
+			// A nested render or callback may have touched the globals. Reassert the
+			// immutable outer snapshots before a legacy template reads them.
+			$this->set_render_globals( $album, $render_args, $template_slug );
+
+			if ( ! $handled ) {
+				load_template( $template_location['path'], false );
+			}
+
+			$this->set_render_globals( $album, $render_args, $template_slug );
+
+			// Existing lifecycle actions retain their order and argument counts.
+			do_action( 'foogallery_loaded_album_template', $album );
+			$this->set_render_globals( $album, $render_args, $template_slug );
+			do_action( "foogallery_loaded_album_template-($template_slug)", $album );
+			$this->set_render_globals( $album, $render_args, $template_slug );
+
+			/**
+			 * Fires after an album template has been handled or loaded.
+			 *
+			 * @param FooGalleryAlbum $album The album that was rendered.
+			 * @param array           $args  Arguments passed in from the shortcode.
+			 */
+			do_action( "foogallery_loaded_album_template-{$template_slug}", $album, $render_args );
+
+			$this->set_render_globals( $album, $render_args, $template_slug );
+
+			$this->finish_render( $previous_globals, $is_nested );
+		} catch ( Throwable $exception ) {
+			$this->finish_render( $previous_globals, $is_nested );
+			throw $exception;
+		}
+	}
+
+	/**
+	 * Set the legacy globals for one immutable render snapshot.
+	 *
+	 * @param FooGalleryAlbum $album         Album being rendered.
+	 * @param array           $render_args   Resolved render arguments.
+	 * @param string          $template_slug Resolved template slug.
+	 * @return void
+	 */
+	private function set_render_globals( $album, $render_args, $template_slug ) {
+		$GLOBALS['current_foogallery_album']           = $album;
+		$GLOBALS['current_foogallery_album_arguments'] = $render_args;
+		$GLOBALS['current_foogallery_album_template']  = $template_slug;
+	}
+
+	/**
+	 * Finish one render and restore the outer render when this was re-entrant.
+	 *
+	 * @param array $previous_globals Previous existence and value snapshots.
+	 * @param bool  $restore_globals  Whether this invocation had an active outer render.
+	 * @return void
+	 */
+	private function finish_render( $previous_globals, $restore_globals ) {
+		if ( $restore_globals ) {
+			foreach ( $previous_globals as $global_name => $previous_global ) {
+				if ( $previous_global['exists'] ) {
+					$GLOBALS[ $global_name ] = $previous_global['value'];
+				} else {
+					unset( $GLOBALS[ $global_name ] );
+				}
 			}
 		}
+
+		self::$render_depth = max( 0, self::$render_depth - 1 );
 	}
 
 	/**

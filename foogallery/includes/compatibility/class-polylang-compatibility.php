@@ -1,21 +1,37 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Polylang Compatibility Class
+ *
  * Credit : @Chrystl from wordpress.org - https://wordpress.org/support/topic/polylang-conflict-with-foo-gallery
  * Date: 30/08/2015
+ *
+ * @package FooGallery
  */
+
 if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 
+	/**
+	 * Adds FooGallery compatibility behavior for Polylang.
+	 */
 	class FooGallery_Polylang_Compatibility {
 
-		function __construct() {
+		/**
+		 * FooGallery_Polylang_Compatibility constructor.
+		 */
+		public function __construct() {
 
 			if ( class_exists( 'Polylang' ) ) {
 
 				add_filter( 'pll_get_post_types', array( $this, 'add_foogallery_cpt' ), 10, 2 );
 				add_filter( 'pll_copy_post_metas', array( $this, 'ignore_foogallery_meta' ), 10, 2 );
+				add_filter( 'foogallery_attachment_get_posts_args', array( $this, 'include_all_languages_for_gallery_attachments' ), 10, 2 );
 
-				//whitelist the Polylang metabox
+				// Whitelist the Polylang metabox.
 				add_filter( 'foogallery_metabox_sanity_foogallery', array( $this, 'add_pll_metaboxes' ) );
 
 				add_action( 'admin_notices', array( $this, 'admin_notice' ) );
@@ -26,12 +42,12 @@ if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 		/**
 		 * Adds Foogallery post type to Polylang settings as 'public' is set to false
 		 *
-		 * @param $post_types
-		 * @param $settings
+		 * @param array $post_types Post types registered with Polylang.
+		 * @param bool  $settings   Whether the list is for Polylang settings.
 		 *
 		 * @return mixed
 		 */
-		function add_foogallery_cpt( $post_types, $settings ) {
+		public function add_foogallery_cpt( $post_types, $settings ) {
 			if ( $settings ) {
 				$post_types['foogallery'] = 'foogallery';
 			}
@@ -42,11 +58,11 @@ if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 		/**
 		 * Adds/whitelists polylang metabox 'ml_box' as Foogallery blocks it by default
 		 *
-		 * @param $metabox_ids
+		 * @param array $metabox_ids Allowed metabox IDs.
 		 *
 		 * @return array
 		 */
-		function add_pll_metaboxes ($metabox_ids) {
+		public function add_pll_metaboxes( $metabox_ids ) {
 			$metabox_ids[] = 'ml_box';
 			return $metabox_ids;
 		}
@@ -55,40 +71,70 @@ if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 		 * Unsets the copy and synchronization of the fooggallery post meta.
 		 * A better solution will be to rewritte a copy function to get the translation
 		 *
-		 * @param $metas
-		 * @param $sync
+		 * @param array $metas Meta keys Polylang may copy or synchronize.
+		 * @param bool  $sync  Whether Polylang is synchronizing metadata.
 		 *
 		 * @return mixed
 		 */
-		function ignore_foogallery_meta($metas, $sync) {
+		public function ignore_foogallery_meta( $metas, $sync ) {
 
-			$key = array_search( FOOGALLERY_META_SETTINGS, $metas );
-			if ( $key ) unset( $metas[$key] );
+			$key = array_search( FOOGALLERY_META_SETTINGS, $metas, true );
+			if ( false !== $key ) {
+				unset( $metas[ $key ] );
+			}
 
-			$key = array_search( FOOGALLERY_META_ATTACHMENTS, $metas );
-			if ( $key ) unset( $metas[$key] );
+			$key = array_search( FOOGALLERY_META_ATTACHMENTS, $metas, true );
+			if ( false !== $key ) {
+				unset( $metas[ $key ] );
+			}
 
-			$key = array_search( FOOGALLERY_META_CUSTOM_CSS, $metas );
-			if ( $key ) unset( $metas[$key] );
+			$key = array_search( FOOGALLERY_META_CUSTOM_CSS, $metas, true );
+			if ( false !== $key ) {
+				unset( $metas[ $key ] );
+			}
 
-			$key = array_search( FOOGALLERY_META_TEMPLATE, $metas );
-			if ( $key ) unset( $metas[$key] );
+			$key = array_search( FOOGALLERY_META_TEMPLATE, $metas, true );
+			if ( false !== $key ) {
+				unset( $metas[ $key ] );
+			}
 
-			$key = array_search( FOOGALLERY_META_SORT, $metas );
-			if ( $key ) unset( $metas[$key] );
+			$key = array_search( FOOGALLERY_META_SORT, $metas, true );
+			if ( false !== $key ) {
+				unset( $metas[ $key ] );
+			}
 
 			return $metas;
 		}
 
 		/**
+		 * Ensure explicit gallery attachment queries are not filtered to the current Polylang language.
+		 *
+		 * When Polylang's Media module is enabled, attachment queries are filtered by the current language.
+		 * FooGallery stores explicit attachment IDs on the gallery, so those IDs should be loaded regardless
+		 * of the language currently being rendered.
+		 *
+		 * @param array      $query_args Attachment query args.
+		 * @param FooGallery $foogallery  Gallery being rendered.
+		 *
+		 * @return array
+		 */
+		public function include_all_languages_for_gallery_attachments( $query_args, $foogallery ) {
+			if ( isset( $query_args['post__in'] ) && ! empty( $query_args['post__in'] ) ) {
+				$query_args['lang'] = 'all';
+			}
+
+			return $query_args;
+		}
+
+		/**
 		 * Add an admin notice to FooGallery pages when Polylang setting media_support is set
 		 */
-		function admin_notice() {
+		public function admin_notice() {
 			if ( FOOGALLERY_CPT_GALLERY === foo_current_screen_post_type() ) {
 
-				$options = get_option('polylang');
+				$options = get_option( 'polylang' );
 
-				if ( array_key_exists( 'media_support', $options ) && 1 === $options['media_support'] ) {
+				if ( is_array( $options ) && array_key_exists( 'media_support', $options ) && 1 === intval( $options['media_support'] ) ) {
 					?>
 				<div class="notice error">
 					<p>

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Created by Brad Vincent.
  * Date: 04/03/2018
@@ -53,9 +58,9 @@ if ( ! class_exists( 'FooGallery_Demo_Content_Generator' ) ) {
 				$title = 'FooGallery Demo Image ' . $image->id;
 				$caption_title = self::build_caption_title( $image->tags );
 				if ( false === $caption_title ) {
-					$caption_title = $lorem->words( rand(3,5) );
+					$caption_title = $lorem->words( wp_rand( 3, 5 ) );
 				}
-				$caption_desc = $lorem->words( rand(8, 15) );
+				$caption_desc = $lorem->words( wp_rand( 8, 15 ) );
 
 				$results[] = array(
 					'title'		   => $title,

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Notices class
  */
@@ -124,21 +129,34 @@ if ( ! class_exists( 'FooGallery_Admin_Notices' ) ) {
 
 			//we must show the message - get out early
 			if ( 0 === $show_message ) {
-				$galleries = get_posts( array(
-					'post_type'     => FOOGALLERY_CPT_GALLERY,
-					'post_status'   => array( 'publish', 'draft' ),
-					'cache_results' => false,
-					'nopaging'      => true,
-				) );
+				$gallery_count = 0;
+				$page          = 1;
+				$batch_size    = 25;
 
-				$gallery_count = $this->count_excluding_demos( $galleries );
+				do {
+					$galleries = get_posts( array(
+						'post_type'              => FOOGALLERY_CPT_GALLERY,
+						'post_status'            => array( 'publish', 'draft' ),
+						'posts_per_page'         => $batch_size,
+						'paged'                  => $page,
+						'orderby'                => 'ID',
+						'order'                  => 'DESC',
+						'cache_results'          => false,
+						'update_post_meta_cache' => false,
+						'update_post_term_cache' => false,
+					) );
 
-				if ( $gallery_count >= 5 ) {
-					update_option( 'foogallery_admin_rating_notice_dismiss', 'show' );
-					return true;
-				} else {
-					return false;
-				}
+					$gallery_count += $this->count_excluding_demos( $galleries );
+
+					if ( $gallery_count >= 5 ) {
+						update_option( 'foogallery_admin_rating_notice_dismiss', 'show' );
+						return true;
+					}
+
+					$page++;
+				} while ( $batch_size === count( $galleries ) );
+
+				return false;
 			}
 
 			return true;

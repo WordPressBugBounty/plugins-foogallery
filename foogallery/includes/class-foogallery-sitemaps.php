@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class for managing sitemaps within FooGallery
  */
@@ -14,6 +19,7 @@ if ( ! class_exists( 'FooGallery_Sitemaps' ) ) {
 			//check if WordPress sitemaps are supported
 			if ( function_exists( 'wp_register_sitemap_provider' ) && class_exists( 'WP_Sitemaps_Provider' ) ) {
 				$provider = new FooGallery_Sitemaps_Provider();
+				// phpcs:ignore -- Compatibility is guarded by function_exists() and class_exists().
 				wp_register_sitemap_provider( 'foogallery', $provider );
 			}
 		}

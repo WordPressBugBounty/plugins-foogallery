@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class for the default thumbnail engine in FooGallery
  */
@@ -119,9 +123,9 @@ Error : ';
 				}
 
 			} else {
-				echo '<img src="' . esc_url( $url ) . '" />';
+				echo '<img src="' . esc_url( $url ) . '" alt="' . esc_attr__( 'Original image', 'foogallery' ) . '" />';
 				echo '&nbsp;&nbsp;&nbsp;→→→&nbsp;&nbsp;&nbsp;';
-				echo '<img src="' . esc_url( $resize_url ) . '" />';
+				echo '<img src="' . esc_url( $resize_url ) . '" alt="' . esc_attr__( 'Generated thumbnail', 'foogallery' ) . '" />';
 			}
 
 

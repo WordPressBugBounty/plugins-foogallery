@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Create gallery ability.
  */
@@ -22,6 +27,7 @@ if ( ! class_exists( 'FooGallery_Ability_Create_Gallery' ) ) {
 		 * Register the ability with the WordPress core Abilities API.
 		 */
 		public function register() {
+			// phpcs:ignore -- This callback is registered only when the WordPress Abilities API is available.
 			wp_register_ability(
 				self::ID,
 				array(
@@ -130,13 +136,9 @@ if ( ! class_exists( 'FooGallery_Ability_Create_Gallery' ) ) {
 				return $template;
 			}
 
-			$attachment_ids = foogallery_abilities_validate_attachment_ids(
+			$attachment_ids = foogallery_normalize_attachment_ids(
 				isset( $args['attachment_ids'] ) ? $args['attachment_ids'] : array()
 			);
-
-			if ( is_wp_error( $attachment_ids ) ) {
-				return $attachment_ids;
-			}
 
 			if ( empty( $attachment_ids ) ) {
 				return new WP_Error(
@@ -152,22 +154,8 @@ if ( ! class_exists( 'FooGallery_Ability_Create_Gallery' ) ) {
 				$title = __( 'Untitled Gallery', 'foogallery' );
 			}
 
-			$gallery_id = wp_insert_post(
-				array(
-					'post_type'   => FOOGALLERY_CPT_GALLERY,
-					'post_title'  => $title,
-					'post_status' => $status,
-				),
-				true
-			);
-
-			if ( is_wp_error( $gallery_id ) ) {
-				return $gallery_id;
-			}
-
 			$request_context = array(
 				'ability'        => self::ID,
-				'gallery_id'     => $gallery_id,
 				'layout'         => $template['slug'],
 				'template'       => $template['slug'],
 				'attachment_ids' => $attachment_ids,
@@ -178,7 +166,6 @@ if ( ! class_exists( 'FooGallery_Ability_Create_Gallery' ) ) {
 			);
 
 			if ( is_wp_error( $request_context['settings'] ) ) {
-				wp_delete_post( $gallery_id, true );
 				return $request_context['settings'];
 			}
 
@@ -187,36 +174,31 @@ if ( ! class_exists( 'FooGallery_Ability_Create_Gallery' ) ) {
 				$template['slug'],
 				$request_context['settings'],
 				$settings,
-				$gallery_id,
+				0,
 				$request_context
 			);
 
-			update_post_meta( $gallery_id, FOOGALLERY_META_TEMPLATE, $template['slug'] );
-			update_post_meta( $gallery_id, FOOGALLERY_META_SETTINGS, $settings );
-			update_post_meta( $gallery_id, FOOGALLERY_META_ATTACHMENTS, $attachment_ids );
-			update_post_meta( $gallery_id, FOOGALLERY_META_DATASOURCE, foogallery_default_datasource() );
-			delete_post_meta( $gallery_id, FOOGALLERY_META_DATASOURCE_VALUE );
+			$insert_args = array(
+				'title'          => $title,
+				'status'         => $status,
+				'template'       => $template['slug'],
+				'settings'       => $settings,
+				'attachment_ids' => $attachment_ids,
+			);
 
 			if ( isset( $args['sort'] ) ) {
-				$sort = foogallery_abilities_sanitize_gallery_sort( $args['sort'] );
-				if ( '' === $sort ) {
-					delete_post_meta( $gallery_id, FOOGALLERY_META_SORT );
-				} else {
-					update_post_meta( $gallery_id, FOOGALLERY_META_SORT, $sort );
-				}
+				$insert_args['sort'] = foogallery_abilities_sanitize_gallery_sort( $args['sort'] );
 			}
 
 			if ( isset( $args['custom_css'] ) ) {
-				$custom_css = foogallery_sanitize_full( $args['custom_css'] );
-				if ( '' === $custom_css ) {
-					delete_post_meta( $gallery_id, FOOGALLERY_META_CUSTOM_CSS );
-				} else {
-					update_post_meta( $gallery_id, FOOGALLERY_META_CUSTOM_CSS, $custom_css );
-				}
+				$insert_args['custom_css'] = foogallery_sanitize_full( $args['custom_css'] );
 			}
 
-			foogallery_abilities_clear_gallery_cache( $gallery_id );
-			do_action( 'foogallery_after_save_gallery', $gallery_id, $request_context );
+			$gallery_id = foogallery_insert_gallery( $insert_args, $request_context );
+
+			if ( is_wp_error( $gallery_id ) ) {
+				return foogallery_abilities_map_gallery_management_error( $gallery_id );
+			}
 
 			$gallery = foogallery_abilities_get_gallery( $gallery_id );
 

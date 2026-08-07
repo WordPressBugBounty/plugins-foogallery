@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Custom CSS Notice class
  */
@@ -49,6 +54,7 @@ if ( ! class_exists( 'FooGallery_Admin_Notice_CustomCSS' ) ) {
                     'title'   => __( 'Custom CSS Review!', 'foogallery' ),
                     'desc'    => __( 'We found custom CSS that needs to be reviewed. Since FooGallery update v3, custom CSS related to captions (specifically when using `fg-caption`), nees to be reivewed and in some cases updated.', 'foogallery' ) . '<br />' . 
                         __( 'Changes are not always needed, so if you review your Custom CSS and all seems correct, you can safely dismiss the admin notice, and ignore this message.', 'foogallery' ) . '<br />' . 
+                        /* translators: %s: Value inserted at runtime. */
                         sprintf( __( 'For more info, please read our %s.', 'foogallery' ), $link_html ),
                     'type'    => 'custom_css_update',
                     'tab'     => 'custom_assets',
@@ -144,6 +150,7 @@ if ( ! class_exists( 'FooGallery_Admin_Notice_CustomCSS' ) ) {
                     $galleries = $option['galleries'];
                     if ( count( $galleries ) > 0 ) {
                         ?>
+                        <?php /* translators: %s: Value inserted at runtime. */ ?>
                         <p><?php printf( esc_html__( 'We found outdated custom CSS in %s galleries that needs to be updated.', 'foogallery' ), count( $galleries ) ); ?></p>
                         <?php
                     }
@@ -153,6 +160,7 @@ if ( ! class_exists( 'FooGallery_Admin_Notice_CustomCSS' ) ) {
                         <?php
                     }
                 ?>
+                <?php /* translators: %s: Value inserted at runtime. */ ?>
                 <p><?php printf( esc_html__( 'You will need to update your custom CSS! Visit %s to see what needs updating', 'foogallery' ), wp_kses_post( $link ) ); ?></p>
             <?php }
         }

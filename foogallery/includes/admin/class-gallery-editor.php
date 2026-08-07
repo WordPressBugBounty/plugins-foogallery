@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Gallery MetaBoxes class
  */
@@ -53,9 +57,11 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 
 			?>
 				<button type="button" class="button foogallery-modal-trigger"
+					<?php /* translators: %s: Value inserted at runtime. */ ?>
 					title="<?php esc_attr_e( sprintf( __( 'Add Gallery From %s', 'foogallery' ), foogallery_plugin_name() ) ); ?>"
 					style="padding-left: .4em;"
 					data-editor="<?php esc_attr_e( $editor_id ); ?>">
+					<?php /* translators: %s: Value inserted at runtime. */ ?>
 					<span class="wp-media-buttons-icon dashicons dashicons-format-gallery"></span> <?php echo esc_html( sprintf( __( 'Add %s', 'foogallery' ), foogallery_plugin_name() ) ); ?>
 				</button>
 			<?php
@@ -271,14 +277,17 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Editor' ) ) {
 				) );
 				$images = $gallery->image_count();
 				$title = empty( $gallery->name ) ?
+					/* translators: %s: Value inserted at runtime. */
 					sprintf( __( '%s #%s', 'foogallery' ), foogallery_plugin_name(), $gallery->ID ) :
 					$gallery->name;
+				/* translators: %s: gallery title. */
+				$image_alt = sprintf( __( 'Preview of %s', 'foogallery' ), $title );
 				?>
                 <li class="foogallery-pile">
                     <div class="foogallery-gallery-select" data-foogallery-id="<?php echo esc_attr( $gallery->ID ); ?>">
                         <div style="display: table;">
                             <div style="display: table-cell; vertical-align: middle; text-align: center;">
-                                <img src="<?php echo esc_url( $img_src ); ?>"/>
+                                <img src="<?php echo esc_url( $img_src ); ?>" alt="<?php echo esc_attr( $image_alt ); ?>"/>
                                 <h3>
 									<?php echo esc_html( $title ); ?>
                                     <span><?php echo esc_html( $images ); ?></span>

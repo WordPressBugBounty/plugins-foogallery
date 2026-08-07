@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery Image Viewer gallery template
  * This is the template that is run when a FooGallery shortcode is rendered to the frontend

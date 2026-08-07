@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class to help users who also use Autoptomize plugin
  * Date: 2017/11/12
@@ -53,10 +58,10 @@ if ( !class_exists( 'FooGallery_Autoptimize_Compatibility' ) ) {
             </script>
             <div class="foogallery-autoptimize-notice notice error is-dismissible">
                 <p>
-                    <strong><?php esc_html_e( 'FooGallery + Autoptimize : ', 'foobox-image-lightbox' ); ?></strong>
-                    <?php esc_html_e( 'We noticed that you have the Autoptimize plugin installed. After updating FooGallery, please make sure you delete the Autoptimize cache from the admin bar above to make sure your galleries continue to display correctly.' ); ?>
+                    <strong><?php esc_html_e( 'FooGallery + Autoptimize : ', 'foogallery' ); ?></strong>
+                    <?php esc_html_e( 'We noticed that you have the Autoptimize plugin installed. After updating FooGallery, please make sure you delete the Autoptimize cache from the admin bar above to make sure your galleries continue to display correctly.', 'foogallery' ); ?>
                     <br />
-                    <?php esc_html_e( 'If you continue to have issues using FooGallery and Autoptimize together, then please goto Autoptimize Plugin settings –> Java Script Options –> Exclude Scripts and add foogallery.min.js' ); ?>
+                    <?php esc_html_e( 'If you continue to have issues using FooGallery and Autoptimize together, then please goto Autoptimize Plugin settings –> Java Script Options –> Exclude Scripts and add foogallery.min.js', 'foogallery' ); ?>
                 </p>
             </div>
             <?php

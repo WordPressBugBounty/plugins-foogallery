@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class used to handle lazy loading for gallery templates
  * Date: 20/03/2017
@@ -9,6 +14,9 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 	 * Class FooGallery_LazyLoad
 	 */
 	class FooGallery_LazyLoad {
+
+		const MODE_SEO    = '';
+		const MODE_LEGACY = 'legacy';
 
 		/**
 		 * FooGallery_LazyLoad constructor.
@@ -22,6 +30,9 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 
 			// change the image src attribute to data attributes if lazy loading is enabled.
 			add_filter( 'foogallery_attachment_html_image_attributes', array( $this, 'change_src_attributes' ), 99, 3 );
+
+			// set the native image loading attribute for SEO friendly lazy loading.
+			add_filter( 'foogallery_attachment_html_image_loading_attribute', array( $this, 'image_loading_attribute' ), 10, 4 );
 
 			// add the lazy load attributes to the gallery container.
 			add_filter( 'foogallery_build_container_data_options', array( $this, 'add_lazyload_options' ), 10, 3 );
@@ -46,7 +57,9 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 		 */
 		public function add_item_classes_for_lazy_loading( $classes, $foogallery_attachment, $args ) {
 			global $current_foogallery;
-			if ( $this->gallery_lazyload_enabled( $current_foogallery ) ) {
+			if ( $this->gallery_seo_lazyload_enabled( $current_foogallery ) ) {
+				$classes[] = 'fg-loading';
+			} elseif ( $this->gallery_lazyload_enabled( $current_foogallery ) ) {
 				$classes[] = 'fg-idle';
 			} else {
 				$classes[] = 'fg-loaded';
@@ -99,6 +112,9 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 					$lazyloading_forced_disabled                  = foogallery_get_setting( 'disable_lazy_loading' ) === 'on';
 					$current_foogallery->lazyload_forced_disabled = $lazyloading_forced_disabled;
 
+					//set the lazy loading mode for the gallery
+					$current_foogallery->lazyload_mode = $this->lazyload_mode();
+
 					//check if we are inside a feed
 					if ( is_feed() ) {
 						$current_foogallery->is_feed = true;
@@ -117,33 +133,7 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 		 * @return mixed
 		 */
 		function change_src_attributes( $attr, $args, $attachment ) {
-			global $current_foogallery;
-
-			$replace_attributes = false;
-
-			if ( null !== $current_foogallery ) {
-
-				// check if we inside a feed and exit early.
-				if ( isset( $current_foogallery->is_feed ) && true === $current_foogallery->is_feed ) {
-					return $attr;
-				}
-
-				if ( $this->gallery_lazyload_enabled( $current_foogallery ) ) {
-					$replace_attributes = true;
-				}
-			} else {
-				// if we get here then check we are dealing with an album.
-				global $current_foogallery_album;
-
-				if ( null !== $current_foogallery_album ) {
-					// check if we have lazy loading disabled.
-					if ( foogallery_get_setting( 'disable_lazy_loading' ) !== 'on' ) {
-						$replace_attributes = true;
-					}
-				}
-			}
-
-			if ( $replace_attributes ) {
+			if ( $this->legacy_lazyload_enabled_for_current_context() ) {
 				if ( isset( $attr['src'] ) ) {
 					// rename src => data-src-fg.
 					$src = $attr['src'];
@@ -163,9 +153,29 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 					// set the src to a transparent SVG that has the correct width and height.
 					$attr['src'] = foogallery_get_svg_placeholder_image( $attr['width'], $attr['height'] );
 				}
+			} else if ( $this->seo_lazyload_enabled_for_current_context() ) {
+				$attr['decoding'] = 'async';
 			}
 
 			return $attr;
+		}
+
+		/**
+		 * Set the image loading attribute for SEO friendly lazy loading.
+		 *
+		 * @param string               $loading The loading attribute.
+		 * @param array                $attr The image attributes.
+		 * @param array                $args Any extra args.
+		 * @param FooGalleryAttachment $attachment The current attachment we are working with.
+		 *
+		 * @return string The loading attribute.
+		 */
+		function image_loading_attribute( $loading, $attr, $args, $attachment ) {
+			if ( $this->seo_lazyload_enabled_for_current_context() ) {
+				return 'lazy';
+			}
+
+			return $loading;
 		}
 
 		/**
@@ -179,7 +189,7 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 		function add_lazyload_options( $options, $gallery, $attributes ) {
 			$lazyload_enabled = $this->gallery_lazyload_enabled( $gallery );
 			$options['lazy']  = $lazyload_enabled;
-			if ( ! $lazyload_enabled ) {
+			if ( ! $lazyload_enabled || $this->gallery_seo_lazyload_enabled( $gallery ) ) {
 				$options['src']    = 'src';
 				$options['srcset'] = 'srcset';
 			}
@@ -193,6 +203,115 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 		private function gallery_lazyload_enabled( $gallery ) {
 			if ( isset( $gallery->lazyload_support ) && true === $gallery->lazyload_support ) {
 				return $gallery->lazyload_enabled && ! $gallery->lazyload_forced_disabled;
+			}
+
+			return false;
+		}
+
+		/**
+		 * Check if a gallery should use SEO friendly lazy loading.
+		 *
+		 * @param FooGallery $gallery The gallery to check.
+		 *
+		 * @return bool
+		 */
+		private function gallery_seo_lazyload_enabled( $gallery ) {
+			return $this->gallery_lazyload_enabled( $gallery ) && self::MODE_SEO === $this->gallery_lazyload_mode( $gallery );
+		}
+
+		/**
+		 * Check if a gallery should use legacy lazy loading.
+		 *
+		 * @param FooGallery $gallery The gallery to check.
+		 *
+		 * @return bool
+		 */
+		private function gallery_legacy_lazyload_enabled( $gallery ) {
+			return $this->gallery_lazyload_enabled( $gallery ) && self::MODE_LEGACY === $this->gallery_lazyload_mode( $gallery );
+		}
+
+		/**
+		 * Get the lazy loading mode for a gallery.
+		 *
+		 * @param FooGallery $gallery The gallery to check.
+		 *
+		 * @return string
+		 */
+		private function gallery_lazyload_mode( $gallery ) {
+			if ( isset( $gallery->lazyload_mode ) ) {
+				return $this->sanitize_lazyload_mode( $gallery->lazyload_mode );
+			}
+
+			return $this->lazyload_mode();
+		}
+
+		/**
+		 * Get the global lazy loading mode.
+		 *
+		 * @return string
+		 */
+		private function lazyload_mode() {
+			return $this->sanitize_lazyload_mode( foogallery_get_setting( 'lazy_loading_mode', self::MODE_SEO ) );
+		}
+
+		/**
+		 * Sanitize the lazy loading mode.
+		 *
+		 * @param string $mode The mode value.
+		 *
+		 * @return string
+		 */
+		private function sanitize_lazyload_mode( $mode ) {
+			if ( self::MODE_LEGACY === $mode ) {
+				return self::MODE_LEGACY;
+			}
+
+			return self::MODE_SEO;
+		}
+
+		/**
+		 * Check if the current rendering context should use SEO friendly lazy loading.
+		 *
+		 * @return bool
+		 */
+		private function seo_lazyload_enabled_for_current_context() {
+			global $current_foogallery;
+			global $current_foogallery_album;
+
+			if ( null !== $current_foogallery ) {
+				if ( isset( $current_foogallery->is_feed ) && true === $current_foogallery->is_feed ) {
+					return false;
+				}
+
+				return $this->gallery_seo_lazyload_enabled( $current_foogallery );
+			}
+
+			if ( null !== $current_foogallery_album ) {
+				return foogallery_get_setting( 'disable_lazy_loading' ) !== 'on' && self::MODE_SEO === $this->lazyload_mode();
+			}
+
+			return false;
+		}
+
+		/**
+		 * Check if the current rendering context should use legacy lazy loading.
+		 *
+		 * @return bool
+		 */
+		private function legacy_lazyload_enabled_for_current_context() {
+			global $current_foogallery;
+			global $current_foogallery_album;
+
+			if ( null !== $current_foogallery ) {
+				if ( isset( $current_foogallery->is_feed ) && true === $current_foogallery->is_feed ) {
+					return false;
+				}
+
+				return $this->gallery_legacy_lazyload_enabled( $current_foogallery );
+			}
+
+			if ( null !== $current_foogallery_album ) {
+				return foogallery_get_setting( 'disable_lazy_loading' ) !== 'on' && self::MODE_LEGACY === $this->lazyload_mode();
 			}
 
 			return false;
@@ -240,6 +359,19 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 		 */
 		function add_settings( $settings ) {
 
+			$lazy_loading_mode_setting = array(
+				'id'      => 'lazy_loading_mode',
+				'title'   => __( 'Lazy Loading Mode', 'foogallery' ),
+				'desc'    => __( 'SEO Friendly outputs real image URLs and uses native browser lazy loading. Legacy uses FooGallery\'s JavaScript placeholder lazy loading for compatibility with older setups.', 'foogallery' ),
+				'type'    => 'radio',
+				'default' => self::MODE_SEO,
+				'choices' => array(
+					self::MODE_SEO    => __( 'SEO Friendly', 'foogallery' ),
+					self::MODE_LEGACY => __( 'Legacy', 'foogallery' ),
+				),
+				'tab'     => 'advanced',
+			);
+
 			$lazy_settings[] = array(
 				'id'      => 'disable_lazy_loading',
 				'title'   => __( 'Disable Lazy Loading', 'foogallery' ),
@@ -252,6 +384,16 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 			$new_settings = array_merge( $lazy_settings, $settings['settings'] );
 
 			$settings['settings'] = $new_settings;
+
+			foreach ( $settings['settings'] as $index => $setting ) {
+				if ( isset( $setting['tab'] ) && 'advanced' === $setting['tab'] ) {
+					array_splice( $settings['settings'], $index, 0, array( $lazy_loading_mode_setting ) );
+
+					return $settings;
+				}
+			}
+
+			$settings['settings'][] = $lazy_loading_mode_setting;
 
 			return $settings;
 		}

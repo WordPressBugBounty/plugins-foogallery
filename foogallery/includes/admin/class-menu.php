@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Menu class
  */
@@ -40,18 +45,22 @@ if ( ! class_exists( 'FooGallery_Admin_Menu' ) ) {
 			$menu_labels = apply_filters( 'foogallery_admin_menu_labels',
 				array(
 					array(
+						/* translators: %s: Value inserted at runtime. */
 						'page_title' => sprintf( __( '%s Settings', 'foogallery' ), foogallery_plugin_name() ),
 						'menu_title' => __( 'Settings', 'foogallery' ),
 					),
 					array(
+						/* translators: %s: Value inserted at runtime. */
 						'page_title' => sprintf( __( '%s Features', 'foogallery' ), foogallery_plugin_name() ),
 						'menu_title' => __( 'Features', 'foogallery' ),
 					),
 					array(
+						/* translators: %s: Value inserted at runtime. */
 						'page_title' => sprintf( __( '%s Help', 'foogallery' ), foogallery_plugin_name() ),
 						'menu_title' => __( 'Help', 'foogallery' ),
 					),
 					array(
+						/* translators: %s: Value inserted at runtime. */
 						'page_title' => sprintf( __( '%s System Information', 'foogallery' ), foogallery_plugin_name() ),
 						'menu_title' => __( 'System Info', 'foogallery' ),
 					),
@@ -91,10 +100,12 @@ if ( ! class_exists( 'FooGallery_Admin_Menu' ) ) {
 				do_action( 'foogallery_settings_reset' );
 				?>
 				<div id="message" class="updated">
+					<?php /* translators: %s: Value inserted at runtime. */ ?>
 					<p><strong><?php printf( esc_html__( '%s settings reset to defaults.', 'foogallery' ), esc_html( foogallery_plugin_name() ) ); ?></strong></p>
 				</div>
 			<?php } else if ( isset($_GET['settings-updated']) ) { ?>
 				<div id="message" class="updated">
+					<?php /* translators: %s: Value inserted at runtime. */ ?>
 					<p><strong><?php printf( esc_html__( '%s settings updated.', 'foogallery' ), esc_html( foogallery_plugin_name() ) ); ?></strong></p>
 				</div>
 			<?php }
@@ -129,6 +140,7 @@ if ( ! class_exists( 'FooGallery_Admin_Menu' ) ) {
 				if ( $results === false ) {
 					echo esc_html__('There was a problem creating the demo galleries!', 'foogallery');
 				} else {
+					/* translators: %d: Value inserted at runtime. */
 					echo esc_html( sprintf( esc_html__('%d sample images imported, and %d demo galleries created!', 'foogallery'), absint( $results['attachments'] ), absint( $results['galleries'] ) ) );
 				}
 			}

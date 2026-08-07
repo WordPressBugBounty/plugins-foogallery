@@ -65,6 +65,52 @@
 		$('body').trigger('foogallery-album-template-changed-' + selectedTemplate );
 	};
 
+	FOOGALLERYALBUM.galleryDescriptionEditorId = 'foogallery-gallery-detail-fields-gallery_description';
+
+	FOOGALLERYALBUM.initGalleryDescriptionEditor = function() {
+		var id = FOOGALLERYALBUM.galleryDescriptionEditorId,
+			$textarea = $('#' + id);
+
+		if (!$textarea.length || !window.wp || !window.wp.editor || !window.wp.editor.initialize) {
+			return;
+		}
+
+		FOOGALLERYALBUM.removeGalleryDescriptionEditor();
+
+		window.wp.editor.initialize(id, {
+			tinymce: {
+				wpautop: true,
+				toolbar1: 'formatselect,bold,italic,bullist,numlist,blockquote,link,unlink,undo,redo'
+			},
+			quicktags: true,
+			mediaButtons: false
+		});
+	};
+
+	FOOGALLERYALBUM.syncGalleryDescriptionEditor = function() {
+		var id = FOOGALLERYALBUM.galleryDescriptionEditorId,
+			editor = window.tinyMCE && window.tinyMCE.get(id);
+
+		if (editor && !editor.isHidden()) {
+			editor.save();
+		}
+	};
+
+	FOOGALLERYALBUM.removeGalleryDescriptionEditor = function() {
+		var id = FOOGALLERYALBUM.galleryDescriptionEditorId,
+			hasEditor = $('#wp-' + id + '-wrap').length || (window.tinyMCE && window.tinyMCE.get(id));
+
+		if (window.wp && window.wp.editor && window.wp.editor.remove && hasEditor) {
+			window.wp.editor.remove(id);
+		}
+	};
+
+	FOOGALLERYALBUM.closeAlbumInfoModal = function() {
+		FOOGALLERYALBUM.removeGalleryDescriptionEditor();
+		$('.foogallery-album-info-modal').hide();
+		$('.media-modal-backdrop').hide();
+	};
+
 	FOOGALLERYALBUM.initAlbumInfoButtons = function() {
 		$('.foogallery-album-gallery-list').on('click', 'a.info', function(e) {
 
@@ -83,6 +129,7 @@
 					'&_wpnonce=' + $nonce.val() +
 					'&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val());
 
+			FOOGALLERYALBUM.removeGalleryDescriptionEditor();
 			$details.html( $details.data('loading') + $this.data('gallery-title') + '...' );
 			$spinner.addClass('is-active');
 
@@ -92,6 +139,7 @@
 				data: data,
 				success: function(data) {
 					$details.html(data);
+					FOOGALLERYALBUM.initGalleryDescriptionEditor();
 				},
 				complete: function() {
 					$spinner.removeClass('is-active');
@@ -110,11 +158,14 @@
 				$spinner = $modal.find('.media-frame-toolbar .spinner'),
 				$nonce = $modal.find('#foogallery_album_gallery_details_nonce'),
 				$form = $modal.find('form[name="foogallery_gallery_details"]'),
-				data = 'action=foogallery_save_gallery_details' +
-						'&foogallery_album_id=' + $('#post_ID').val() +
-						'&_wpnonce=' + $nonce.val() +
-						'&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val()) +
-						'&' + $form.serialize();
+				data;
+
+			FOOGALLERYALBUM.syncGalleryDescriptionEditor();
+			data = 'action=foogallery_save_gallery_details' +
+				'&foogallery_album_id=' + $('#post_ID').val() +
+				'&_wpnonce=' + $nonce.val() +
+				'&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val()) +
+				'&' + $form.serialize();
 
 			$this.attr('disabled', 'disabled');
 			$spinner.addClass('is-active');
@@ -124,8 +175,7 @@
 				url: ajaxurl,
 				data: data,
 				success: function() {
-					$('.foogallery-album-info-modal').hide();
-					$('.media-modal-backdrop').hide();
+					FOOGALLERYALBUM.closeAlbumInfoModal();
 				},
 				complete: function() {
 					$spinner.removeClass('is-active');
@@ -135,8 +185,7 @@
 		});
 
 		$('.foogallery-album-info-modal .media-modal-close').on('click', function() {
-			$('.foogallery-album-info-modal').hide();
-			$('.media-modal-backdrop').hide();
+			FOOGALLERYALBUM.closeAlbumInfoModal();
 		});
 	};
 

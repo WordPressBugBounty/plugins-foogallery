@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Admin Gallery Attachment Modal class
  */
@@ -78,6 +83,10 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 			}
 
 			$modal_data = $this->build_modal_data( $_POST );
+			$image_alt  = ! empty( $modal_data['image_alt'] ) ? $modal_data['image_alt'] : $modal_data['img_title'];
+			if ( empty( $image_alt ) ) {
+				$image_alt = __( 'Attachment preview', 'foogallery' );
+			}
 
 			ob_start() ?>
 
@@ -89,7 +98,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
                     do_action( 'foogallery_attachment_modal_before_thumbnail', $modal_data );
 
                     if ( $modal_data['image_attributes'] ) { ?>
-                        <img src="<?php echo esc_url( $modal_data['image_attributes'][0] ); ?>" width="<?php echo esc_attr( $modal_data['image_attributes'][1] ); ?>" height="<?php echo esc_attr( $modal_data['image_attributes'][2] ); ?>" />
+                        <img src="<?php echo esc_url( $modal_data['image_attributes'][0] ); ?>" width="<?php echo esc_attr( $modal_data['image_attributes'][1] ); ?>" height="<?php echo esc_attr( $modal_data['image_attributes'][2] ); ?>" alt="<?php echo esc_attr( $image_alt ); ?>" />
                     <?php } ?>
                 </div>
                 <div class="foogallery-image-edit-button">
@@ -221,6 +230,14 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 				);
 			}
 
+			$attachment_post = get_post( $img_id );
+			if ( ! is_a( $attachment_post, 'WP_Post' ) || 'attachment' !== $attachment_post->post_type ) {
+				wp_send_json_error(
+					array( 'message' => __( 'Invalid attachment data.', 'foogallery' ) ),
+					400
+				);
+			}
+
 			do_action( 'foogallery_attachment_save_data', $img_id, $foogallery );
 			wp_send_json_success();
 		}
@@ -315,7 +332,8 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 				}
 
 				if ( array_key_exists( 'caption', $data ) ) {
-					$foogallery_post['post_excerpt'] = sanitize_text_field( wp_unslash( $data['caption'] ) );
+					$caption = is_scalar( $data['caption'] ) ? (string) $data['caption'] : '';
+					$foogallery_post['post_excerpt'] = wp_slash( wp_kses_post( $caption ) );
 				}
 
 				if ( array_key_exists( 'description', $data ) ) {
@@ -417,11 +435,33 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 			if ( is_array( $data ) && !empty( $data ) ) {
 
 				if ( array_key_exists( 'crop_pos', $data ) ) {
-					update_post_meta( $img_id, 'foogallery_crop_pos', $data['crop_pos'] );
+					$crop_position = is_scalar( $data['crop_pos'] ) ? strtolower( trim( (string) $data['crop_pos'] ) ) : '';
+					$allowed_crop_positions = array(
+						'left,top',
+						'center,top',
+						'right,top',
+						'left,center',
+						'center,center',
+						'right,center',
+						'left,bottom',
+						'center,bottom',
+						'right,bottom',
+					);
+
+					if ( in_array( $crop_position, $allowed_crop_positions, true ) ) {
+						update_post_meta( $img_id, 'foogallery_crop_pos', $crop_position );
+					} else {
+						delete_post_meta( $img_id, 'foogallery_crop_pos' );
+					}
 				}
 
 				if ( array_key_exists( 'override-thumbnail-id', $data ) ) {
-					update_post_meta( $img_id, 'foogallery_override_thumbnail', $data['override-thumbnail-id'] );
+					$override_thumbnail_id = is_scalar( $data['override-thumbnail-id'] ) ? absint( $data['override-thumbnail-id'] ) : 0;
+					if ( $override_thumbnail_id > 0 ) {
+						update_post_meta( $img_id, 'foogallery_override_thumbnail', $override_thumbnail_id );
+					} else {
+						delete_post_meta( $img_id, 'foogallery_override_thumbnail' );
+					}
 				}
 			}
 		}
@@ -438,19 +478,40 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 
 			if ( is_array( $data ) && !empty( $data ) ) {
 				if ( array_key_exists( 'data-width', $data ) ) {
-					update_post_meta( $img_id, '_data-width', $data['data-width'] );
+					$width = is_scalar( $data['data-width'] ) ? absint( $data['data-width'] ) : 0;
+					if ( $width > 0 ) {
+						update_post_meta( $img_id, '_data-width', $width );
+					} else {
+						delete_post_meta( $img_id, '_data-width' );
+					}
 				}
 
 				if ( array_key_exists( 'data-height', $data ) ) {
-					update_post_meta( $img_id, '_data-height', $data['data-height'] );
+					$height = is_scalar( $data['data-height'] ) ? absint( $data['data-height'] ) : 0;
+					if ( $height > 0 ) {
+						update_post_meta( $img_id, '_data-height', $height );
+					} else {
+						delete_post_meta( $img_id, '_data-height' );
+					}
 				}
 
 				if ( array_key_exists( 'panning', $data ) ) {
-					update_post_meta( $img_id, '_foobox_panning', $data['panning'] );
+					$panning = is_scalar( $data['panning'] ) ? sanitize_key( $data['panning'] ) : '';
+					if ( 'enabled' === $panning ) {
+						update_post_meta( $img_id, '_foobox_panning', $panning );
+					} else {
+						delete_post_meta( $img_id, '_foobox_panning' );
+					}
 				}
 
 				if ( array_key_exists( 'override_type', $data ) ) {
-					update_post_meta( $img_id, '_foogallery_override_type', $data['override_type'] );
+					$override_type = is_scalar( $data['override_type'] ) ? sanitize_key( $data['override_type'] ) : '';
+					$allowed_override_types = array( 'image', 'iframe', 'video', 'embed', 'html' );
+					if ( in_array( $override_type, $allowed_override_types, true ) ) {
+						update_post_meta( $img_id, '_foogallery_override_type', $override_type );
+					} else {
+						delete_post_meta( $img_id, '_foogallery_override_type' );
+					}
 				}
 			}
 		}
@@ -515,13 +576,21 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
                         }
                     }
 
-                    // Get attachment file size.
-                    $file_size = false;
-                    if ( isset( $modal_data['meta']['filesize'] ) ) {
-                        $file_size = $modal_data['meta']['filesize'];
-                    } elseif ( file_exists( $modal_data['file_url'] ) ) {
-                        $file_size = wp_filesize( $modal_data['file_url'] );
-                    }
+					// Get attachment file size.
+					$file_size = false;
+					if ( isset( $modal_data['meta']['filesize'] ) ) {
+						$file_size = $modal_data['meta']['filesize'];
+					} else {
+						$attached_file = get_attached_file( $attachment_id );
+						if ( is_string( $attached_file ) && '' !== $attached_file && ! wp_is_stream( $attached_file ) && is_readable( $attached_file ) ) {
+							if ( function_exists( 'wp_filesize' ) ) {
+								$file_size = wp_filesize( $attached_file );
+							} else {
+								// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filesize -- Compatibility fallback for WordPress below 6.0.
+								$file_size = filesize( $attached_file );
+							}
+						}
+					}
                     if ( ! empty( $file_size ) ) {
                         $modal_data['file_size'] = size_format( $file_size );
                     }
@@ -726,7 +795,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 							</span>								
 							<span class="setting" data-setting="caption">
 								<label for="attachment-details-two-column-caption" class="name"><?php esc_html_e('Caption', 'foogallery'); ?></label>
-								<textarea id="attachment-details-two-column-caption" name="foogallery[caption]"><?php echo esc_attr( $modal_data['caption'] );?></textarea>
+								<textarea id="attachment-details-two-column-caption" name="foogallery[caption]"><?php echo esc_textarea( $modal_data['caption'] );?></textarea>
 							</span>
 							<span class="setting" data-setting="description">
 								<label for="attachment-details-two-column-description" class="name"><?php esc_html_e('Description', 'foogallery'); ?></label>
@@ -842,6 +911,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 
                                 </ul>
                                 <div>
+                                    <?php /* translators: %s: Attachment taxonomy label. */ ?>
                                     <a target="_blank" href="<?php echo esc_url( admin_url( 'edit-tags.php?taxonomy=' . $tax_name ) ); ?>"?><?php printf( esc_html__('Manage %s', 'foogallery' ), esc_html( $taxonomy->labels->name ) ); ?></a>
                                 </div>
                             </div>
@@ -893,7 +963,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Attachment_Modal' ) ) {
 
 							<span class="setting" data-setting="generated-thumbnails">
 								<label class="name"><?php esc_html_e( 'Thumbnail Info', 'foogallery' ); ?></label>
-								<span><?php echo $thumbnail_info; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped - This is safe HTML output from find_thumbnail_info ?> </span>
+								<span><?php echo wp_kses_post( $thumbnail_info ); ?> </span>
 							</span>
 
 						<?php if ( $engine->has_local_cache() ) { ?>

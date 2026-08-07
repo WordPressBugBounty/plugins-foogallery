@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 //include the base engine class
 require_once( FOOGALLERY_PATH . 'includes/thumbs/class-foogallery-thumb-engine.php' );
 

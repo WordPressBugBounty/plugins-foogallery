@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery abilities bootstrap.
  */
@@ -41,6 +46,7 @@ if ( ! class_exists( 'FooGallery_Abilities' ) ) {
 		 * @return void
 		 */
 		public function register_main_category() {
+			// phpcs:ignore -- This callback is registered only when the WordPress Abilities API is available.
 			wp_register_ability_category(
 				self::CATEGORY,
 				array(

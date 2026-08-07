@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery default extensions common functions
  */
@@ -27,49 +32,7 @@ function foogallery_enqueue_core_gallery_template_style() {
  * @param string[] $deps
  */
 function foogallery_enqueue_core_gallery_template_script( $deps = null ) {
-	if ( isset( $deps ) ) {
-		//ensure we deregister the previous one
-		wp_deregister_script( 'foogallery-core' );
-		do_action( 'foogallery_dequeue_script-core' );
-	} else {
-		//set the default
-		$deps = array( 'jquery' );
-	}
-
-	//enqueue the core script
-	$filename_suffix = foogallery_is_debug() ? '' : '.min';
-	$js = apply_filters( 'foogallery_core_gallery_script', FOOGALLERY_DEFAULT_TEMPLATES_EXTENSION_SHARED_URL . 'js/foogallery' . $filename_suffix . '.js' );
-	$deps = apply_filters( 'foogallery_core_gallery_script_deps', $deps );
-
-    if ( foogallery_get_setting( 'enqueue_polyfills', false ) ) {
-        foogallery_enqueue_polyfills();
-        $deps[] = 'foogallery-polyfills';
-    }
-
-	//resolve the asset URL to a fingerprinted version if available.
-	$js = foogallery_resolve_asset_url( $js );
-
-	wp_enqueue_script( 'foogallery-core', $js, $deps, FOOGALLERY_VERSION );
-	do_action( 'foogallery_enqueue_script-core', $js );
-	$feature_deps = array( 'foogallery-core' );
-
-	//apply filters to the custom deps, so scripts are loaded in correct order.
-	$feature_deps = apply_filters( 'foogallery_feature_script_deps', $feature_deps );
-
-	//enqueue the custom JS
-	if ( foogallery_get_setting( 'custom_js', '' ) !== '' ) {
-		$custom_assets = get_option( FOOGALLERY_OPTION_CUSTOM_ASSETS );
-		if ( is_array( $custom_assets ) && array_key_exists( 'script', $custom_assets ) ) {
-			wp_enqueue_script( 'foogallery-custom', $custom_assets['script'], $feature_deps, FOOGALLERY_VERSION );
-			$feature_deps[] = 'foogallery-custom';
-		}
-	}
-
-	//resolve the asset URL to a fingerprinted version if available.
-	$ready_src = foogallery_resolve_asset_url( FOOGALLERY_DEFAULT_TEMPLATES_EXTENSION_SHARED_URL . 'js/foogallery.ready' . $filename_suffix . '.js' );
-	
-	//enqueue the ready script
-	wp_enqueue_script( 'foogallery-ready', $ready_src, $feature_deps, FOOGALLERY_VERSION );
+	FooGallery_Delayed_Runtime_Loader::instance()->enqueue_core_gallery_template_script( $deps );
 }
 
 /**

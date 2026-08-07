@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Thumbnail Resizing class
  */
@@ -56,19 +61,20 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 
 			//allow for plugins to change the thumbnail creation args one final time
 			$args = apply_filters( 'foogallery_thumbnail_resize_args_final', $args, $original_image_src, $thumbnail_object );
+			$requires_image_processing = ! empty( $args['watermark_options'] );
 
 			$width  = (int)$args['width'];
 			$height = (int)$args['height'];
 			$crop   = (bool)$args['crop'];
 
-			if ( 0 === $width && 0 === $height ) {
+			if ( 0 === $width && 0 === $height && ! $requires_image_processing ) {
 				return $original_image_src;
 			}
 
 			//we can force the use of the originally uploaded full-size image
 			$force_use_original_image = isset( $args['force_use_original_image'] ) && true === $args['force_use_original_image'];
 
-			if ( $thumbnail_object->ID > 0 && $force_use_original_image ) {
+			if ( ! $requires_image_processing && $thumbnail_object->ID > 0 && $force_use_original_image ) {
 				$fullsize = wp_get_attachment_image_src( $thumbnail_object->ID, 'fullsize' );
 
 				return $fullsize[0];
@@ -77,7 +83,7 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			//we can force the use of the original WP icon or WP-generated thumb by passing through args individually
 			$force_use_original_thumb = isset( $args['force_use_original_thumb'] ) && true === $args['force_use_original_thumb'];
 
-			if ( $thumbnail_object->ID > 0 && $force_use_original_thumb ) {
+			if ( ! $requires_image_processing && $thumbnail_object->ID > 0 && $force_use_original_thumb ) {
 				$thumbnail_icon = wp_get_attachment_image_src( $thumbnail_object->ID, array( $width, $height ) );
 
 				return $thumbnail_icon[0];
@@ -86,7 +92,7 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			//we can force the use of original WP thumbs by passing through args individually, or by saved settings
 			$use_original_thumbs = ( isset( $args['use_original_thumbs'] ) && true === $args['use_original_thumbs'] ) || 'on' === foogallery_get_setting( 'use_original_thumbs' );
 
-			if ( $use_original_thumbs ) {
+			if ( ! $requires_image_processing && $use_original_thumbs ) {
 
 				$option_thumbnail_size_w = get_option( 'thumbnail_size_w' );
 				$option_thumbnail_size_h = get_option( 'thumbnail_size_h' );
@@ -125,9 +131,18 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			}
 
 			//do some checks to see if the image is smaller
-			if ( $force_resize || $this->should_resize( $thumbnail_object, $args ) ) {
+			if ( $requires_image_processing || $force_resize || $this->should_resize( $thumbnail_object, $args ) ) {
+				/**
+				 * Filters the source URL immediately before the active thumbnail engine runs.
+				 *
+				 * @param string               $original_image_src Original image source URL.
+				 * @param array                $args               Final thumbnail generation arguments.
+				 * @param FooGalleryAttachment $thumbnail_object   Current attachment.
+				 */
+				$thumbnail_source = apply_filters( 'foogallery_thumbnail_resize_source', $original_image_src, $args, $thumbnail_object );
+
 				//save the generated thumb url to a global so that we can use it later if needed
-				$foogallery_last_generated_thumb_url = foogallery_thumb( $original_image_src, $args );
+				$foogallery_last_generated_thumb_url = foogallery_thumb( $thumbnail_source, $args );
 			} else {
 				$foogallery_last_generated_thumb_url = apply_filters('foogallery_thumbnail_resize_small_image', $original_image_src, $args );
 			}
@@ -283,6 +298,7 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			}
 
 			if ( $local_path && file_exists( $local_path ) ) {
+				// phpcs:ignore -- Compatibility is guarded by function_exists().
 				$size = function_exists( 'wp_getimagesize' ) ? wp_getimagesize( $local_path ) : @getimagesize( $local_path );
 
 				if ( isset( $size[0], $size[1] ) ) {

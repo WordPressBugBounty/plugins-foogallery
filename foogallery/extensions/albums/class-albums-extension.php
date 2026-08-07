@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'FooGallery_Albums_Extension' ) ) {
 
 	define( 'FOOGALLERY_ALBUM_PATH', plugin_dir_path( __FILE__ ) );
@@ -78,10 +83,10 @@ if ( ! class_exists( 'FooGallery_Albums_Extension' ) ) {
 		 * @return string
 		 */
 		public function render_gallery_description( $content, $foogallery ) {
-			if ( 'on' === foogallery_get_setting( 'enable_gallery_descriptions' ) ) {
-				if ( isset( $foogallery->_post ) && ! empty( $foogallery->_post->post_content ) ) {
-					$content = apply_filters( 'the_content', $foogallery->_post->post_content );
-				}
+			$description = foogallery_album_gallery_description_html( $foogallery );
+
+			if ( ! empty( $description ) ) {
+				$content = $description;
 			}
 
 			return $content;

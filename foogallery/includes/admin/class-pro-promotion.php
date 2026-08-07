@@ -3,6 +3,10 @@
  * FooGallery Pro Feature Promotion class
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 	class FooGallery_Pro_Promotion {
 
@@ -22,6 +26,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			'foogallery-videos'            => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/video-gallery/',
 			'foogallery-social'            => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/social/',
 			'foogallery-exif'              => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/exif-data/',
+			'foogallery-imagegallery-schema' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/pro-expert',
 			'foogallery-bulk-copy'         => 'https://fooplugins.com/bulk-copy-foogallery-pro/',
 			'foogallery-trial'             => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/start-trial/',
 			'foogallery-pricing'           => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/compare-plans/',
@@ -133,6 +138,9 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 
 					//EXIF
 					add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_exif_promo_fields' ), 10, 2 );
+
+					//ImageGallery Schema
+					add_filter( 'foogallery_override_gallery_template_fields', array( $this, 'add_imagegallery_schema_promo_fields' ), 90, 2 );
 
 					//Bulk Copy Settings
 					add_action( 'add_meta_boxes_' . FOOGALLERY_CPT_GALLERY, array( $this, 'add_bulk_copy_meta_box_to_gallery' ) );
@@ -521,7 +529,13 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			}
 		    $trial_link = '<a href="' . $this->build_url('foogallery-trial', $promotion ) . '" target="_blank">' . __('start a 7 day free trial', 'foogallery') . '</a>';
 		    $pro_link = '<a href="' . foogallery_admin_pricing_url() . '">' . __('Upgrade to', 'foogallery') . ' ' . $plan . '</a>';
-			return sprintf( __('To try the %s features, %s (no credit card required). Or you can %s right now.', 'foogallery' ), $plan, $trial_link, $pro_link );
+			return sprintf(
+				/* translators: 1: PRO plan name, 2: free trial link, 3: upgrade link. */
+				__( 'To try the %1$s features, %2$s (no credit card required). Or you can %3$s right now.', 'foogallery' ),
+				$plan,
+				$trial_link,
+				$pro_link
+			);
 		}
 
 		/**
@@ -720,6 +734,52 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 		}
 
 		/**
+		 * Add ImageGallery schema promo fields to the gallery templates.
+		 *
+		 * @uses "foogallery_override_gallery_template_fields"
+		 *
+		 * @param array $fields Gallery template fields.
+		 * @param array $template Current gallery template.
+		 *
+		 * @return array
+		 */
+		function add_imagegallery_schema_promo_fields( $fields, $template ) {
+			unset( $template );
+
+			$fields[] = array(
+				'id'            => 'promo_imagegallery_schema',
+				'title'         => __( 'PRO Expert Feature : ImageGallery Schema', 'foogallery' ),
+				'section'       => __( 'SEO', 'foogallery' ),
+				'section_order' => 98,
+				'desc'          => __( 'Help search engines and scrapers understand your gallery images by outputting ImageGallery JSON-LD schema on pages where FooGallery usage is detected:', 'foogallery' ) .
+								   '<ul class="ul-disc"><li><strong>' . __( 'Page-level ImageGallery schema', 'foogallery' ) . '</strong> - ' . __( 'outputs structured data in the page head for eligible singular pages and posts.', 'foogallery' ) .
+								   '</li><li><strong>' . __( 'ImageObject details', 'foogallery' ) . '</strong> - ' . __( 'uses attachment titles, captions, descriptions, dates, and full image URLs for each gallery image.', 'foogallery' ) .
+								   '</li><li><strong>' . __( 'Per-gallery overrides', 'foogallery' ) . '</strong> - ' . __( 'customize schema names, descriptions, keywords, authors, licenses, and publication dates per gallery.', 'foogallery' ) .
+								   '</li></ul>' . $this->build_promo_trial_html( 'imagegallery-schema', __( 'PRO Expert', 'foogallery' ) ) . '<br /><br />',
+				'class'         => 'foogallery_promo_pro',
+				'cta'           => array(
+					array(
+						'text' => __( 'Learn More', 'foogallery' ),
+						'link' => $this->build_url( 'foogallery-imagegallery-schema' ),
+					),
+					array(
+						'text'  => __( 'Compare PRO Plans', 'foogallery' ),
+						'link'  => $this->build_url( 'foogallery-plans' ),
+						'class' => 'button-secondary',
+					),
+				),
+				'type'          => 'promo',
+				'row_data'      => array(
+					'data-foogallery-change-selector' => 'input',
+					'data-foogallery-preview'         => 'shortcode',
+					'data-foogallery-value-selector'  => 'input:checked',
+				)
+			);
+
+			return $fields;
+		}
+
+		/**
 		 * Add filtering fields to the gallery templates
 		 *
 		 * @uses "foogallery_override_gallery_template_fields"
@@ -825,6 +885,10 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 
 			if ( 'exif' === strtolower( $section_slug ) ) {
 				return 'dashicons-info-outline';
+			}
+
+			if ( 'seo' === $section_slug ) {
+				return 'dashicons-search';
 			}
 
 			return $section_slug;
@@ -994,7 +1058,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'id'      => 'polaroid_promo',
 						'title'   => __( 'Polaroid PRO Gallery Layout', 'foogallery' ),
 						'desc'    => __( 'Available in all PRO plans, the Polaroid PRO gallery layout is a fun take on the simple portfolio gallery. Image thumbnails are framed as Polaroid photos which are staggered on the page.', 'foogallery' ) . '<br />' .
-						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-polaroid-gallery.jpg" />' .
+						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-polaroid-gallery.jpg" alt="' . esc_attr__( 'Polaroid PRO gallery layout preview', 'foogallery' ) . '" />' .
 						             '<br /><br />' . $this->build_promo_trial_html( 'polaroid', __( 'PRO Starter', 'foogallery' )  ) . '<br /><br />',
 						'section' => __( 'General', 'foogallery' ),
 						'type'    => 'promo',
@@ -1032,7 +1096,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'id'      => 'grid_promo',
 						'title'   => __( 'Grid PRO Gallery Layout', 'foogallery' ),
 						'desc'    => __( 'Available in all PRO plans, the Grid PRO gallery layout creates a stylish grid gallery that allows you to "preview" each image, similar to how Google Image Search works.', 'foogallery' ) . '<br /><br />' .
-						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-grid-gallery.jpg" />' .
+						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-grid-gallery.jpg" alt="' . esc_attr__( 'Grid PRO gallery layout preview', 'foogallery' ) . '" />' .
 						             '<br /><br />' . $this->build_promo_trial_html( 'grid', __( 'PRO Starter', 'foogallery' )  ) . '<br /><br />',
 						'section' => __( 'General', 'foogallery' ),
 						'type'    => 'promo',
@@ -1066,8 +1130,8 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'id'      => 'slider_promo',
 						'title'   => __( 'Slider PRO Gallery Layout', 'foogallery' ),
 						'desc'    => __( 'Available in all PRO plans, the Slider PRO gallery layout creates an amazing slider gallery in either a horizontal or a vertical layout.', 'foogallery' ) . '<br /><br />' .
-						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-slider-gallery-vertical.jpg" /><br /><br />' .
-						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-slider-gallery-horizontal.jpg" /><br /><br />' .
+						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-slider-gallery-vertical.jpg" alt="' . esc_attr__( 'Vertical Slider PRO gallery layout preview', 'foogallery' ) . '" /><br /><br />' .
+						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-slider-gallery-horizontal.jpg" alt="' . esc_attr__( 'Horizontal Slider PRO gallery layout preview', 'foogallery' ) . '" /><br /><br />' .
 						             $this->build_promo_trial_html( 'slider', __( 'PRO Starter', 'foogallery' ) ) . '<br /><br />',
 						'section' => __( 'General', 'foogallery' ),
 						'type'    => 'promo',
@@ -1101,7 +1165,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'id'            => 'spotlight_promo',
 						'title'         => __( 'Spotlight PRO Gallery Layout', 'foogallery' ),
 						'desc'          => __( 'Available in all PRO plans, the Spotlight PRO gallery layout offers a clean and effective way to showcase images inline without opening them in a lightbox. Scroll through gallery images with navigational arrows and dots for a modern, focused presentation.', 'foogallery' ) . '<br /><br />' .
-											'<img src="https://assets.fooplugins.com/foogallery/foogallery-spotlight-gallery.png" /><br /><br />' .
+											'<img src="https://assets.fooplugins.com/foogallery/foogallery-spotlight-gallery.png" alt="' . esc_attr__( 'Spotlight PRO gallery layout preview', 'foogallery' ) . '" /><br /><br />' .
 						                   $this->build_promo_trial_html( 'spotlight', __( 'PRO Starter', 'foogallery' ) ) . '<br /><br />',
 						'section'       => __( 'General', 'foogallery' ),
 						'type'          => 'promo',
@@ -1303,7 +1367,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'id'            => 'product_promo',
 						'title'         => __( 'Product Gallery Layout', 'foogallery' ),
 						'desc'          => __( 'Only available in the Commerce PRO plan, the Product Gallery layout works out of the box with the WooCommerce Product Datasource, making it very easy for you to start selling your photographs online.', 'foogallery' ) .
-						                   '<br />' . '<img src="https://assets.fooplugins.com/foogallery/foogallery-product-gallery.png" />' .
+						                   '<br />' . '<img src="https://assets.fooplugins.com/foogallery/foogallery-product-gallery.png" alt="' . esc_attr__( 'Product gallery layout preview', 'foogallery' ) . '" />' .
 						                   '<br /><br />' . $this->build_promo_trial_html( 'product-gallery', __( 'PRO Commerce', 'foogallery' ) ) . '<br /><br />',
 						'section'       => __( 'General', 'foogallery' ),
 						'type'          => 'promo',

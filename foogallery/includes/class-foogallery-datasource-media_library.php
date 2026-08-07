@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * The default Gallery Datasource which pulls attachments from the WP media library
  */
@@ -224,7 +229,7 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary' ) ) {
 			}
 
 			$data_attribute = empty($attachment_id) ? '' : "data-attachment-id=\"{$attachment_id}\"";
-			$img_tag        = empty($attachment) ? '<img width="150" height="150" />' : "<img width=\"150\" height=\"150\" data-src=\"{$attachment[0]}\" />";
+			$img_tag        = empty($attachment) ? '<img width="150" height="150" alt="" />' : "<img width=\"150\" height=\"150\" data-src=\"{$attachment[0]}\" alt=\"\" />";
 			?>
 			<li aria-label="<?php esc_attr_e( $attachment_title ); ?>" class="attachment details" <?php echo $data_attribute; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attribute safely built above ?>>
 				<div class="attachment-preview type-image <?php echo esc_attr( $extra_class ); ?>">

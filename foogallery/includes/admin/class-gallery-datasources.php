@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class to handle all interactions for Gallery datasources
  */
@@ -6,6 +11,9 @@
 if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
 
     class FooGallery_Admin_Gallery_Datasources {
+
+		const RECOVERY_DATASOURCE_FIELD = '_foogallery_datasource_recovery_original';
+		const RECOVERY_VALUE_FIELD      = '_foogallery_datasource_recovery_value';
 
         /**
          * Primary class constructor.
@@ -78,11 +86,25 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
             $datasource_value = array();
 
             if ( isset( $_POST[FOOGALLERY_META_DATASOURCE] ) ) {
-				$datasource = sanitize_file_name( $_POST[FOOGALLERY_META_DATASOURCE] );
+				$submitted_datasource = wp_unslash( $_POST[FOOGALLERY_META_DATASOURCE] );
+				$stored_datasource    = get_post_meta( $post_id, FOOGALLERY_META_DATASOURCE, true );
+
+				if ( $this->should_preserve_unavailable_datasource( $stored_datasource, $submitted_datasource ) ) {
+					$datasource       = $stored_datasource;
+					$datasource_value = get_post_meta( $post_id, FOOGALLERY_META_DATASOURCE_VALUE, true );
+					do_action( 'foogallery_after_save_gallery_datasource', $post_id, $datasource, $datasource_value );
+					return;
+				}
+
+				$datasource = $this->normalize_datasource_name( $submitted_datasource );
 
 				update_post_meta( $post_id, FOOGALLERY_META_DATASOURCE, $datasource );
 
-                if ( isset( $_POST[FOOGALLERY_META_DATASOURCE_VALUE] ) ) {
+				if ( $datasource === foogallery_default_datasource() ) {
+					delete_post_meta( $post_id, FOOGALLERY_META_DATASOURCE_VALUE );
+				} elseif ( $this->should_preserve_invalid_datasource_value( $stored_datasource, $datasource ) ) {
+					$datasource_value = get_post_meta( $post_id, FOOGALLERY_META_DATASOURCE_VALUE, true );
+				} elseif ( isset( $_POST[FOOGALLERY_META_DATASOURCE_VALUE] ) ) {
                     $datasource_value = $this->get_json_datasource_value( $_POST[FOOGALLERY_META_DATASOURCE_VALUE] );
 
                     if ( !empty( $datasource_value ) ) {
@@ -93,12 +115,99 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
                 }
 
 			} else {
-                delete_post_meta( $post_id, FOOGALLERY_META_DATASOURCE );
+				$stored_datasource = get_post_meta( $post_id, FOOGALLERY_META_DATASOURCE, true );
+				if ( ! $this->datasource_is_unavailable( $stored_datasource ) ) {
+					delete_post_meta( $post_id, FOOGALLERY_META_DATASOURCE );
+				} else {
+					$datasource       = $stored_datasource;
+					$datasource_value = get_post_meta( $post_id, FOOGALLERY_META_DATASOURCE_VALUE, true );
+				}
             }
 
             //action for post-save
             do_action( 'foogallery_after_save_gallery_datasource', $post_id, $datasource, $datasource_value );
         }
+
+		/**
+		 * Check whether an unavailable datasource must survive an unrelated gallery save.
+		 *
+		 * @param mixed $stored_datasource    The stored datasource name.
+		 * @param mixed $submitted_datasource The submitted fallback datasource name.
+		 *
+		 * @return bool
+		 */
+		private function should_preserve_unavailable_datasource( $stored_datasource, $submitted_datasource ) {
+			if ( ! isset( $_POST[ self::RECOVERY_DATASOURCE_FIELD ] ) || ! is_scalar( $_POST[ self::RECOVERY_DATASOURCE_FIELD ] ) ) {
+				return false;
+			}
+
+			$recovery_datasource = trim( (string) wp_unslash( $_POST[ self::RECOVERY_DATASOURCE_FIELD ] ) );
+			$stored_datasource   = is_scalar( $stored_datasource ) ? trim( (string) $stored_datasource ) : '';
+
+			if ( '' === $stored_datasource || $stored_datasource !== $recovery_datasource || ! $this->datasource_is_unavailable( $stored_datasource ) ) {
+				return false;
+			}
+
+			return foogallery_default_datasource() === $this->normalize_datasource_name( $submitted_datasource );
+		}
+
+		/**
+		 * Check whether malformed settings should survive until the user explicitly replaces them.
+		 *
+		 * @param mixed  $stored_datasource The stored datasource name.
+		 * @param string $datasource        The normalized submitted datasource name.
+		 *
+		 * @return bool
+		 */
+		private function should_preserve_invalid_datasource_value( $stored_datasource, $datasource ) {
+			if ( empty( $_POST[ self::RECOVERY_VALUE_FIELD ] ) ) {
+				return false;
+			}
+
+			$stored_datasource = is_scalar( $stored_datasource ) ? sanitize_key( (string) $stored_datasource ) : '';
+
+			return '' !== $stored_datasource && $stored_datasource === $datasource;
+		}
+
+		/**
+		 * Check whether a stored datasource belongs to a currently unavailable add-on.
+		 *
+		 * @param mixed $datasource_name The stored datasource name.
+		 *
+		 * @return bool
+		 */
+		private function datasource_is_unavailable( $datasource_name ) {
+			if ( ! is_scalar( $datasource_name ) ) {
+				return false;
+			}
+
+			$datasource_name = trim( (string) $datasource_name );
+			if ( '' === $datasource_name || foogallery_default_datasource() !== $this->normalize_datasource_name( $datasource_name ) ) {
+				return false;
+			}
+
+			return foogallery_default_datasource() !== sanitize_key( str_replace( '-', '_', $datasource_name ) );
+		}
+
+		private function normalize_datasource_name( $datasource_name ) {
+			if ( ! is_scalar( $datasource_name ) ) {
+				return foogallery_default_datasource();
+			}
+
+			$datasource_name = sanitize_key( (string) $datasource_name );
+			$datasources     = foogallery_gallery_datasources();
+
+			if ( is_array( $datasources ) && array_key_exists( $datasource_name, $datasources ) ) {
+				return $datasource_name;
+			}
+
+			$recovered_datasource_name = str_replace( '-', '_', $datasource_name );
+			if ( is_array( $datasources ) && array_key_exists( $recovered_datasource_name, $datasources ) ) {
+				return $recovered_datasource_name;
+			}
+
+			return foogallery_default_datasource();
+		}
 
         /**
          * Safely returns an array from the json string
@@ -173,12 +282,20 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_Datasources' ) ) {
         public function add_datasources_hidden_inputs( $gallery ) {
             $datasources = foogallery_gallery_datasources();
             if ( count( $datasources ) > 1 ) {
-                $datasource_value = get_post_meta( $gallery->ID, FOOGALLERY_META_DATASOURCE_VALUE, true );
+                $datasource_value = isset( $gallery->datasource_value ) ?
+					$gallery->datasource_value :
+					get_post_meta( $gallery->ID, FOOGALLERY_META_DATASOURCE_VALUE, true );
                 if ( is_array( $datasource_value ) ) {
                     $datasource_value = json_encode( $datasource_value );
                 } ?>
             <input type="hidden" data-foogallery-preview="include" name="<?php echo esc_attr( FOOGALLERY_META_DATASOURCE ); ?>" value="<?php echo esc_attr( $gallery->datasource_name ); ?>" id="<?php echo esc_attr( FOOGALLERY_META_DATASOURCE ); ?>" />
             <input type="hidden" data-foogallery-preview="include" value="<?php echo esc_attr( $datasource_value ); ?>" name="<?php echo esc_attr( FOOGALLERY_META_DATASOURCE_VALUE ); ?>" id="<?php echo esc_attr( FOOGALLERY_META_DATASOURCE_VALUE ); ?>" />
+			<?php if ( ! empty( $gallery->_foogallery_invalid_datasource_name ) ) { ?>
+				<input type="hidden" name="<?php echo esc_attr( self::RECOVERY_DATASOURCE_FIELD ); ?>" id="<?php echo esc_attr( self::RECOVERY_DATASOURCE_FIELD ); ?>" value="<?php echo esc_attr( $gallery->_foogallery_invalid_datasource_name ); ?>" />
+			<?php } ?>
+			<?php if ( ! empty( $gallery->_foogallery_invalid_datasource_value ) ) { ?>
+				<input type="hidden" name="<?php echo esc_attr( self::RECOVERY_VALUE_FIELD ); ?>" id="<?php echo esc_attr( self::RECOVERY_VALUE_FIELD ); ?>" value="1" />
+			<?php } ?>
             <?php }
         }
 

@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $foogallery_plans = array(
 	FOOGALLERY_PRO_PLAN_STARTER  => __( 'PRO Starter', 'foogallery' ),
 	FOOGALLERY_PRO_PLAN_EXPERT   => __( 'PRO Expert', 'foogallery' ),
@@ -37,6 +41,7 @@ $foogallery_pro_features = foogallery_pro_features();
             $current_plan_name = isset( $foogallery_plans[ $foogallery_current_plan ] ) ? $foogallery_plans[ $foogallery_current_plan ] : '';
             ?>
             <header>
+                <?php /* translators: %s: Value inserted at runtime. */ ?>
                 <h3><?php echo sprintf( esc_html__( 'Thanks for your support by purchasing a %s license 😍', 'foogallery' ), '<span class="fgah-plan-' . esc_attr( $foogallery_current_plan ) . '">' . esc_html( $current_plan_name ) . '</span>' );?></h3>
                 <p><?php esc_html_e( 'Check out the PRO features you can start using immediately...', 'foogallery' );?></p>
             </header>

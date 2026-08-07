@@ -425,6 +425,7 @@ class FooGallery extends stdClass {
 	public function image_count() {
 		$no_images_text = esc_html( foogallery_get_setting( 'language_images_count_none_text', __( 'No images', 'foogallery' ) ) );
 		$singular_text  = esc_html( foogallery_get_setting( 'language_images_count_single_text', __( '1 image', 'foogallery' ) ) );
+		/* translators: %s: Value inserted at runtime. */
 		$plural_text    = esc_html( foogallery_get_setting( 'language_images_count_plural_text', __( '%s images', 'foogallery' ) ) );
 
 		$count = $this->item_count();
@@ -437,6 +438,7 @@ class FooGallery extends stdClass {
 				$count_text = $singular_text === false ? __( '1 image', 'foogallery' ) : $singular_text;
 				break;
 			default:
+				/* translators: %s: Value inserted at runtime. */
 				$count_text = sprintf( $plural_text === false ? __( '%s images', 'foogallery' ) : $plural_text, $count );
 		}
 
@@ -449,6 +451,7 @@ class FooGallery extends stdClass {
 	 * @return string
 	 */
 	public function safe_name() {
+		/* translators: %s: Value inserted at runtime. */
 		return empty( $this->name ) ? sprintf( __( '%s #%s', 'foogallery' ), foogallery_plugin_name(), $this->ID ) : $this->name;
 	}
 

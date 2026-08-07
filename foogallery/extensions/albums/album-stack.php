@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery All-In-One Stack Album template
  */
@@ -16,6 +21,11 @@ if ( $lightbox === 'foogallery' ) {
 $random_angle = foogallery_album_template_setting( 'random_angle', 'false' );
 $gutter = foogallery_album_template_setting( 'gutter', '40' );
 $pile_angles = foogallery_album_template_setting( 'pile_angles', '2' );
+$foogallery_album_caption_alignment = sanitize_key( foogallery_album_template_setting( 'caption_alignment', 'center' ) );
+if ( ! in_array( $foogallery_album_caption_alignment, array( 'left', 'center', 'right' ), true ) ) {
+	$foogallery_album_caption_alignment = 'center';
+}
+$foogallery_album_show_gallery_description_in_caption = 'on' === foogallery_album_template_setting( 'show_gallery_description_in_caption', '' );
 
 $data_options = array(
 	'itemWidth' => intval( $args['width'] ),
@@ -66,7 +76,8 @@ if ( !function_exists( 'foogallery_album_all_in_one_stack_render_gallery_attachm
     <div class="fg-piles">
 	    <?php
 	    foreach ( $current_foogallery_album->galleries() as $gallery ) {
-		    ?><ul class="fg-pile <?php echo esc_attr( $lightbox ); ?>" data-title="<?php echo esc_attr( $gallery->name ); ?>"><?php
+		    $foogallery_album_gallery_description = $foogallery_album_show_gallery_description_in_caption ? foogallery_album_gallery_description_html( $gallery ) : '';
+		    ?><ul class="fg-pile <?php echo esc_attr( $lightbox ); ?>" data-title="<?php echo esc_attr( $gallery->name ); ?>" data-caption-alignment="<?php echo esc_attr( $foogallery_album_caption_alignment ); ?>"<?php echo ! empty( $foogallery_album_gallery_description ) ? ' data-description="' . esc_attr( $foogallery_album_gallery_description ) . '"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attribute value escaped above. ?>><?php
 		    $current_foogallery = $gallery;
 		    $featured_attachment = $gallery->featured_attachment();
 		    //render the featured attachment first
@@ -83,4 +94,3 @@ if ( !function_exists( 'foogallery_album_all_in_one_stack_render_gallery_attachm
 	    ?>
     </div>
 </div>
-

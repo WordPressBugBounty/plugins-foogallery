@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 
 	define('FOOGALLERY_IMAGE_VIEWER_GALLERY_TEMPLATE_URL', plugin_dir_url( __FILE__ ));
@@ -156,9 +160,43 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 							'data-foogallery-preview' => 'shortcode'
 						)
 					),
-                    array(
-                        'id'      => 'language-help',
-                        'desc'    => __( 'You can change the "Prev", "Next" and "of" text used in the gallery from the settings page, under the Language tab.', 'foogallery' ),
+					array(
+						'id'      => 'autoplay',
+						'title'   => __( 'Autoplay', 'foogallery' ),
+						'section' => __( 'General', 'foogallery' ),
+						'desc'    => __( 'Automatically advance to the next image after a specified time.', 'foogallery' ),
+						'default' => 'disabled',
+						'type'    => 'radio',
+						'class'   => 'foogallery-radios-12em',
+						'choices' => array(
+							'disabled' => __( 'Disabled', 'foogallery' ),
+							'enabled'  => __( 'Enabled', 'foogallery' ),
+						),
+						'row_data'=> array(
+							'data-foogallery-change-selector' => 'input:radio',
+							'data-foogallery-value-selector'  => 'input:checked',
+							'data-foogallery-preview' => 'shortcode'
+						)
+					),
+					array(
+						'id'      => 'autoplay_seconds',
+						'title'   => __( 'Autoplay Seconds', 'foogallery' ),
+						'section' => __( 'General', 'foogallery' ),
+						'desc'    => __( 'The time in seconds to display each image before advancing.', 'foogallery' ),
+						'default' => '10',
+						'type'    => 'number',
+						'row_data'=> array(
+							'data-foogallery-hidden'                   => true,
+							'data-foogallery-show-when-field'          => 'autoplay',
+							'data-foogallery-show-when-field-operator' => '===',
+							'data-foogallery-show-when-field-value'    => 'enabled',
+							'data-foogallery-change-selector'          => 'input',
+							'data-foogallery-preview'                  => 'shortcode'
+						)
+					),
+	                    array(
+	                        'id'      => 'language-help',
+	                        'desc'    => __( 'You can change the "Prev", "Next" and "of" text used in the gallery from the settings page, under the Language tab.', 'foogallery' ),
 						'section' => __( 'General', 'foogallery' ),
                         'type'    => 'help'
                     )
@@ -299,6 +337,13 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 
 			$looping = foogallery_gallery_template_setting( 'looping', 'enabled' ) === 'enabled';
 			$options['template']['loop'] = $looping;
+
+			$autoplay = foogallery_gallery_template_setting( 'autoplay', 'disabled' ) === 'enabled';
+			$options['template']['autoplay'] = 0;
+			if ( $autoplay ) {
+				$autoplay_seconds = absint( foogallery_gallery_template_setting( 'autoplay_seconds', '10' ) );
+				$options['template']['autoplay'] = max( 1, $autoplay_seconds );
+			}
 
 			return $options;
 		}

@@ -168,7 +168,7 @@
 	display: block;
 }
 
-.foogallery-album-info-modal {
+.foogallery-album-info-modal.media-modal {
 	display: none;
 	top: 20%;
 	bottom: 20%;
@@ -177,7 +177,8 @@
 }
 
 	.foogallery-album-info-modal .media-frame-title {
-		left:0;
+		left: 0;
+		right: 50px;
 	}
 
 		.foogallery-album-info-modal .media-frame-title h1 {
@@ -189,12 +190,37 @@
 			margin: 15px 0;
 		}
 
-	.foogallery-album-info-modal .close {
+	.foogallery-album-info-modal .media-modal-close {
 		position: absolute;
-		top: 20px;
-		right: 20px;
+		top: 0;
+		right: 0;
 		cursor: pointer;
-		font-size: 20px;
+		width: 50px;
+		height: 50px;
+		z-index: 1000;
+		border-left: 1px solid #ddd;
+		border-bottom: 1px solid #ddd;
+		background: #fff;
+		text-decoration: none;
+	}
+
+	.foogallery-album-info-modal .media-modal-close:hover,
+	.foogallery-album-info-modal .media-modal-close:active,
+	.foogallery-album-info-modal .media-modal-close:focus {
+		text-decoration: none;
+	}
+
+	.foogallery-album-info-modal .media-modal-close .media-modal-icon {
+		display: block;
+		margin: 0;
+		width: 50px;
+		height: 50px;
+	}
+
+	.foogallery-album-info-modal .media-modal-close .media-modal-icon:before {
+		display: block;
+		line-height: 50px;
+		text-align: center;
 	}
 
 	.foogallery-album-info-modal .modal-content {
@@ -249,13 +275,21 @@
 		}
 
 	.foogallery-album-info-modal .media-toolbar .spinner {
+		float: left;
 		margin-top: 20px;
+		margin-left: 10px;
 		margin-right: 0;
 	}
 
 	.foogallery-album-info-modal .media-frame-toolbar {
 		left: 0;
 	}
+
+		.foogallery-album-info-modal .media-frame-toolbar .media-toolbar-primary {
+			float: right;
+			left: auto;
+			right: auto;
+		}
 
 		.foogallery-album-info-modal .media-frame-toolbar .media-toolbar-secondary {
 			line-height: 60px;

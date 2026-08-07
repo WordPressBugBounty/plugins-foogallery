@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $instance = FooGallery_Plugin::get_instance();
 $info = $instance->get_plugin_info();
 
@@ -10,12 +15,16 @@ $plugin_url = foogallery_admin_url( 'https://fooplugins.com/foogallery-wordpress
 $support_url = foogallery_admin_url( 'https://fooplugins.link/support/', 'help' );
 $plans_url = foogallery_admin_url( 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/compare-plans/', 'help' );
 $support_link = sprintf( '<a href="%s" target="_blank">%s</a>', $support_url, __( 'open a support ticket', 'foogallery' ) );
+/* translators: %s: Value inserted at runtime. */
 $support_text = sprintf( __('Still stuck? Please %s and we will help!', 'foogallery'), $support_link );
 
 $fooplugins_link = sprintf( '<a href="%s" target="_blank">%s</a>', $fooplugins_url, __( 'FooPlugins', 'foogallery' ) );
+/* translators: %s: Value inserted at runtime. */
 $link = sprintf('<a href="%s" target="_blank">%s</a>', $plugin_url, sprintf( __( 'Visit the %s Homepage', 'foogallery' ), $plugin_name ) );
+/* translators: %s: Value inserted at runtime. */
 $tagline = sprintf( __( 'Thank you for choosing %s!<br />Better galleries for WordPress, that are faster, more flexible and beautiful!', 'foogallery' ), $plugin_name );
 
+/* translators: %s: Value inserted at runtime. */
 $made_by = __( 'Made with ❤️ by %s', 'foogallery' );
 $footer_text = sprintf( $made_by, $fooplugins_link );
 
@@ -132,7 +141,7 @@ $show_demos = apply_filters( 'foogallery_admin_help_show_demos', true );
 <div class="foogallery-admin-help">
 	<div class="foogallery-admin-help-header">
 		<div class="foogallery-admin-help-ribbon"><span><?php echo esc_html( FOOGALLERY_VERSION ); ?></span></div>
-		<img src="<?php echo esc_url( $logo ); ?>" width="200">
+		<img src="<?php echo esc_url( $logo ); ?>" width="200" alt="<?php echo esc_attr( $plugin_name ); ?>">
 	</div>
 	<nav>
 		<a class="foogallery-admin-help-tab-active" href="#help">

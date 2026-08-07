@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 	/**
 	 * FooGallery Lightbox class
 	 *
@@ -52,6 +57,11 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 		 */
 		public function add_caption_attributes( $attr, $args, $foogallery_attachment ) {
 			global $current_foogallery;
+
+			// Attribute helpers can be used outside a gallery render context by integrations and tests.
+			if ( ! is_object( $current_foogallery ) ) {
+				return $attr;
+			}
 
 			if ( ! property_exists( $current_foogallery, 'lightbox' ) ) {
 				// TODO : rather use foogallery_current_gallery_check_template_has_supported_feature.
@@ -759,6 +769,29 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			);
 
 			$field[] = array(
+				'id'      => 'lightbox_auto_progress_button',
+				'title'   => __( 'Auto Progress Button', 'foogallery' ),
+				'desc'    => __( 'Show or hide the auto progress control button. Hiding the button does not stop auto progress.', 'foogallery' ),
+				'section' => $section,
+				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'type'    => 'radio',
+				'choices' => array(
+					'yes' => __( 'Shown', 'foogallery' ),
+					'no'  => __( 'Hidden', 'foogallery' ),
+				),
+				'default' => 'yes',
+				'row_data'=> array(
+					'data-foogallery-hidden'                   => true,
+					'data-foogallery-show-when-field'          => 'lightbox_auto_progress',
+					'data-foogallery-show-when-field-operator' => '===',
+					'data-foogallery-show-when-field-value'    => 'yes',
+					'data-foogallery-change-selector'          => 'input:radio',
+					'data-foogallery-preview'                  => 'shortcode',
+					'data-foogallery-value-selector'           => 'input:checked',
+				)
+			);
+
+			$field[] = array(
 				'id'      => 'lightbox_fit_media',
 				'title'   => __( 'Fit Media', 'foogallery' ),
 				'desc'    => __( 'Whether or not to force images to fill the content area. Aspect ratios are maintained, the image is simply scaled so it covers the entire available area.', 'foogallery' ),
@@ -1186,6 +1219,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			if ( $auto_progress ) {
 				$options['autoProgress'] = intval( foogallery_gallery_template_setting( 'lightbox_auto_progress_seconds', '10' ) );
 				$options['autoProgressStart'] = foogallery_gallery_template_setting( 'lightbox_auto_progress_start', 'yes' ) === 'yes';
+				$options['autoProgressVisible'] = foogallery_gallery_template_setting( 'lightbox_auto_progress_button', 'yes' ) === 'yes';
 			}
 
 			$options['hoverButtons'] = foogallery_gallery_template_setting( 'lightbox_hover_buttons', 'no' ) === 'yes';

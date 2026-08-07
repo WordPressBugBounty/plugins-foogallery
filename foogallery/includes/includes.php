@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // Common includes.
 require_once FOOGALLERY_PATH . 'includes/render-functions.php';
 require_once FOOGALLERY_PATH . 'includes/class-posttypes.php';
@@ -31,6 +35,7 @@ require_once FOOGALLERY_PATH . 'includes/thumbs/includes.php';
 
 // Include bundled extensions.
 require_once FOOGALLERY_PATH . 'extensions/albums/class-albums-extension.php';
+require_once FOOGALLERY_PATH . 'includes/class-foogallery-delayed-runtime-loader.php';
 require_once FOOGALLERY_PATH . 'extensions/default-templates/class-default-templates-extension.php'; // Legacy!
 require_once FOOGALLERY_PATH . 'extensions/default-templates/class-default-templates.php';
 require_once FOOGALLERY_PATH . 'extensions/demo-content-generator/class-demo-content-generator.php';

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class used to cache gallery HTML output to save requests to the database
  * Date: 20/03/2017

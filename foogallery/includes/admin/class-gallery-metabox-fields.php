@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 
 	class FooGallery_Admin_Gallery_MetaBox_Fields {
@@ -167,7 +171,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 						$icon_html .= '<input style="display:none" name="' . $input_name. '" id="FooGallerySettings_' . $id . $i . '" ' . $selected . ' type="radio" value="' . $value . '" tabindex="' . $i . '"/>';
 						$title = $icon['label'];
 						$img = $icon['img'];
-						$icon_html .= '<label for="FooGallerySettings_' . $id . $i . '" data-balloon-length="small" data-balloon-pos="down" data-balloon="' . $title . '"><img src="' . $img . '" /></label>';
+						$icon_html .= '<label for="FooGallerySettings_' . $id . $i . '" data-balloon-length="small" data-balloon-pos="down" data-balloon="' . $title . '"><img src="' . $img . '" alt="' . esc_attr( $title ) . '" /></label>';
 						$i++;
 					}
 					echo $icon_html;

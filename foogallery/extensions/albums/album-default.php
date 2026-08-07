@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery default responsive album template
  */
@@ -35,14 +40,15 @@ if ( false !== $foogallery ) {
 } else {
 	$title_bg = foogallery_album_template_setting( 'title_bg', '#ffffff' );
 	$title_font_color = foogallery_album_template_setting( 'title_font_color', '#000000' );
+	$foogallery_album_show_gallery_description_in_caption = 'on' === foogallery_album_template_setting( 'show_gallery_description_in_caption', '' );
 	$args = foogallery_album_template_setting( 'thumbnail_dimensions', array() );
 	if ( !empty( $title_bg ) || !empty( $title_font_color ) ) {
 		echo '<style type="text/css">';
 		if ( !empty( $title_bg ) ) {
-			echo '.foogallery-album-gallery-list .foogallery-pile h3 { background: ' . esc_attr( $title_bg ) . ' !important; }';
+			echo '.foogallery-album-gallery-list .foogallery-pile h3, .foogallery-album-gallery-list .foogallery-pile .foogallery-pile-caption { background: ' . esc_attr( $title_bg ) . ' !important; }';
 		}
 		if ( !empty( $title_font_color ) ) {
-			echo '.foogallery-album-gallery-list .foogallery-pile h3 { color: ' . esc_attr( $title_font_color ) . ' !important; }';
+			echo '.foogallery-album-gallery-list .foogallery-pile h3, .foogallery-album-gallery-list .foogallery-pile .foogallery-pile-caption { color: ' . esc_attr( $title_font_color ) . ' !important; }';
 		}
 		echo '</style>';
 	}
@@ -65,19 +71,32 @@ if ( false !== $foogallery ) {
 				<li>
 					<div class="foogallery-pile">
 						<div class="foogallery-pile-inner">
-							<a href="<?php echo esc_url( $gallery_link ); ?>" target="<?php echo esc_attr( $gallery_link_target ); ?>">
+							<?php
+							$title = empty( $gallery->name ) ?
+								/* translators: 1: Plugin name, 2: Gallery ID. */
+								sprintf( __( '%s #%s', 'foogallery' ), foogallery_plugin_name(), $gallery->ID ) :
+								$gallery->name;
+							$foogallery_album_gallery_description = $foogallery_album_show_gallery_description_in_caption ? foogallery_album_gallery_description_html( $gallery ) : '';
+							?>
+							<a class="foogallery-pile-thumbnail" href="<?php echo esc_url( $gallery_link ); ?>" target="<?php echo esc_attr( $gallery_link_target ); ?>">
 								<?php echo $img_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-								<?php
-
-								$title = empty( $gallery->name ) ?
-									sprintf( __( '%s #%s', 'foogallery' ), foogallery_plugin_name(), $gallery->ID ) :
-									$gallery->name;
-
-								?>
-								<h3><?php echo esc_html( $title ); ?>
-									<span><?php echo esc_html( $images ); ?></span>
-								</h3>
+								<?php if ( empty( $foogallery_album_gallery_description ) ) { ?>
+									<h3><?php echo esc_html( $title ); ?>
+										<span><?php echo esc_html( $images ); ?></span>
+									</h3>
+								<?php } ?>
 							</a>
+							<?php if ( ! empty( $foogallery_album_gallery_description ) ) { ?>
+								<div class="foogallery-pile-caption">
+									<h3>
+										<a class="foogallery-pile-title-link" href="<?php echo esc_url( $gallery_link ); ?>" target="<?php echo esc_attr( $gallery_link_target ); ?>">
+											<?php echo esc_html( $title ); ?>
+											<span><?php echo esc_html( $images ); ?></span>
+										</a>
+									</h3>
+									<div class="foogallery-pile-description"><?php echo $foogallery_album_gallery_description; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized by foogallery_album_gallery_description_html(). ?></div>
+								</div>
+							<?php } ?>
 						</div>
 					</div>
 				</li>

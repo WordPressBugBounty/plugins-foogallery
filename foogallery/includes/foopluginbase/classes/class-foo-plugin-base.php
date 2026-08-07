@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Foo_Plugin_Base
  * A base class for WordPress plugins. Get up and running quickly with this opinionated, convention based, plugin framework
@@ -107,8 +112,8 @@ if ( !class_exists( 'Foo_Plugin_Base_v2_4' ) ) {
 			//instantiate our option class
 			$this->_options = new Foo_Plugin_Options_v2_1( $this->plugin_slug );
 
-			//check we are using php 5
-			foo_check_php_version( $this->plugin_title, '5.4.0' );
+			// Check that the runtime meets FooGallery's minimum supported PHP version.
+			foo_check_php_version( $this->plugin_title, '7.0.0' );
 
 			// Load plugin text domain
 			add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
@@ -288,8 +293,6 @@ if ( !class_exists( 'Foo_Plugin_Base_v2_4' ) ) {
 		// add a settings admin menu
 		function admin_settings_page_menu() {
 			if ( $this->has_admin_settings_page() ) {
-
-				register_setting( $this->plugin_slug, $this->plugin_slug );
 
 				$page_title = $this->apply_filters( $this->plugin_slug . '_admin_settings_page_title', $this->plugin_title . __( ' Settings', $this->plugin_slug ) );
 				$menu_title = $this->apply_filters( $this->plugin_slug . '_admin_settings_menu_title', $this->plugin_title );

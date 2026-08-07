@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $migrator_install_url = wp_nonce_url(
     add_query_arg(
         array(
@@ -18,6 +23,7 @@ $demos_created = foogallery_get_setting( 'demo_content' ) === 'on';
 <div id="help_section" class="foogallery-admin-help-section">
 	<section class="fgah-feature">
 		<header>
+			<?php /* translators: %s: Value inserted at runtime. */ ?>
 			<h3><?php printf( esc_html__(  'Thank you for choosing %s!', 'foogallery' ), esc_html( foogallery_plugin_name() ) );?></h3>
 			<p><?php esc_html_e( 'Better galleries for WordPress, that are faster, more flexible and beautiful!', 'foogallery' ); ?></p>
             <a href="#create" class="foogallery-admin-help-button"><?php esc_html_e( 'Getting Started', 'foogallery' ); ?></a>
@@ -31,6 +37,7 @@ $demos_created = foogallery_get_setting( 'demo_content' ) === 'on';
         <header>
             <h3><?php esc_html_e(  'Are you migrating from another gallery plugin?', 'foogallery' ); ?></h3>
             <p>
+                <?php /* translators: %s: Value inserted at runtime. */ ?>
                 <?php printf( esc_html__( 'We have built a separate migration tool to help you seamlessly migrate from other gallery plugins to %s.', 'foogallery' ), esc_html( foogallery_plugin_name() ) ); ?>
                 <?php echo wp_kses_post( $migrator_link ); ?>
             </p>
@@ -112,8 +119,10 @@ $demos_created = foogallery_get_setting( 'demo_content' ) === 'on';
                 <img width="556" height="407" src="<?php echo esc_url( 'https://assets.fooplugins.com/foogallery/plugin/foogallery-admin-help-embed.png' ); ?>" alt="Show off your gallery" />
             </figure>
             <dl>
+                <?php /* translators: %s: Value inserted at runtime. */ ?>
                 <dt><?php printf(  esc_html__( '%s Block','foogallery' ), esc_html( foogallery_plugin_name() ) ); ?></dt>
                 <dd><?php esc_html_e( 'Use our block to embed a gallery in the Gutenberg editor. Live previews help you visualize how the gallery will really look on the frontend.', 'foogallery' );?></dd>
+                <?php /* translators: %s: Value inserted at runtime. */ ?>
                 <dt><?php printf( esc_html__( 'The <code>[%s]</code> Shortcode','foogallery' ), esc_html( foogallery_gallery_shortcode_tag() ) );?></dt>
                 <dd><?php esc_html_e( 'Copy and paste the gallery shortcode into any page. You can find the shortcode from the gallery listing or within the Gallery Shortcode metabox when you edit a gallery.', 'foogallery' );?></dd>
             </dl>

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Builds in support for the Responsive Lightbox plugin by dFactory
  * Created by brad.

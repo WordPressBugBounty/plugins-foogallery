@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * Foo Plugin Settings
  *
@@ -471,7 +476,10 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 			//validate a single setting
 
 			if ( $setting['type'] == 'checkbox' ) {
-				if ( ! empty( $input[ $setting['id'] ] ) ) {
+				if ( isset( $input[ $setting['id'] ] ) && 'off' === $input[ $setting['id'] ] ) {
+					// Keep normalized unchecked values stable if the option is sanitized again.
+					$input[ $setting['id'] ] = 'off';
+				} else if ( ! empty( $input[ $setting['id'] ] ) ) {
 					$input[ $setting['id'] ] = 'on';
 				} else if ( isset( $setting['default'] ) && 'on' === $setting['default'] ) {
 					$input[ $setting['id'] ] = 'off';

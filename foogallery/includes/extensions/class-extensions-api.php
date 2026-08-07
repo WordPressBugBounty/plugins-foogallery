@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * @TODO
  */
@@ -307,6 +312,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 						$failure = deactivate_plugins( $plugin['file'], true, false );
 						if ( null !== $failure ) {
 							return array(
+								/* translators: %s: Value inserted at runtime. */
 								'message' => sprintf( __( 'The feature %s could NOT be deactivated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
 								'type' => 'error'
 							);
@@ -334,11 +340,13 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 				do_action( 'foogallery_extension_deactivated-' . $slug );
 
 				return apply_filters( 'foogallery_extensions_deactivated_message-' . $slug, array(
+					/* translators: %s: Value inserted at runtime. */
 					'message' => sprintf( __( 'The feature %s was successfully deactivated', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
 					'type' => 'success',
 				) );
 			}
 			return array(
+				/* translators: %s: Value inserted at runtime. */
 				'message' => sprintf( __( 'Unknown feature : %s', 'foogallery' ), $slug ),
 				'type' => 'error',
 			);
@@ -375,8 +383,10 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 						if ( !empty($minimum_version) ) {
 							$actual_version = $plugin['plugin']['Version'];
 							if ( version_compare( $actual_version, $minimum_version ) < 0 ) {
+								/* translators: %s: Value inserted at runtime. */
 								$this->add_to_error_extensions( $slug, sprintf( __( 'Requires %s version %s','foogallery' ), $extension['title'], $minimum_version ) );
 								return array(
+									/* translators: %s: Value inserted at runtime. */
 									'message' => sprintf( __( 'The feature %s could not be activated, because you are using an outdated version! Please update %s to at least version %s.', 'foogallery' ), $extension['title'], $extension['title'], $minimum_version ),
 									'type' => 'error',
 								);
@@ -387,6 +397,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 						$failure = activate_plugin( $plugin['file'], '', false, false );
 						if ( null !== $failure ) {
 							return array(
+								/* translators: %s: Value inserted at runtime. */
 								'message' => sprintf( __( 'The feature %s could NOT be activated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
 								'type' => 'error',
 							);
@@ -407,11 +418,13 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 
 				//return our result
 				return apply_filters( 'foogallery_extension_activated_message-' . $slug, array(
+					/* translators: %s: Value inserted at runtime. */
 					'message' => sprintf( __( 'The feature %s was successfully activated', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
 					'type' => 'success',
 				) );
 			}
 			return array(
+				/* translators: %s: Value inserted at runtime. */
 				'message' => sprintf( __( 'Unknown feature : %s', 'foogallery' ), $slug ),
 				'type' => 'error',
 			);
@@ -424,6 +437,8 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 * @return array|bool
 		 */
 		private function find_wordpress_plugin( $extension ) {
+			$this->load_wordpress_plugin_functions();
+
 			$plugins = get_plugins();
 			foreach ( $plugins as $plugin_file => $plugin ) {
 				if ( isset($extension['file']) && foo_ends_with( $plugin_file, $extension['file'] ) ) {
@@ -444,6 +459,8 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 * @return array|bool
 		 */
 		private function find_active_wordpress_plugin( $extension ) {
+			$this->load_wordpress_plugin_functions();
+
 			$plugins = get_plugins();
 			foreach ( $plugins as $plugin_file => $plugin ) {
 				if ( is_plugin_active( $plugin_file ) && isset($extension['file']) && foo_ends_with( $plugin_file, $extension['file'] ) ) {
@@ -454,6 +471,19 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * Load plugin administration functions when extension checks run on the frontend.
+		 *
+		 * WordPress 5.3 does not load these functions during a normal frontend bootstrap.
+		 *
+		 * @return void
+		 */
+		private function load_wordpress_plugin_functions() {
+			if ( ! function_exists( 'get_plugins' ) || ! function_exists( 'is_plugin_active' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
 		}
 
 		/**
@@ -478,6 +508,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 
 					if ( is_wp_error( $plugins_api ) ) {
 						return array(
+							/* translators: %s: Value inserted at runtime. */
 							'message' => sprintf( __( 'Unable to connect to the WordPress.org plugin API to download %s. Full error log: %s', 'foogallery' ), $slug,  '<br />' . var_export( $plugins_api, true ) ),
 							'type' => 'error',
 						);
@@ -492,6 +523,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 				//check we have something to download
 				if ( empty( $download_link ) ) {
 					return array(
+						/* translators: %s: Value inserted at runtime. */
 						'message' => sprintf( __( 'The feature %s has no download link!', 'foogallery' ), $slug ),
 						'type' => 'error',
 					);
@@ -508,10 +540,12 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 					$error_message = is_wp_error( $skin->result ) ? $skin->result->get_error_message() : __( 'Unknown!', 'foogallery' );
 
 					//save the error message for the extension
+					/* translators: %s: Value inserted at runtime. */
 					$this->add_to_error_extensions( $slug, sprintf( __('Could not be downloaded! Error : %s', 'foogallery' ), $error_message ) );
 
 					//we had an error along the way
 					return apply_filters( 'foogallery_extensions_download_failure-' . $slug, array(
+						/* translators: %s: Value inserted at runtime. */
 						'message' => sprintf( __( 'The feature %s could NOT be downloaded! Error : %s', 'foogallery' ), "<strong>{$extension['title']}</strong>", $error_message ),
 						'type' => 'error'
 					) );
@@ -519,6 +553,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 
 				//return our result
 				return apply_filters( 'foogallery_extensions_download_success-' . $slug, array(
+					/* translators: %s: Value inserted at runtime. */
 					'message' => sprintf( __( 'The feature %s was successfully downloaded and can now be activated. %s', 'foogallery' ),
 						"<strong>{$extension['title']}</strong>",
 						'<a href="' . esc_url( add_query_arg( array(
@@ -529,6 +564,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 				) );
 			}
 			return array(
+				/* translators: %s: Value inserted at runtime. */
 				'message' => sprintf( __( 'Unknown feature : %s', 'foogallery' ), $slug ),
 				'type' => 'error',
 			);

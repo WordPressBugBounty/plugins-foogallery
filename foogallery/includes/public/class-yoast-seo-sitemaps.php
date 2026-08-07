@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Adds support for Yoast SEO Sitemaps
  *  - so that images in a FooGallery are added to the sitemap

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * Foo Plugin Base Bootsrapper
  * Includes all the files needed for the Foo Plugin Base framework

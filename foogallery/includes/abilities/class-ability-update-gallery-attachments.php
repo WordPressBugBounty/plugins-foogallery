@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Update gallery attachments ability.
  */
@@ -22,6 +27,7 @@ if ( ! class_exists( 'FooGallery_Ability_Update_Gallery_Attachments' ) ) {
 		 * Register the ability with the WordPress core Abilities API.
 		 */
 		public function register() {
+			// phpcs:ignore -- This callback is registered only when the WordPress Abilities API is available.
 			wp_register_ability(
 				self::ID,
 				array(
@@ -119,82 +125,35 @@ if ( ! class_exists( 'FooGallery_Ability_Update_Gallery_Attachments' ) ) {
 		 * @return array|WP_Error
 		 */
 		public function execute( $args ) {
-			$args = foogallery_abilities_normalize_input( $args );
+			$args       = foogallery_abilities_normalize_input( $args );
+			$gallery_id = isset( $args['gallery_id'] ) ? absint( $args['gallery_id'] ) : 0;
+			$changes    = array();
 
-			$gallery = foogallery_abilities_get_gallery( isset( $args['gallery_id'] ) ? $args['gallery_id'] : 0 );
-
-			if ( is_wp_error( $gallery ) ) {
-				return $gallery;
+			if ( array_key_exists( 'replace_attachment_ids', $args ) ) {
+				$changes['replace'] = foogallery_normalize_attachment_ids( $args['replace_attachment_ids'] );
 			}
 
-			if ( $gallery->datasource_name !== foogallery_default_datasource() ) {
-				return new WP_Error(
-					'foogallery_ability_unsupported_datasource',
-					__( 'This ability currently supports media-library-backed galleries only.', 'foogallery' )
-				);
+			if ( array_key_exists( 'append_attachment_ids', $args ) ) {
+				$changes['add'] = foogallery_normalize_attachment_ids( $args['append_attachment_ids'] );
 			}
 
-			$has_replace = array_key_exists( 'replace_attachment_ids', $args );
-			$has_append  = array_key_exists( 'append_attachment_ids', $args );
-			$has_remove  = array_key_exists( 'remove_attachment_ids', $args );
-
-			if ( ! $has_replace && ! $has_append && ! $has_remove ) {
-				return new WP_Error(
-					'foogallery_ability_no_attachment_changes',
-					__( 'Provide replace_attachment_ids, append_attachment_ids, remove_attachment_ids, or a combination of append/remove.', 'foogallery' )
-				);
+			if ( array_key_exists( 'remove_attachment_ids', $args ) ) {
+				$changes['remove'] = foogallery_normalize_attachment_ids( $args['remove_attachment_ids'] );
 			}
 
-			if ( $has_replace && ( $has_append || $has_remove ) ) {
-				return new WP_Error(
-					'foogallery_ability_conflicting_attachment_changes',
-					__( 'replace_attachment_ids cannot be combined with append_attachment_ids or remove_attachment_ids. Use replace on its own, or use append/remove together.', 'foogallery' )
-				);
-			}
-
-			if ( $has_replace ) {
-				$new_attachment_ids = foogallery_abilities_validate_attachment_ids( $args['replace_attachment_ids'] );
-				if ( is_wp_error( $new_attachment_ids ) ) {
-					return $new_attachment_ids;
-				}
-			} else {
-				$new_attachment_ids = foogallery_abilities_normalize_attachment_ids( $gallery->attachment_ids );
-			}
-
-			if ( $has_append ) {
-				$append_ids = foogallery_abilities_validate_attachment_ids( $args['append_attachment_ids'] );
-				if ( is_wp_error( $append_ids ) ) {
-					return $append_ids;
-				}
-
-				foreach ( $append_ids as $attachment_id ) {
-					if ( ! in_array( $attachment_id, $new_attachment_ids, true ) ) {
-						$new_attachment_ids[] = $attachment_id;
-					}
-				}
-			}
-
-			if ( $has_remove ) {
-				$remove_ids = foogallery_abilities_normalize_attachment_ids( $args['remove_attachment_ids'] );
-				$new_attachment_ids = array_values( array_diff( $new_attachment_ids, $remove_ids ) );
-			}
-
-			update_post_meta( $gallery->ID, FOOGALLERY_META_ATTACHMENTS, $new_attachment_ids );
-			update_post_meta( $gallery->ID, FOOGALLERY_META_DATASOURCE, foogallery_default_datasource() );
-			delete_post_meta( $gallery->ID, FOOGALLERY_META_DATASOURCE_VALUE );
-
-			foogallery_abilities_clear_gallery_cache( $gallery->ID );
-			do_action(
-				'foogallery_after_save_gallery',
-				$gallery->ID,
+			$new_attachment_ids = foogallery_update_gallery_attachments(
+				$gallery_id,
+				$changes,
 				array(
-					'ability'        => self::ID,
-					'gallery_id'     => $gallery->ID,
-					'attachment_ids' => $new_attachment_ids,
+					'ability' => self::ID,
 				)
 			);
 
-			$gallery = foogallery_abilities_get_gallery( $gallery->ID );
+			if ( is_wp_error( $new_attachment_ids ) ) {
+				return foogallery_abilities_map_gallery_management_error( $new_attachment_ids );
+			}
+
+			$gallery = foogallery_abilities_get_gallery( $gallery_id );
 
 			if ( is_wp_error( $gallery ) ) {
 				return $gallery;

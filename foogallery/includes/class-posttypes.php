@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /*
  * FooGallery Custom Post Types and Custom Taxonomy Registration class
  */
@@ -189,10 +194,12 @@ if ( ! class_exists( 'FooGallery_PostTypes' ) ) {
                     2  => __( 'Gallery custom field updated.', 'foogallery' ),
                     3  => __( 'Gallery custom field deleted.', 'foogallery' ),
                     4  => __( 'Gallery updated.', 'foogallery' ),
+                    /* translators: %s: Revision date. */
                     5  => isset($_GET['revision']) ? sprintf( __( 'Gallery restored to revision from %s.', 'foogallery' ), wp_post_revision_title( (int) $_GET['revision'], false ) ) : false,
                     6  => __( 'Gallery published.', 'foogallery' ),
                     7  => __( 'Gallery saved.', 'foogallery' ),
                     8  => __( 'Gallery submitted.', 'foogallery' ),
+                    /* translators: %1$s: Value inserted at runtime. */
                     9  => sprintf( __( 'Gallery scheduled for: <strong>%1$s</strong>.', 'foogallery' ), date_i18n( __( 'M j, Y @ G:i' ), strtotime( $post->post_date ) ) ),
                     10 => __( 'Gallery draft updated.', 'foogallery' )
                 )
@@ -212,10 +219,15 @@ if ( ! class_exists( 'FooGallery_PostTypes' ) ) {
         function update_bulk_messages( $bulk_messages, $bulk_counts ) {
             $bulk_messages[FOOGALLERY_CPT_GALLERY] = apply_filters( 'foogallery_gallery_posttype_bulk_update_messages',
                 array(
+                    /* translators: %s: Value inserted at runtime. */
                     'updated'   => _n( '%s Gallery updated.', '%s Galleries updated.', $bulk_counts['updated'], 'foogallery' ),
+                    /* translators: %s: Value inserted at runtime. */
                     'locked'    => _n( '%s Gallery not updated, somebody is editing it.', '%s Galleries not updated, somebody is editing them.', $bulk_counts['locked'], 'foogallery' ),
+                    /* translators: %s: Value inserted at runtime. */
                     'deleted'   => _n( '%s Gallery permanently deleted.', '%s Galleries permanently deleted.', $bulk_counts['deleted'], 'foogallery' ),
+                    /* translators: %s: Value inserted at runtime. */
                     'trashed'   => _n( '%s Gallery moved to the Trash.', '%s Galleries moved to the Trash.', $bulk_counts['trashed'], 'foogallery' ),
+                    /* translators: %s: Value inserted at runtime. */
                     'untrashed' => _n( '%s Gallery restored from the Trash.', '%s Galleries restored from the Trash.', $bulk_counts['untrashed'], 'foogallery' ),
                 )
             );

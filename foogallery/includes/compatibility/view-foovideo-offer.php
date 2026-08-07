@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $show_upgrade = apply_filters('foogallery_foovideo_discount_offer_show_upgrade', true );
 $message = apply_filters('foogallery_foovideo_discount_offer_message', '' );
 ?>

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * FooGallery Blocks Initializer
  *
@@ -15,10 +20,42 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 			//Backend editor block assets.
 			//add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
 			add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_editor_assets' ) );
+			if ( version_compare( $GLOBALS['wp_version'], '5.8', '<' ) ) {
+				add_filter( 'block_categories', array( $this, 'ensure_media_block_category' ) );
+			}
+			add_filter( 'block_categories_all', array( $this, 'ensure_media_block_category' ) );
 
 			add_action( 'init', array( $this, 'php_block_init' ) );
 
 			add_filter( 'foogallery_build_container_data_options', array( $this, 'add_data_options_for_block_editor' ), 10, 3 );
+		}
+
+		/**
+		 * Add the Media block category when running a WordPress version that predates it.
+		 *
+		 * WordPress 5.3 rejects client-side block registration when the declared category
+		 * is unavailable. Newer WordPress versions already provide this category.
+		 *
+		 * @param array $categories Registered block categories.
+		 * @return array
+		 */
+		function ensure_media_block_category( $categories ) {
+			if ( ! is_array( $categories ) ) {
+				$categories = array();
+			}
+
+			foreach ( $categories as $category ) {
+				if ( is_array( $category ) && isset( $category['slug'] ) && 'media' === $category['slug'] ) {
+					return $categories;
+				}
+			}
+
+			$categories[] = array(
+				'slug'  => 'media',
+				'title' => __( 'Media', 'foogallery' ),
+			);
+
+			return $categories;
 		}
 
 		/**
@@ -76,6 +113,7 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 				array( 'dashicons', 'wp-components', 'wp-edit-blocks', 'foogallery-core' ), // Dependency to include the CSS after it.
                 $asset[ 'version' ]
 			);
+			wp_style_add_data( 'foogallery-block-editor-css', 'rtl', 'replace' );
 
 			if ( function_exists( 'wp_set_script_translations' ) ) {
 				wp_set_script_translations( 'foogallery-block-js', 'foogallery' );
@@ -167,6 +205,7 @@ if ( ! class_exists( 'FooGallery_Blocks' ) ) {
 			}
 
 			if ( function_exists( 'register_block_type_from_metadata' ) ) {
+				// phpcs:ignore -- Compatibility is guarded by function_exists().
 				register_block_type_from_metadata(
 					FOOGALLERY_PATH . 'gutenberg',
 					array(

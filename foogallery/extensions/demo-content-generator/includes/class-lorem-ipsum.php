@@ -256,8 +256,9 @@ class FooGallery_LoremIpsum
 	 */
 	private function gauss($mean, $std_dev)
 	{
-		$x = mt_rand() / mt_getrandmax();
-		$y = mt_rand() / mt_getrandmax();
+		$random_max = 1000000;
+		$x          = wp_rand( 0, $random_max ) / $random_max;
+		$y          = wp_rand( 0, $random_max ) / $random_max;
 		$z = sqrt(-2 * log($x)) * cos(2 * pi() * $y);
 
 		return $z * $std_dev + $mean;

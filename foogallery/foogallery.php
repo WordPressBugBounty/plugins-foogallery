@@ -3,14 +3,15 @@
 /*
 Plugin Name: FooGallery
 Description: FooGallery is the most intuitive and extensible gallery management tool ever created for WordPress
-Version:     3.1.32
+Version:     3.2.6
 Author:      FooPlugins
 Plugin URI:  https://fooplugins.com/foogallery-wordpress-gallery-plugin/
 Author URI:  https://fooplugins.com
 Text Domain: foogallery
 License:     GPL-2.0+
 Domain Path: /languages
-Requires PHP: 5.4
+Requires at least: 5.3
+Requires PHP: 7.0
 */
 // If this file is called directly, abort.
 if ( !defined( 'WPINC' ) ) {
@@ -24,7 +25,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
         define( 'FOOGALLERY_PATH', plugin_dir_path( __FILE__ ) );
         define( 'FOOGALLERY_URL', plugin_dir_url( __FILE__ ) );
         define( 'FOOGALLERY_FILE', __FILE__ );
-        define( 'FOOGALLERY_VERSION', '3.1.32' );
+        define( 'FOOGALLERY_VERSION', '3.2.6' );
         define( 'FOOGALLERY_SETTINGS_VERSION', '2' );
         if ( file_exists( FOOGALLERY_PATH . 'vendor-scoped/scoper-autoload.php' ) ) {
             require_once FOOGALLERY_PATH . 'vendor-scoped/scoper-autoload.php';
@@ -437,23 +438,15 @@ if ( function_exists( 'foogallery_fs' ) ) {
              *
              * @since    1.0.0
              *
-             * @return   array|false    The blog ids, false if no matches.
+             * @return array The blog IDs.
              */
             private static function get_blog_ids() {
-                if ( function_exists( 'get_sites' ) ) {
-                    $sites = get_sites();
-                    $blog_ids = array();
-                    foreach ( $sites as $site ) {
-                        $blog_ids[] = $site->blog_id;
-                    }
-                    return $blog_ids;
-                } else {
-                    //pre WP 3.7 - do this the old way!
-                    global $wpdb;
-                    // get an array of blog ids
-                    $sql = "SELECT blog_id FROM {$wpdb->blogs} WHERE archived = '0' AND spam = '0' AND deleted = '0'";
-                    return $wpdb->get_col( $sql );
+                $sites = get_sites();
+                $blog_ids = array();
+                foreach ( $sites as $site ) {
+                    $blog_ids[] = $site->blog_id;
                 }
+                return $blog_ids;
             }
 
         }

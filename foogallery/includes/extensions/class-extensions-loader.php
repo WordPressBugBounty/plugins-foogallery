@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'FooGallery_Extensions_Loader' ) ) {
 	class FooGallery_Extensions_Loader {
 

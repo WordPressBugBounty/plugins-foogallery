@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 return array(
     'gallery_templates' => array(
         'title' => foogallery__( 'PRO Gallery Layouts','foogallery' ),
@@ -96,6 +100,16 @@ return array(
         'desc' => foogallery__( 'Show image metadata within your galleries. A must-have for professional photographers wanting to showcase specific metadata about each image.', 'foogallery' ),
         'link' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/exif-data/',
         'utm_content' => 'exif',
+        'link_text' => foogallery__( 'Learn More','foogallery' ),
+        'image' => 'https://assets.fooplugins.com/foogallery/plugin/foogallery-admin-help-pro-exif.png',
+        'plan' => FOOGALLERY_PRO_PLAN_EXPERT,
+        'plans' => array( FOOGALLERY_PRO_PLAN_EXPERT, FOOGALLERY_PRO_PLAN_COMMERCE ),
+    ),
+    'imagegallery_schema' => array(
+        'title' => foogallery__( 'ImageGallery SEO Schema','foogallery' ),
+        'desc' => foogallery__( 'Output opt-in ImageGallery JSON-LD schema for pages and posts that use FooGallery, with per-gallery fields for names, descriptions, keywords, authors, licenses, and dates.', 'foogallery' ),
+        'link' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/pro-expert',
+        'utm_content' => 'imagegallery_schema',
         'link_text' => foogallery__( 'Learn More','foogallery' ),
         'image' => 'https://assets.fooplugins.com/foogallery/plugin/foogallery-admin-help-pro-exif.png',
         'plan' => FOOGALLERY_PRO_PLAN_EXPERT,

@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Adds all functionality related to the common gallery fields that are used in the default gallery templates
  * Date: 12/09/2017
@@ -641,6 +646,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 					'default'  => '',
 					'choices'  => array(
 						'none'    => __( 'None', 'foogallery' ),
+						/* translators: %s: Value inserted at runtime. */
 						''        => sprintf( __( 'Default (as per %s)', 'foogallery' ), $settings_link ),
 						'title'   => foogallery_get_attachment_field_friendly_name( 'title' ),
 						'caption' => foogallery_get_attachment_field_friendly_name( 'caption' ),
@@ -663,6 +669,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 					'default'  => '',
 					'choices'  => array(
 						'none'    => __( 'None', 'foogallery' ),
+						/* translators: %s: Value inserted at runtime. */
 						''        => sprintf( __( 'Default (as per %s)', 'foogallery' ), $settings_link ),
 						'title'   => foogallery_get_attachment_field_friendly_name( 'title' ),
 						'caption' => foogallery_get_attachment_field_friendly_name( 'caption' ),
@@ -704,7 +711,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 				$fields[] = array(
 					'id'      => 'caption_title_length',
 					'title'   => __( 'Max Title Length', 'foogallery' ),
-					'desc'	  => __( 'A max length of zero will not apply a limit.', 'foogallery '),
+					'desc'	  => __( 'A max length of zero will not apply a limit.', 'foogallery' ),
 					'section' => __( 'Captions', 'foogallery' ),
 					'type'    => 'number',
 					'class'   => 'small-text',
@@ -723,7 +730,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 				$fields[] = array(
 					'id'      => 'caption_desc_length',
 					'title'   => __( 'Max Desc Length', 'foogallery' ),
-					'desc'	  => __( 'A max length of zero will not apply a limit.', 'foogallery '),
+					'desc'	  => __( 'A max length of zero will not apply a limit.', 'foogallery' ),
 					'section' => __( 'Captions', 'foogallery' ),
 					'type'    => 'number',
 					'class'   => 'small-text',
@@ -742,7 +749,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 				$fields[] = array(
 					'id'      => 'caption_title_clamp',
 					'title'   => __( 'Max Title Lines', 'foogallery' ),
-					'desc'	  => __( 'A max number of lines of text to display. A value of zero will not apply a limit.', 'foogallery '),
+					'desc'	  => __( 'A max number of lines of text to display. A value of zero will not apply a limit.', 'foogallery' ),
 					'section' => __( 'Captions', 'foogallery' ),
 					'type'    => 'number',
 					'class'   => 'small-text',
@@ -761,7 +768,7 @@ if ( ! class_exists( 'FooGallery_Common_Fields' ) ) {
 				$fields[] = array(
 					'id'      => 'caption_desc_clamp',
 					'title'   => __( 'Max Desc Lines', 'foogallery' ),
-					'desc'	  => __( 'A max number of lines of text to display. A value of zero will not apply a limit.', 'foogallery '),
+					'desc'	  => __( 'A max number of lines of text to display. A value of zero will not apply a limit.', 'foogallery' ),
 					'section' => __( 'Captions', 'foogallery' ),
 					'type'    => 'number',
 					'class'   => 'small-text',

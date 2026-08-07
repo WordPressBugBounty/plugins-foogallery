@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 
 	class FooGallery_Carousel_Gallery_Template {

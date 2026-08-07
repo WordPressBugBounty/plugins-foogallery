@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 wp_enqueue_script( 'masonry' );
 foogallery_enqueue_core_gallery_template_style();
 foogallery_enqueue_core_gallery_template_script();
@@ -18,6 +23,7 @@ if ( isset( $_POST['foogallery_demo_content_generate'] ) ) {
 		} else {
 			$gallery_id = FooGallery_Demo_Content_Generator::generate( $query, $count );
 			$gallery_link = sprintf( '<a href="%s" target="_blank">%s</a>', get_edit_post_link( $gallery_id ), __( 'View the gallery', 'foogallery' ) );
+			/* translators: %s: Link to the generated gallery. */
 			$message = sprintf( __( 'The images have been imported into your media library and a gallery has been generated. %s', 'foogallery' ), $gallery_link );
 		}
 	}
@@ -45,6 +51,7 @@ if ( isset( $_POST['foogallery_demo_content_generate'] ) ) {
 
 	<div class="foogallery-help">
 		<?php esc_html_e( 'Search for images and generate galleries below. Use multiple keywords to ensure you find enough images.', 'foogallery' ); ?>
+		<?php /* translators: %s: Link to the Pixabay website. */ ?>
 		<?php echo wp_kses_post( sprintf( esc_html__( 'Images are provided by %s', 'foogallery' ), '<a href="https://pixabay.com/" target="_blank">Pixabay</a>.' ) ); ?>
 	</div>
 

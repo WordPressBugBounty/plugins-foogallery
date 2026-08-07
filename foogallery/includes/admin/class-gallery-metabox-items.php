@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Class to handle adding the Items metabox to a gallery
  */
@@ -47,6 +52,8 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 				}
 			}
 
+			$this->prepare_invalid_datasource_for_recovery( $gallery );
+
 			$mode = $gallery->get_meta( 'foogallery_items_view', 'manage' );
 
 			if ( empty($mode) || $gallery->is_new() ) {
@@ -56,6 +63,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 
 			do_action( 'foogallery_gallery_metabox_items', $gallery );
 			?>
+			<?php $this->render_invalid_datasource_notice( $gallery ); ?>
 			<div class="foogallery-hidden foogallery-items-view-switch-container">
 				<div class="foogallery-items-view-switch">
 					<a href="#manage" data-value="manage" data-container=".foogallery-items-view-manage" class="<?php echo $mode==='manage' ? 'current' : ''; ?>"><?php esc_html_e('Manage Items', 'foogallery'); ?></a>
@@ -114,6 +122,135 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 				<?php wp_nonce_field( 'foogallery_preview', 'foogallery_preview', false ); ?>
 			</div>
 			<?php
+		}
+
+		private function prepare_invalid_datasource_for_recovery( $gallery ) {
+			if ( ! is_object( $gallery ) || ! isset( $gallery->datasource_name ) ) {
+				return;
+			}
+
+			$datasource_name = is_scalar( $gallery->datasource_name ) ? trim( (string) $gallery->datasource_name ) : '';
+			if ( '' === $datasource_name ) {
+				return;
+			}
+
+			$datasources = foogallery_gallery_datasources();
+			if ( is_array( $datasources ) && array_key_exists( $datasource_name, $datasources ) ) {
+				$this->prepare_invalid_datasource_value_for_recovery( $gallery );
+				return;
+			}
+
+			$recovered_datasource_name = $this->recover_datasource_name( $datasource_name, $datasources );
+
+			$gallery->_foogallery_invalid_datasource_name    = $datasource_name;
+			$gallery->_foogallery_recovered_datasource_name  = $recovered_datasource_name;
+			$gallery->_foogallery_recovered_datasource_label = $this->get_datasource_label( $recovered_datasource_name, $datasources );
+			$gallery->datasource_name                        = $recovered_datasource_name;
+
+			if ( foogallery_default_datasource() === $recovered_datasource_name || ! isset( $gallery->datasource_value ) || ! is_array( $gallery->datasource_value ) ) {
+				$gallery->datasource_value = array();
+			}
+		}
+
+		private function prepare_invalid_datasource_value_for_recovery( $gallery ) {
+			if ( ! isset( $gallery->datasource_name ) || foogallery_default_datasource() === $gallery->datasource_name ) {
+				return;
+			}
+
+			if ( ! isset( $gallery->datasource_value ) || empty( $gallery->datasource_value ) || is_array( $gallery->datasource_value ) ) {
+				return;
+			}
+
+			if ( is_string( $gallery->datasource_value ) ) {
+				$decoded_value = json_decode( stripslashes( $gallery->datasource_value ), true );
+				if ( is_array( $decoded_value ) ) {
+					$gallery->datasource_value = $decoded_value;
+					return;
+				}
+			}
+
+			$gallery->_foogallery_invalid_datasource_value   = true;
+			$gallery->_foogallery_recovered_datasource_name  = $gallery->datasource_name;
+			$gallery->_foogallery_recovered_datasource_label = $this->get_datasource_label( $gallery->datasource_name, foogallery_gallery_datasources() );
+			$gallery->datasource_value                       = array();
+		}
+
+		private function recover_datasource_name( $datasource_name, $datasources ) {
+			$candidates = array(
+				str_replace( '-', '_', $datasource_name ),
+				sanitize_key( str_replace( '-', '_', $datasource_name ) ),
+			);
+
+			if ( is_array( $datasources ) ) {
+				foreach ( array_unique( array_filter( $candidates ) ) as $candidate ) {
+					if ( array_key_exists( $candidate, $datasources ) ) {
+						return $candidate;
+					}
+				}
+			}
+
+			$default_datasource = foogallery_default_datasource();
+			if ( is_array( $datasources ) && array_key_exists( $default_datasource, $datasources ) ) {
+				return $default_datasource;
+			}
+
+			if ( is_array( $datasources ) ) {
+				foreach ( $datasources as $datasource_key => $datasource ) {
+					return $datasource_key;
+				}
+			}
+
+			return $default_datasource;
+		}
+
+		private function render_invalid_datasource_notice( $gallery ) {
+			if ( ! is_object( $gallery ) ) {
+				return;
+			}
+
+			$messages = array();
+
+			if ( ! empty( $gallery->_foogallery_invalid_datasource_name ) ) {
+				$messages[] = sprintf(
+					/* translators: 1: invalid datasource value, 2: recovered datasource label, 3: recovered datasource value. */
+					__( 'This gallery has an invalid datasource value "%1$s". FooGallery is temporarily showing the %2$s UI so you can recover it. Update the gallery to save the corrected datasource value "%3$s".', 'foogallery' ),
+					$gallery->_foogallery_invalid_datasource_name,
+					$gallery->_foogallery_recovered_datasource_label,
+					$gallery->_foogallery_recovered_datasource_name
+				);
+			}
+
+			if ( ! empty( $gallery->_foogallery_invalid_datasource_value ) ) {
+				$messages[] = sprintf(
+					/* translators: %s: recovered datasource label. */
+					__( 'This gallery has an invalid datasource configuration value. FooGallery is temporarily showing the %s UI with empty source settings so you can recover it.', 'foogallery' ),
+					$gallery->_foogallery_recovered_datasource_label
+				);
+			}
+
+			if ( empty( $messages ) ) {
+				return;
+			}
+			?>
+			<div class="notice notice-error inline">
+				<?php foreach ( $messages as $message ) { ?>
+					<p><?php echo esc_html( $message ); ?></p>
+				<?php } ?>
+			</div>
+			<?php
+		}
+
+		private function get_datasource_label( $datasource_name, $datasources ) {
+			if ( is_array( $datasources ) && isset( $datasources[ $datasource_name ] ) && is_array( $datasources[ $datasource_name ] ) ) {
+				$datasource = $datasources[ $datasource_name ];
+				foreach ( array( 'menu', 'label', 'name' ) as $label_key ) {
+					if ( ! empty( $datasource[ $label_key ] ) && is_scalar( $datasource[ $label_key ] ) ) {
+						return (string) $datasource[ $label_key ];
+					}
+				}
+			}
+
+			return $datasource_name;
 		}
 
 		public function render_empty_gallery_preview( $message = '' ) {

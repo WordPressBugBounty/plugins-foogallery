@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * List galleries ability.
  */
@@ -22,6 +27,7 @@ if ( ! class_exists( 'FooGallery_Ability_List_Galleries' ) ) {
 		 * Register the ability with the WordPress core Abilities API.
 		 */
 		public function register() {
+			// phpcs:ignore -- This callback is registered only when the WordPress Abilities API is available.
 			wp_register_ability(
 				self::ID,
 				array(
