@@ -300,23 +300,30 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 * @param      $slug
 		 * @param bool $deactivate_wordpress_plugin
 		 * @param bool $error_loading
+		 * @param bool $network_wide Whether to deactivate the plugin network-wide.
 		 *
 		 * @return array|mixed|void
 		 */
-		public function deactivate( $slug, $deactivate_wordpress_plugin = true, $error_loading = false ) {
+		public function deactivate( $slug, $deactivate_wordpress_plugin = true, $error_loading = false, $network_wide = false ) {
 			$extension = $this->get_extension( $slug );
 			if ( $extension ) {
 				if ( $deactivate_wordpress_plugin && 'bundled' !== foo_safe_get( $extension, 'source', false ) ) {
 					$plugin = $this->find_wordpress_plugin( $extension );
-					if ( $plugin ) {
-						$failure = deactivate_plugins( $plugin['file'], true, false );
-						if ( null !== $failure ) {
-							return array(
-								/* translators: %s: Value inserted at runtime. */
-								'message' => sprintf( __( 'The feature %s could NOT be deactivated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
-								'type' => 'error'
-							);
-						}
+					if ( ! $plugin ) {
+						return array(
+							/* translators: %s: Value inserted at runtime. */
+							'message' => sprintf( __( 'The feature %s could NOT be deactivated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
+							'type'    => 'error',
+						);
+					}
+
+					$failure = deactivate_plugins( $plugin['file'], true, $network_wide );
+					if ( null !== $failure ) {
+						return array(
+							/* translators: %s: Value inserted at runtime. */
+							'message' => sprintf( __( 'The feature %s could NOT be deactivated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
+							'type' => 'error'
+						);
 					}
 				}
 
@@ -363,45 +370,54 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 *
 		 * @param      $slug
 		 * @param bool $activate_wordpress_plugin
+		 * @param bool $network_wide Whether to activate the plugin network-wide.
 		 *
 		 * @return array|mixed|void
 		 */
-		public function activate( $slug, $activate_wordpress_plugin = true ) {
+		public function activate( $slug, $activate_wordpress_plugin = true, $network_wide = false ) {
 			$extension = $this->get_extension( $slug );
 			if ( $extension ) {
+				$plugin = false;
+				if ( $activate_wordpress_plugin && 'bundled' !== foo_safe_get( $extension, 'source', false ) ) {
+					$plugin = $this->find_wordpress_plugin( $extension );
+					if ( ! $plugin ) {
+						return array(
+							/* translators: %s: Value inserted at runtime. */
+							'message' => sprintf( __( 'The feature %s could NOT be activated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
+							'type'    => 'error',
+						);
+					}
+				}
+
 				//first remove it from our error list (if it was there before)
 				$this->remove_from_error_extensions( $slug );
 
-				if ( $activate_wordpress_plugin && 'bundled' !== foo_safe_get( $extension, 'source', false ) ) {
+				if ( $plugin ) {
 					//activate the plugin, WordPress style!
-					$plugin = $this->find_wordpress_plugin( $extension );
 
-					if ( $plugin ) {
-
-						//check min version
-						$minimum_version = foo_safe_get( $extension, 'minimum_version' );
-						if ( !empty($minimum_version) ) {
-							$actual_version = $plugin['plugin']['Version'];
-							if ( version_compare( $actual_version, $minimum_version ) < 0 ) {
-								/* translators: %s: Value inserted at runtime. */
-								$this->add_to_error_extensions( $slug, sprintf( __( 'Requires %s version %s','foogallery' ), $extension['title'], $minimum_version ) );
-								return array(
-									/* translators: %s: Value inserted at runtime. */
-									'message' => sprintf( __( 'The feature %s could not be activated, because you are using an outdated version! Please update %s to at least version %s.', 'foogallery' ), $extension['title'], $extension['title'], $minimum_version ),
-									'type' => 'error',
-								);
-							}
-						}
-
-						//try to activate the plugin
-						$failure = activate_plugin( $plugin['file'], '', false, false );
-						if ( null !== $failure ) {
+					//check min version
+					$minimum_version = foo_safe_get( $extension, 'minimum_version' );
+					if ( !empty($minimum_version) ) {
+						$actual_version = $plugin['plugin']['Version'];
+						if ( version_compare( $actual_version, $minimum_version ) < 0 ) {
+							/* translators: %s: Value inserted at runtime. */
+							$this->add_to_error_extensions( $slug, sprintf( __( 'Requires %s version %s','foogallery' ), $extension['title'], $minimum_version ) );
 							return array(
 								/* translators: %s: Value inserted at runtime. */
-								'message' => sprintf( __( 'The feature %s could NOT be activated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
+								'message' => sprintf( __( 'The feature %s could not be activated, because you are using an outdated version! Please update %s to at least version %s.', 'foogallery' ), $extension['title'], $extension['title'], $minimum_version ),
 								'type' => 'error',
 							);
 						}
+					}
+
+					//try to activate the plugin
+					$failure = activate_plugin( $plugin['file'], '', $network_wide, false );
+					if ( null !== $failure ) {
+						return array(
+							/* translators: %s: Value inserted at runtime. */
+							'message' => sprintf( __( 'The feature %s could NOT be activated!', 'foogallery' ), "<strong>{$extension['title']}</strong>" ),
+							'type' => 'error',
+						);
 					}
 				}
 				//load an instance of the extension class into memory
@@ -450,6 +466,16 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * Resolve an installed WordPress plugin for a registered extension.
+		 *
+		 * @param array $extension Registered extension data.
+		 * @return array|bool Plugin data or false when no installed plugin matches.
+		 */
+		public function get_wordpress_plugin( $extension ) {
+			return $this->find_wordpress_plugin( $extension );
 		}
 
 		/**

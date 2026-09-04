@@ -74,14 +74,14 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 						<span class="dashicons dashicons-update"></span>
 					</button>
 					<span></span>
-					<button type="button" class="foogallery-viewport-btn active" data-viewport="desktop" title="<?php esc_attr_e('Desktop View', 'foogallery'); ?>">
-						<span class="dashicons dashicons-desktop"></span>
+					<button type="button" class="foogallery-viewport-btn active" data-viewport="desktop" title="<?php esc_attr_e('Desktop View', 'foogallery'); ?>" aria-label="<?php esc_attr_e('Desktop View', 'foogallery'); ?>" aria-pressed="true">
+						<span class="dashicons dashicons-desktop" aria-hidden="true"></span>
 					</button>
-					<button type="button" class="foogallery-viewport-btn" data-viewport="tablet" title="<?php esc_attr_e('Tablet View', 'foogallery'); ?>">
-						<span class="dashicons dashicons-tablet"></span>
+					<button type="button" class="foogallery-viewport-btn" data-viewport="tablet" title="<?php esc_attr_e('Tablet View', 'foogallery'); ?>" aria-label="<?php esc_attr_e('Tablet View', 'foogallery'); ?>" aria-pressed="false">
+						<span class="dashicons dashicons-tablet" aria-hidden="true"></span>
 					</button>
-					<button type="button" class="foogallery-viewport-btn" data-viewport="mobile" title="<?php esc_attr_e('Mobile View', 'foogallery'); ?>">
-						<span class="dashicons dashicons-smartphone"></span>
+					<button type="button" class="foogallery-viewport-btn" data-viewport="mobile" title="<?php esc_attr_e('Mobile View', 'foogallery'); ?>" aria-label="<?php esc_attr_e('Mobile View', 'foogallery'); ?>" aria-pressed="false">
+						<span class="dashicons dashicons-smartphone" aria-hidden="true"></span>
 					</button>
 				</div>
 				<span id="foogallery_preview_spinner" class="spinner"></span>
@@ -333,7 +333,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Items' ) ) {
 			} else {
 				echo '<div style="padding:20px 50px 50px 50px; text-align: center">';
 				echo '<h3>' . esc_html__( 'Preview not available!', 'foogallery' ) . '</h3>';
-				echo esc_html__( 'Sorry, but this gallery template does not support live previews. Please update the gallery in order to see what the gallery will look like.', 'foogallery' );
+				echo esc_html__( 'Sorry, but this gallery layout does not support live previews. Please update the gallery in order to see what the gallery will look like.', 'foogallery' );
 				echo '</div>';
 			}
 

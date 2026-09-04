@@ -333,7 +333,7 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 					'id'       => 'lazyload',
 					'title'    => __( 'Lazy Loading', 'foogallery' ),
 					'desc'     => __( 'If you choose to disable lazy loading, then all thumbnails will be loaded at once. This means you will lose the performance improvements that lazy loading gives you.', 'foogallery' ),
-					'section'  => __( 'Advanced', 'foogallery' ),
+					'section_id' => 'advanced',
 					'type'     => 'radio',
 					'default'  => '',
 					'choices'  => array(
@@ -362,7 +362,7 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 			$lazy_loading_mode_setting = array(
 				'id'      => 'lazy_loading_mode',
 				'title'   => __( 'Lazy Loading Mode', 'foogallery' ),
-				'desc'    => __( 'SEO Friendly outputs real image URLs and uses native browser lazy loading. Legacy uses FooGallery\'s JavaScript placeholder lazy loading for compatibility with older setups.', 'foogallery' ),
+				'desc'    => __( 'SEO Friendly outputs real image URLs and uses native browser lazy loading. Legacy uses JavaScript placeholder lazy loading for compatibility with older setups.', 'foogallery' ),
 				'type'    => 'radio',
 				'default' => self::MODE_SEO,
 				'choices' => array(
@@ -370,6 +370,7 @@ if ( ! class_exists( 'FooGallery_LazyLoad' ) ) {
 					self::MODE_LEGACY => __( 'Legacy', 'foogallery' ),
 				),
 				'tab'     => 'advanced',
+				'section' => __( 'Gallery Loading & Compatibility', 'foogallery' ),
 			);
 
 			$lazy_settings[] = array(

@@ -124,7 +124,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings' ) ) {
                     return 'dashicons-admin-appearance';
                 case 'video':
                     return 'dashicons-video-alt3';
-                case 'hover effects':
+				case 'hover-effects':
                     return 'dashicons-star-filled';
                 case 'captions':
                     return 'dashicons-editor-quote';

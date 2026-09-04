@@ -108,12 +108,29 @@ function foogallery_abilities_get_public_setting_id( $field ) {
  * @return array
  */
 function foogallery_abilities_get_template_field_indexes( $template ) {
-	$template = sanitize_key( $template );
-	$fields   = foogallery_get_fields_for_template( $template );
-	$indexes  = array(
-		'fields'   => $fields,
-		'lookup'   => array(),
-		'storage'  => array(),
+	$template       = sanitize_key( $template );
+	$fields         = foogallery_get_fields_for_template( $template );
+	$base_fields    = $fields;
+	$registered_ids = array();
+
+	foreach ( $base_fields as $field ) {
+		if ( ! empty( $field['id'] ) ) {
+			$registered_ids[] = sanitize_key( $field['id'] );
+		}
+	}
+
+	foreach ( $base_fields as $field ) {
+		$mobile_field = foogallery_get_mobile_field_for_template_field( $field, null, $template );
+		if ( false !== $mobile_field && ! in_array( sanitize_key( $mobile_field['id'] ), $registered_ids, true ) ) {
+			$fields[] = $mobile_field;
+			$registered_ids[] = sanitize_key( $mobile_field['id'] );
+		}
+	}
+
+	$indexes = array(
+		'fields'  => $fields,
+		'lookup'  => array(),
+		'storage' => array(),
 	);
 
 	foreach ( $fields as $field ) {
@@ -556,10 +573,20 @@ function foogallery_abilities_normalize_template_settings( $template, $settings,
 	$merged = apply_filters( 'foogallery_save_gallery_settings-' . $template, $merged, $gallery_id, $context );
 
 	foreach ( $merged as $key => $value ) {
-		if ( '' === $value || null === $value ) {
+		$field                     = $field_indexes['storage'][ sanitize_key( (string) $key ) ] ?? null;
+		$valid_empty_mobile_choice = '' === $value
+			&& is_array( $field )
+			&& ! empty( $field['_foogallery_mobile_variant'] )
+			&& isset( $field['choices'] )
+			&& is_array( $field['choices'] )
+			&& array_key_exists( '', $field['choices'] );
+
+		if ( ( '' === $value && ! $valid_empty_mobile_choice ) || null === $value ) {
 			unset( $merged[ $key ] );
 		}
 	}
+	$merged = foogallery_normalize_mobile_settings_for_save( $merged, $template );
+	$merged = foogallery_preserve_paid_mobile_settings( $merged, $template, $gallery_id );
 
 	return $merged;
 }
@@ -665,7 +692,10 @@ function foogallery_abilities_build_template_settings_base( $template ) {
 			continue;
 		}
 
-		$settings[ $template . '_' . $field['id'] ] = array_key_exists( 'default', $field ) ? $field['default'] : '';
+		$default = array_key_exists( 'default', $field ) ? $field['default'] : '';
+		if ( null !== $default ) {
+			$settings[ $template . '_' . $field['id'] ] = $default;
+		}
 	}
 
 	return $settings;
@@ -751,25 +781,31 @@ function foogallery_abilities_get_template_field_schema() {
 	return array(
 		'type'       => 'object',
 		'properties' => array(
-			'id'          => array(
+			'id'            => array(
 				'type' => 'string',
 			),
-			'title'       => array(
+			'title'         => array(
 				'type' => 'string',
 			),
-			'type'        => array(
+			'type'          => array(
 				'type' => 'string',
 			),
-			'section'     => array(
+			'section'       => array(
 				'type' => 'string',
 			),
-			'subsection'  => array(
+			'section_id'    => array(
 				'type' => 'string',
 			),
-			'description' => array(
+			'subsection'    => array(
 				'type' => 'string',
 			),
-			'choices'     => array(
+			'subsection_id' => array(
+				'type' => 'string',
+			),
+			'description'   => array(
+				'type' => 'string',
+			),
+			'choices'       => array(
 				'type' => 'object',
 			),
 		),
@@ -1057,7 +1093,8 @@ function foogallery_abilities_prepare_template( $template, $include_fields = fal
 	if ( $include_fields ) {
 		$data['fields'] = array();
 
-		foreach ( foogallery_get_fields_for_template( $template ) as $field ) {
+		$field_indexes = foogallery_abilities_get_template_field_indexes( $data['slug'] );
+		foreach ( $field_indexes['fields'] as $field ) {
 			$prepared_field = foogallery_abilities_prepare_template_field( $field );
 
 			if ( ! empty( $prepared_field ) ) {
@@ -1081,24 +1118,38 @@ function foogallery_abilities_prepare_template_field( $field ) {
 		return array();
 	}
 
+	$sections       = foogallery_get_gallery_setting_sections();
+	$field          = foogallery_normalize_gallery_setting_field_sections( $field, $sections );
+	$section_id     = $field['section_id'];
+	$section_config = isset( $sections[ $section_id ] ) && is_array( $sections[ $section_id ] ) ? $sections[ $section_id ] : array();
+	$section_label  = isset( $section_config['label'] )
+		? $section_config['label']
+		: ( isset( $field['section'] ) ? $field['section'] : ucwords( str_replace( array( '-', '_' ), ' ', $section_id ) ) );
+
 	$data = array(
-		'id'      => foogallery_abilities_get_public_setting_id( $field ),
-		'title'   => isset( $field['title'] ) ? wp_strip_all_tags( $field['title'] ) : '',
-		'type'    => isset( $field['type'] ) ? $field['type'] : '',
-		'section' => isset( $field['section'] ) ? wp_strip_all_tags( $field['section'] ) : '',
-		'default' => array_key_exists( 'default', $field ) ? $field['default'] : '',
+		'id'         => foogallery_abilities_get_public_setting_id( $field ),
+		'title'      => isset( $field['title'] ) ? wp_strip_all_tags( $field['title'] ) : '',
+		'type'       => isset( $field['type'] ) ? $field['type'] : '',
+		'section'    => wp_strip_all_tags( $section_label ),
+		'section_id' => $section_id,
+		'default'    => array_key_exists( 'default', $field ) ? $field['default'] : '',
 	);
 
 	if ( isset( $field['desc'] ) ) {
 		$data['description'] = wp_strip_all_tags( $field['desc'] );
 	}
 
-	if ( isset( $field['subsection'] ) ) {
-		$subsection = foogallery_abilities_prepare_template_field_subsection( $field['subsection'] );
+	if ( ! empty( $field['subsection_id'] ) ) {
+		$subsection_id     = $field['subsection_id'];
+		$subsection_config = isset( $section_config['subsections'][ $subsection_id ] ) && is_array( $section_config['subsections'][ $subsection_id ] )
+			? $section_config['subsections'][ $subsection_id ]
+			: array();
+		$subsection_label  = isset( $subsection_config['label'] )
+			? $subsection_config['label']
+			: ( isset( $field['subsection'][ $subsection_id ] ) ? $field['subsection'][ $subsection_id ] : ucwords( str_replace( array( '-', '_' ), ' ', $subsection_id ) ) );
 
-		if ( ! empty( $subsection ) ) {
-			$data['subsection'] = $subsection;
-		}
+		$data['subsection']    = wp_strip_all_tags( $subsection_label );
+		$data['subsection_id'] = $subsection_id;
 	}
 
 	if ( isset( $field['choices'] ) && is_array( $field['choices'] ) ) {
@@ -1138,8 +1189,16 @@ function foogallery_abilities_prepare_gallery_settings( $template, $settings ) {
 	$field_indexes = foogallery_abilities_get_template_field_indexes( $template );
 	$prepared      = array();
 
+	$paid_mobile_storage = array();
+	foreach ( array_keys( foogallery_get_paid_mobile_setting_storage_keys( $template, $settings ) ) as $paid_storage_key ) {
+		$paid_mobile_storage[ sanitize_key( $paid_storage_key ) ] = true;
+	}
+
 	foreach ( $settings as $key => $value ) {
 		$storage_key = sanitize_key( (string) $key );
+		if ( isset( $paid_mobile_storage[ $storage_key ] ) && ! foogallery_mobile_settings_is_entitled() ) {
+			continue;
+		}
 
 		if ( array_key_exists( $storage_key, $field_indexes['storage'] ) ) {
 			$prepared_key = foogallery_abilities_get_public_setting_id( $field_indexes['storage'][ $storage_key ] );

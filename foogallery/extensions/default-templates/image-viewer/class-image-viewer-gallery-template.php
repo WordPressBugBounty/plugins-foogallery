@@ -94,13 +94,13 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
                     array(
                         'id'      => 'thumbnail-help',
                         'desc'    => __( 'It is recommended to crop your thumbnails, so that your gallery remains a constant size. If you do not crop, then the size of the gallery could potentially change for each thumbnail.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'type'    => 'help'
                     ),
                     array(
                         'id'      => 'thumbnail_size',
                         'title'   => __( 'Thumb Size', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'desc'    => __( 'Choose the size of your thumbnails', 'foogallery' ),
                         'type'    => 'thumb_size',
 						'for'     => 'thumbnail_size_width',
@@ -117,7 +117,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
                     array(
                         'id'      => 'thumbnail_link',
                         'title'   => __( 'Thumbnail Link', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default' => 'image' ,
                         'type'    => 'thumb_link',
                     ),
@@ -129,7 +129,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
                     array(
                         'id'      => 'alignment',
                         'title'   => __( 'Alignment', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
                         'desc'    => __( 'The horizontal alignment of the thumbnails inside the gallery', 'foogallery' ),
                         'default' => 'fg-center',
 						'type'    => 'radio',
@@ -146,7 +146,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 					array(
 						'id'      => 'looping',
 						'title'   => __( 'Loop Images', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'desc'    => __( 'When navigating through the images, do you want to loop image back to the first after you navigate past the last image?', 'foogallery' ),
 						'default' => 'enabled',
 						'type'    => 'radio',
@@ -163,7 +163,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 					array(
 						'id'      => 'autoplay',
 						'title'   => __( 'Autoplay', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'desc'    => __( 'Automatically advance to the next image after a specified time.', 'foogallery' ),
 						'default' => 'disabled',
 						'type'    => 'radio',
@@ -181,7 +181,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 					array(
 						'id'      => 'autoplay_seconds',
 						'title'   => __( 'Autoplay Seconds', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'desc'    => __( 'The time in seconds to display each image before advancing.', 'foogallery' ),
 						'default' => '10',
 						'type'    => 'number',
@@ -197,7 +197,7 @@ if ( !class_exists( 'FooGallery_Image_Viewer_Gallery_Template' ) ) {
 	                    array(
 	                        'id'      => 'language-help',
 	                        'desc'    => __( 'You can change the "Prev", "Next" and "of" text used in the gallery from the settings page, under the Language tab.', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
                         'type'    => 'help'
                     )
 				)

@@ -323,6 +323,7 @@ class FooGallery_Template_Loader {
 	function add_style_block( $gallery, $template ) {
 		$css = array();
 		$css = apply_filters( "foogallery_template_style_block-{$template}", $css, $gallery );
+		$css = apply_filters( 'foogallery_template_style_block', $css, $gallery, $template );
 
 		if ( !empty( $css ) ) {
 			// @formatter:off

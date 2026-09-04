@@ -10,11 +10,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 global $current_foogallery;
 
 $lightbox = foogallery_gallery_template_setting_lightbox();
-$mobile_columns = foogallery_gallery_template_setting( 'mobile_columns', '' );
+$foogallery_mobile_columns = foogallery_gallery_template_mobile_setting( 'mobile_columns', '' );
 $alignment = foogallery_gallery_template_setting( 'alignment', 'fg-center' );
 $layout = foogallery_gallery_template_setting( 'layout', '' );
 
-$foogallery_default_classes = foogallery_build_class_attribute_safe( $current_foogallery, 'foogallery-lightbox-' . $lightbox, $alignment, $mobile_columns, $layout );
+$foogallery_default_classes = foogallery_build_class_attribute_safe( $current_foogallery, 'foogallery-lightbox-' . $lightbox, $alignment, $foogallery_mobile_columns, $layout );
 $foogallery_default_attributes = foogallery_build_container_attributes_safe( $current_foogallery, array( 'class' => $foogallery_default_classes ) );
 
 ?><div <?php echo $foogallery_default_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>

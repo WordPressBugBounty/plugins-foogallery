@@ -188,8 +188,8 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 					'id'      => 'foobox_caption_source',
 					'title'   => __( 'Lightbox Caption Source', 'foogallery' ),
 					'desc'    => __( 'The lightbox captions can be different to the thumbnail captions.', 'foogallery' ),
-					'section' => __( 'Lightbox', 'foogallery' ),
-					'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+					'section_id' => 'lightbox',
+					'subsection_id' => 'lightbox-general',
 					'type'    => 'radio',
 					'default' => '',
 					'class'   => 'foogallery-radios-stacked',
@@ -211,8 +211,8 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 					'id'      => 'foobox_caption_override_title',
 					'title'   => __( 'Override Caption Title', 'foogallery' ),
 					'desc'    => __( 'You can override the caption title to be different from the thumbnail caption title.', 'foogallery' ),
-					'section' => __( 'Lightbox', 'foogallery' ),
-					'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+					'section_id' => 'lightbox',
+					'subsection_id' => 'lightbox-general',
 					'type'    => 'radio',
 					'default' => '',
 					'class'   => 'foogallery-radios-stacked',
@@ -238,8 +238,8 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 					'id'      => 'foobox_caption_override_desc',
 					'title'   => __( 'Override Caption Desc.', 'foogallery' ),
 					'desc'    => __( 'You can override the caption description to be different from the thumbnail caption description.', 'foogallery' ),
-					'section' => __( 'Lightbox', 'foogallery' ),
-					'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+					'section_id' => 'lightbox',
+					'subsection_id' => 'lightbox-general',
 					'type'    => 'radio',
 					'default' => '',
 					'class'   => 'foogallery-radios-stacked',
@@ -262,7 +262,7 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 				);
 
 				//find the index of the first Hover Effect field
-				$index = foogallery_admin_fields_find_index_of_section( $fields, __( 'Hover Effects', 'foogallery' ) );
+				$index = foogallery_admin_fields_find_index_of_section( $fields, 'hover-effects' );
 
 				array_splice( $fields, $index, 0, $new_fields );
 			}

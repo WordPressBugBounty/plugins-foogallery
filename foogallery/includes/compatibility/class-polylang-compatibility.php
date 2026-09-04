@@ -29,7 +29,7 @@ if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 
 				add_filter( 'pll_get_post_types', array( $this, 'add_foogallery_cpt' ), 10, 2 );
 				add_filter( 'pll_copy_post_metas', array( $this, 'ignore_foogallery_meta' ), 10, 2 );
-				add_filter( 'foogallery_attachment_get_posts_args', array( $this, 'include_all_languages_for_gallery_attachments' ), 10, 2 );
+				add_filter( 'foogallery_attachment_get_posts_args_after_overrides', array( $this, 'include_all_languages_for_gallery_attachments' ), 999, 2 );
 
 				// Whitelist the Polylang metabox.
 				add_filter( 'foogallery_metabox_sanity_foogallery', array( $this, 'add_pll_metaboxes' ) );
@@ -113,6 +113,9 @@ if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 		 * FooGallery stores explicit attachment IDs on the gallery, so those IDs should be loaded regardless
 		 * of the language currently being rendered.
 		 *
+		 * REST block rendering parses `lang=all` as a language taxonomy term before Polylang can remove it.
+		 * Omitting the language argument in REST requests preserves the exact explicit attachment IDs.
+		 *
 		 * @param array      $query_args Attachment query args.
 		 * @param FooGallery $foogallery  Gallery being rendered.
 		 *
@@ -120,10 +123,23 @@ if ( ! class_exists( 'FooGallery_Polylang_Compatibility' ) ) {
 		 */
 		public function include_all_languages_for_gallery_attachments( $query_args, $foogallery ) {
 			if ( isset( $query_args['post__in'] ) && ! empty( $query_args['post__in'] ) ) {
-				$query_args['lang'] = 'all';
+				if ( $this->is_rest_request() ) {
+					unset( $query_args['lang'] );
+				} else {
+					$query_args['lang'] = 'all';
+				}
 			}
 
 			return $query_args;
+		}
+
+		/**
+		 * Whether the current request is serving the WordPress REST API.
+		 *
+		 * @return bool
+		 */
+		protected function is_rest_request() {
+			return defined( 'REST_REQUEST' ) && REST_REQUEST;
 		}
 
 		/**

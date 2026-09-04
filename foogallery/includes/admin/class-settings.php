@@ -516,94 +516,102 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			//region Advanced Tab
 			$tabs['advanced'] = __( 'Advanced', 'foogallery' );
 
-            $settings[] = array(
-                'id'      => 'add_media_button_start',
-                'title'   => __( 'Move Add Media Button', 'foogallery' ),
-                'desc'    => sprintf( __( 'You can move the Add Media button to the beginning of the attachment list. This can help when your galleries have a large number of images, so you do not have to scroll.', 'foogallery' ), foogallery_plugin_name() ),
-                'type'    => 'checkbox',
-                'tab'     => 'advanced'
-            );
+			$settings[] = array(
+				'id'      => 'add_media_button_start',
+				'title'   => __( 'Move Add Media Button', 'foogallery' ),
+				'desc'    => __( 'Move the Add Media button to the beginning of the gallery item list, making it easier to reach in galleries with many images.', 'foogallery' ),
+				'type'    => 'checkbox',
+				'tab'     => 'advanced',
+				'section' => __( 'Gallery Builder & Output', 'foogallery' ),
+			);
 
 			$settings[] = array(
 				'id'      => 'enable_legacy_thumb_cropping',
 				'title'   => __( 'Enable Legacy Thumb Cropping', 'foogallery' ),
-				'desc'    => __( 'Enables legacy thumbnail cropping for the Simple Portfolio gallery template, meaning it will not crop thumbnails.<br/>PLEASE NOTE : only enable this if you have been asked to by our support team.', 'foogallery' ),
+				'desc'    => __( 'Restore the older Portfolio behavior that does not crop thumbnails to fixed dimensions. Enable this only for galleries created with that behavior or when requested by support.', 'foogallery' ),
 				'type'    => 'checkbox',
-				'tab'     => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'Troubleshooting & Legacy Support', 'foogallery' ),
 			);
 
 			$settings[] = array(
 				'id'      => 'enable_debugging',
 				'title'   => __( 'Enable Debugging', 'foogallery' ),
-				'desc'    => sprintf( __( 'Helps to debug problems and diagnose issues. Enable debugging if you need support for an issue you are having.', 'foogallery' ), foogallery_plugin_name() ),
+				'desc'    => __( 'Show additional diagnostic information that can help investigate gallery problems. Enable this temporarily while troubleshooting or when requested by support.', 'foogallery' ),
 				'type'    => 'checkbox',
-				'tab'     => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'Troubleshooting & Legacy Support', 'foogallery' ),
 			);
 
             $settings[] = array(
                 'id'      => 'enqueue_polyfills',
                 'title'   => __( 'Enqueue Polyfills', 'foogallery' ),
-                /* translators: %s: Value inserted at runtime. */
-                'desc'    => sprintf( __( '%s uses modern JavaScript API\'s which may not be supported in older browsers. Enable the enqueueing of polyfills for better backwards compatibility.', 'foogallery' ), foogallery_plugin_name() ),
-                'type'    => 'checkbox',
-                'tab'     => 'advanced'
-            );
+				'desc'    => __( 'Load additional compatibility scripts for older browsers that do not support the modern JavaScript features used by gallery layouts.', 'foogallery' ),
+				'type'    => 'checkbox',
+				'tab'     => 'advanced',
+				'section' => __( 'Gallery Loading & Compatibility', 'foogallery' ),
+			);
 
 			$settings[] = array(
 				'id'      => 'force_legacy_runtime_scripts',
 				'title'   => __( 'Force Legacy Runtime Loading', 'foogallery' ),
-				'desc'    => __( 'Always enqueue the FooGallery runtime scripts through WordPress immediately instead of using delayed runtime loading. Existing sites upgraded from older FooGallery versions keep this enabled automatically. Disable it to opt in to delayed runtime loading.', 'foogallery' ),
+				'desc'    => __( 'Load gallery scripts immediately through WordPress instead of using delayed runtime loading. Enable this if galleries do not start correctly with delayed loading. Existing sites upgraded from older versions may have this enabled automatically.', 'foogallery' ),
 				'type'    => 'checkbox',
-				'tab'     => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'Gallery Loading & Compatibility', 'foogallery' ),
 			);
 
 			$settings[] = array(
 				'id'      => 'uninstall',
 				'title'   => __( 'Full Uninstall', 'foogallery' ),
-				/* translators: %s: Value inserted at runtime. */
-				'desc'    => sprintf( __( 'Run a full uninstall of %s, which includes removing all galleries, settings and metadata. This basically removes all traces of the plugin from your system. Please be careful - there is no undo!', 'foogallery' ), foogallery_plugin_name() ),
+				'desc'    => __( 'Permanently remove all galleries created with this plugin, along with its settings and related metadata. This cannot be undone, so create a backup before continuing.', 'foogallery' ),
 				'type'    => 'uninstall',
-				'tab'     => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'Data Removal', 'foogallery' ),
 			);
 
 			if ( foogallery_thumb_active_engine()->has_local_cache() ) {
 				$settings[] = array(
-					'id'    => 'override_thumb_test',
-					'title' => __( 'Override Thumb Test', 'foogallery' ),
-					'desc'  => __( 'Sometimes there are problems running the thumbnail generation test. This overrides the test to use a remote image from our CDN.', 'foogallery' ),
-					'type'  => 'checkbox',
-					'tab'   => 'advanced',
+					'id'      => 'override_thumb_test',
+					'title'   => __( 'Override Thumb Test', 'foogallery' ),
+					'desc'    => __( 'Use a remote test image instead of an image from the Media Library when checking thumbnail generation. Enable this only if the normal thumbnail test cannot run successfully.', 'foogallery' ),
+					'type'    => 'checkbox',
+					'tab'     => 'advanced',
+					'section' => __( 'Troubleshooting & Legacy Support', 'foogallery' ),
 				);
 			}
 
 			if ( !foogallery_is_pro() ) {
 				$settings[] = array(
-					'id'    => 'force_hide_trial',
-					'title' => __( 'Force Hide Trial Notice', 'foogallery' ),
-					'desc'  => __( 'Force the trial notice admin banner to never show', 'foogallery' ),
-					'type'  => 'checkbox',
-					'tab'   => 'advanced'
+					'id'      => 'force_hide_trial',
+					'title'   => __( 'Force Hide Trial Notice', 'foogallery' ),
+					'desc'    => __( 'Permanently hide the trial notice in the WordPress admin.', 'foogallery' ),
+					'type'    => 'checkbox',
+					'tab'     => 'advanced',
+					'section' => __( 'WordPress Admin', 'foogallery' ),
 				);
 			}
 
 			$settings[] = array(
-				'id'    => 'demo_content',
-				'type'  => 'checkbox',
-				'title' => __( 'Demo Content Created', 'foogallery' ),
-				'desc'  => __( 'If the demo content has been created, then this will be checked. You can uncheck this to allow for demo content to be created again.', 'foogallery' ),
-				'tab'   => 'advanced'
+				'id'      => 'demo_content',
+				'type'    => 'checkbox',
+				'title'   => __( 'Demo Content Created', 'foogallery' ),
+				'desc'    => __( 'This is checked after demo content has been created. Clear it and save the settings to allow the demo content to be created again. Existing demo galleries are not removed.', 'foogallery' ),
+				'tab'     => 'advanced',
+				'section' => __( 'WordPress Admin', 'foogallery' ),
 			);
 
 			$settings[] = array(
-				'id'    => 'attachment_id_attribute',
-				'type'  => 'radio',
-				'title' => __( 'Item ID Attribute', 'foogallery' ),
-				'desc'  => __( 'Each item has an ID attribute which identifies itself. Changing the attribute will change what is used for deeplinking.', 'foogallery' ),
+				'id'      => 'attachment_id_attribute',
+				'type'    => 'radio',
+				'title'   => __( 'Item ID Attribute', 'foogallery' ),
+				'desc'    => __( 'Choose the HTML attribute used to identify gallery items for deeplinking and integrations. Keep the default unless a theme, extension, or custom script requires the alternative.', 'foogallery' ),
 				'choices' => array(
 					'data-attachment-id' => __( 'data-attachment-id', 'foogallery' ),
-					'data-id' => __( 'data-id', 'foogallery' ),
+					'data-id'            => __( 'data-id', 'foogallery' ),
 				),
-				'tab'   => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'Gallery Builder & Output', 'foogallery' ),
 			);
 			
 			$custom_post_types = get_post_types( array( 'public' => true, '_builtin' => false ), 'objects' );
@@ -617,19 +625,21 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 				$settings[] = array(
 					'id'      => 'allowed_custom_post_types',
 					'title'   => __( 'Allowed Custom Post Types', 'foogallery' ),
-					'desc'    => __( 'Select the custom post types where galleries can be attached.', 'foogallery' ),
+					'desc'    => __( 'Select the custom post types where galleries can be attached or selected. Posts and pages are always supported.', 'foogallery' ),
 					'type'    => 'checkboxlist',
 					'choices' => $post_type_choices,
-					'tab'     => 'advanced'
+					'tab'     => 'advanced',
+					'section' => __( 'Gallery Builder & Output', 'foogallery' ),
 				);
 			}
 
 			$settings[] = array(
-				'id'    => 'enable_trial_mode',
-				'title' => __( 'Admin Trial Mode', 'foogallery' ),
-				'desc'  => __( 'Enables trial mode in the admin, which will highlight features that are only available in the Pro version.', 'foogallery' ),
-				'type'  => 'checkbox',
-				'tab'   => 'advanced'
+				'id'      => 'enable_trial_mode',
+				'title'   => __( 'Admin Trial Mode', 'foogallery' ),
+				'desc'    => __( 'Highlight gallery layouts and features available in other plans. This does not activate those features or start a trial.', 'foogallery' ),
+				'type'    => 'checkbox',
+				'tab'     => 'advanced',
+				'section' => __( 'WordPress Admin', 'foogallery' ),
 			);
 
 			//endregion Advanced Tab
@@ -676,11 +686,154 @@ if ( ! class_exists( 'FooGallery_Admin_Settings' ) ) {
 			);
 			//endregion Custom JS & CSS
 
-			return apply_filters( 'foogallery_admin_settings_override', array(
+			$settings = apply_filters( 'foogallery_admin_settings_override', array(
 				'tabs'     => $tabs,
 				'sections' => array(),
 				'settings' => $settings,
 			) );
+
+			return $this->organize_advanced_settings( $settings );
+		}
+
+		/**
+		 * Group and order global Advanced settings after all feature filters have run.
+		 *
+		 * @param array $settings The complete global settings configuration.
+		 *
+		 * @return array The organized settings configuration.
+		 */
+		public function organize_advanced_settings( $settings ) {
+			if ( empty( $settings['settings'] ) || ! is_array( $settings['settings'] ) ) {
+				return $settings;
+			}
+
+			$groups = array(
+				'gallery_loading' => array(
+					'name'     => __( 'Gallery Loading & Compatibility', 'foogallery' ),
+					'settings' => array(
+						'lazy_loading_mode',
+						'disable_no_js_thumbnail_fallback',
+						'enqueue_polyfills',
+						'force_legacy_runtime_scripts',
+						'force_https',
+					),
+				),
+				'gallery_builder' => array(
+					'name'     => __( 'Gallery Builder & Output', 'foogallery' ),
+					'settings' => array(
+						'add_media_button_start',
+						'attachment_id_attribute',
+						'allowed_custom_post_types',
+					),
+				),
+				'media_library' => array(
+					'name'     => __( 'Media Library & Sources', 'foogallery' ),
+					'settings' => array(
+						'disable_attachment_taxonomies',
+						'disable_media_category_sidebar',
+						'show_media_folders_in_all_media_modals',
+						'override_media_category_taxonomy',
+						'root_folder',
+					),
+				),
+				'troubleshooting' => array(
+					'name'     => __( 'Troubleshooting & Legacy Support', 'foogallery' ),
+					'settings' => array(
+						'enable_legacy_thumb_cropping',
+						'enable_debugging',
+						'override_thumb_test',
+					),
+				),
+				'wordpress_admin' => array(
+					'name'     => __( 'WordPress Admin', 'foogallery' ),
+					'settings' => array(
+						'force_hide_trial',
+						'pro_promo_disabled',
+						'enable_trial_mode',
+						'demo_content',
+					),
+				),
+				'data_removal' => array(
+					'name'     => __( 'Data Removal', 'foogallery' ),
+					'settings' => array(
+						'uninstall',
+					),
+				),
+			);
+
+			$setting_positions = array();
+			$group_positions   = array();
+			$group_names       = array();
+
+			foreach ( $groups as $group_position => $group ) {
+				$group_positions[ $group_position ] = count( $group_positions );
+				$group_names[ $group['name'] ]       = $group_positions[ $group_position ];
+
+				foreach ( $group['settings'] as $setting_position => $setting_id ) {
+					$setting_positions[ $setting_id ] = array(
+						'group'   => $group_positions[ $group_position ],
+						'position' => $setting_position,
+						'section' => $group['name'],
+					);
+				}
+			}
+
+			$advanced_settings        = array();
+			$other_settings           = array();
+			$advanced_insert_position = null;
+
+			foreach ( $settings['settings'] as $original_position => $setting ) {
+				if ( isset( $setting['tab'] ) && 'advanced' === $setting['tab'] ) {
+					if ( null === $advanced_insert_position ) {
+						$advanced_insert_position = count( $other_settings );
+					}
+
+					$setting_id = isset( $setting['id'] ) ? $setting['id'] : '';
+					if ( isset( $setting_positions[ $setting_id ] ) ) {
+						$setting['section'] = $setting_positions[ $setting_id ]['section'];
+						$group_position     = $setting_positions[ $setting_id ]['group'];
+						$setting_position   = $setting_positions[ $setting_id ]['position'];
+					} else {
+						$section          = isset( $setting['section'] ) ? $setting['section'] : '';
+						$group_position   = isset( $group_names[ $section ] ) ? $group_names[ $section ] : count( $groups ) - 3;
+						$setting_position = PHP_INT_MAX;
+					}
+
+					$advanced_settings[] = array(
+						'field'             => $setting,
+						'group_position'    => $group_position,
+						'setting_position'  => $setting_position,
+						'original_position' => $original_position,
+					);
+				} else {
+					$other_settings[] = $setting;
+				}
+			}
+
+			if ( empty( $advanced_settings ) ) {
+				return $settings;
+			}
+
+			usort( $advanced_settings, function ( $left, $right ) {
+				if ( $left['group_position'] !== $right['group_position'] ) {
+					return $left['group_position'] - $right['group_position'];
+				}
+
+				if ( $left['setting_position'] !== $right['setting_position'] ) {
+					return $left['setting_position'] - $right['setting_position'];
+				}
+
+				return $left['original_position'] - $right['original_position'];
+			} );
+
+			$advanced_settings = array_map( function ( $setting ) {
+				return $setting['field'];
+			}, $advanced_settings );
+
+			array_splice( $other_settings, $advanced_insert_position, 0, $advanced_settings );
+			$settings['settings'] = $other_settings;
+
+			return $settings;
 		}
 
 		/**

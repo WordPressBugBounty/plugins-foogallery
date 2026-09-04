@@ -93,6 +93,7 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 			if ( $caching_enabled ) {
 				//save the output to post meta for later use
 				update_post_meta( $foogallery_id, FOOGALLERY_META_CACHE, $gallery_html );
+				update_post_meta( $foogallery_id, FOOGALLERY_META_CACHE . '_mobile_access', foogallery_mobile_settings_is_entitled() ? '1' : '0' );
 			}
 
 			$foogallery_force_gallery_cache = false;
@@ -150,7 +151,18 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 				return false;
 			}
 
-			$gallery_cache = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE, true );
+			$gallery_cache         = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE, true );
+			$mobile_access         = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_mobile_access', true );
+			$current_mobile_access = foogallery_mobile_settings_is_entitled() ? '1' : '0';
+			if ( $current_mobile_access !== (string) $mobile_access ) {
+				// Older caches lack an entitlement marker, while upgraded and
+				// downgraded installs carry the opposite marker. Rebuild once even
+				// if a declaration was removed during that same transition.
+				delete_post_meta( $gallery->ID, FOOGALLERY_META_CACHE );
+				delete_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_mobile_access' );
+				$this->cache_gallery_html_output( $gallery->ID );
+				$gallery_cache = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE, true );
+			}
 
 			if ( !empty( $gallery_cache ) && is_string( $gallery_cache ) ) {
 				//output the cached gallery html
@@ -233,6 +245,7 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 		 */
 		function clear_all_gallery_caches() {
 			delete_post_meta_by_key( FOOGALLERY_META_CACHE );
+			delete_post_meta_by_key( FOOGALLERY_META_CACHE . '_mobile_access' );
 		}
 
 		/**

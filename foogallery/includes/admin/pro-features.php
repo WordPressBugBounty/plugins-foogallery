@@ -15,6 +15,16 @@ return array(
         'plan' => FOOGALLERY_PRO_PLAN_STARTER,
         'plans' => array( FOOGALLERY_PRO_PLAN_STARTER, FOOGALLERY_PRO_PLAN_EXPERT, FOOGALLERY_PRO_PLAN_COMMERCE ),
     ),
+	'mobile_settings'       => array(
+		'title'       => foogallery__( 'Mobile-Specific Gallery Settings', 'foogallery' ),
+		'desc'        => foogallery__( 'Fine-tune gallery settings for phones without changing their desktop values. Switch the live preview to mobile and adjust spacing, paging, captions, navigation, and other responsive options independently.', 'foogallery' ),
+		'link'        => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/',
+		'utm_content' => 'mobile_settings',
+		'link_text'   => foogallery__( 'Learn More', 'foogallery' ),
+		'image'       => FOOGALLERY_URL . 'assets/img/foogallery-admin-help-pro-mobile-settings.png',
+		'plan'        => FOOGALLERY_PRO_PLAN_STARTER,
+		'plans'       => array( FOOGALLERY_PRO_PLAN_STARTER, FOOGALLERY_PRO_PLAN_EXPERT, FOOGALLERY_PRO_PLAN_COMMERCE ),
+	),
     'hover_effects' => array(
         'title' => foogallery__( 'Animated Hover Effect Presets','foogallery' ),
         'desc' => foogallery__( 'Choose from 11 animated hover effect presets, to add that professional and elegant look to your galleries.', 'foogallery' ),
@@ -97,7 +107,7 @@ return array(
     ),
     'exif' => array(
         'title' => foogallery__( 'EXIF Metadata','foogallery' ),
-        'desc' => foogallery__( 'Show image metadata within your galleries. A must-have for professional photographers wanting to showcase specific metadata about each image.', 'foogallery' ),
+        'desc' => foogallery__( 'Show image EXIF metadata within your galleries. A must-have for professional photographers wanting to showcase specific metadata about each image.', 'foogallery' ),
         'link' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/exif-data/',
         'utm_content' => 'exif',
         'link_text' => foogallery__( 'Learn More','foogallery' ),
@@ -107,7 +117,7 @@ return array(
     ),
     'imagegallery_schema' => array(
         'title' => foogallery__( 'ImageGallery SEO Schema','foogallery' ),
-        'desc' => foogallery__( 'Output opt-in ImageGallery JSON-LD schema for pages and posts that use FooGallery, with per-gallery fields for names, descriptions, keywords, authors, licenses, and dates.', 'foogallery' ),
+        'desc' => foogallery__( 'Boost your SEO by outputting ImageGallery JSON-LD schema for pages and posts that use FooGallery, with per-gallery fields for names, descriptions, keywords, authors, licenses, and dates.', 'foogallery' ),
         'link' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/pro-expert',
         'utm_content' => 'imagegallery_schema',
         'link_text' => foogallery__( 'Learn More','foogallery' ),
@@ -137,7 +147,7 @@ return array(
     ),
     'master_product' => array(
         'title' => foogallery__( 'Sell Images With A Master Product','foogallery' ),
-        'desc' => foogallery__( 'Create a single "Master Product" with variations and link it to all the images in your gallery. This means you can start selling your image just like a stock photo website!', 'foogallery' ),
+        'desc' => foogallery__( 'Create a single "Master Product" with variations and link it to all the images in your gallery. This means you can start selling your images just like a stock photo website!', 'foogallery' ),
         'link' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/woocommerce-integration/#master-product',
         'utm_content' => 'product_gallery',
         'link_text' => foogallery__( 'Learn More','foogallery' ),

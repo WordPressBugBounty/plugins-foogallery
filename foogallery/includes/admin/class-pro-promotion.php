@@ -217,7 +217,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 				'id'       => 'promo_captions_type',
 				'title'    => __( 'Caption Type', 'foogallery' ),
 				'desc'     => __( 'What type of captions do you want to display in the gallery. By default, captions will be built up from the image attributes for both the caption title and description.', 'foogallery' ),
-				'section'  => __( 'Captions', 'foogallery' ),
+				'section_id' => 'captions',
 				'type'     => 'radio',
 				'default'  => '',
 				'choices'  => array(
@@ -241,7 +241,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 				'desc'     => __( 'Take complete control over your image captions, and customize them by using HTML and pre-defined placeholders. Integrates with popular solutions like ACF and Pods for unlimited possibilities.', 'foogallery')
 				                  . '<br /><br />' . $this->build_promo_trial_html( 'pagination', __( 'PRO Expert', 'foogallery' ) ) . '<br /><br />',
 				'cta' => $this->build_cta_buttons( 'foogallery-captions' ),
-				'section'  => __( 'Captions', 'foogallery' ),
+				'section_id' => 'captions',
 				'type'     => 'promo',
 				'row_data'=> array(
 					'data-foogallery-change-selector'          => 'input',
@@ -510,7 +510,8 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 				'title'   => __( 'Disable PRO Promotions', 'foogallery' ),
 				'desc'    => __( 'Disable all premium upsell promotions throughout the WordPress admin.', 'foogallery' ),
 				'type'    => 'checkbox',
-				'tab'     => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'WordPress Admin', 'foogallery' ),
 			);
 
 			return $settings;
@@ -586,7 +587,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 								'</li><li><strong>' . __('Load More' ,'foogallery') . '</strong> ' . __( 'adds a \'Load More\' button to the end of your gallery. When visitors click the button, the next set of items will load in the gallery.', 'foogallery' ) .
 					              '</li></ul>' . $this->build_promo_trial_html( 'pagination', __( 'PRO Expert', 'foogallery' ) ) . '<br /><br />',
 					'cta' => $this->build_cta_buttons( 'foogallery-pagination' ),
-					'section'  => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'     => 'promo',
 					'row_data'=> array(
 						'data-foogallery-change-selector'          => 'input',
@@ -691,7 +692,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 				'class'   => 'foogallery_promo_prostarter',
 				'type'     => 'promo',
 				'cta' => $this->build_cta_buttons( 'foogallery-hover-presets' ),
-				'section'  => __( 'Hover Effects', 'foogallery' ),
+				'section_id' => 'hover-effects',
 				'row_data' => array(
 					'data-foogallery-hidden'                => true,
 					'data-foogallery-show-when-field'       => 'hover_effect_preset',
@@ -719,7 +720,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			$fields[] = array(
 				'id'       => 'promo_exif',
 				'title'    => __( 'PRO Expert Feature : EXIF Metadata', 'foogallery' ),
-				'section'  => __( 'EXIF', 'foogallery' ),
+				'section_id' => 'exif',
 				'desc'     => __( 'Show image metadata within your galleries. A must-have for professional photographers wanting to showcase specific metadata about each image.', 'foogallery' )
 				              . '<br /><br />' . $this->build_promo_trial_html( 'filtering', __( 'PRO Expert', 'foogallery' ) ). '<br /><br />',
 				'cta' => $this->build_cta_buttons( 'foogallery-exif' ),
@@ -749,8 +750,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			$fields[] = array(
 				'id'            => 'promo_imagegallery_schema',
 				'title'         => __( 'PRO Expert Feature : ImageGallery Schema', 'foogallery' ),
-				'section'       => __( 'SEO', 'foogallery' ),
-				'section_order' => 98,
+				'section_id' => 'seo',
 				'desc'          => __( 'Help search engines and scrapers understand your gallery images by outputting ImageGallery JSON-LD schema on pages where FooGallery usage is detected:', 'foogallery' ) .
 								   '<ul class="ul-disc"><li><strong>' . __( 'Page-level ImageGallery schema', 'foogallery' ) . '</strong> - ' . __( 'outputs structured data in the page head for eligible singular pages and posts.', 'foogallery' ) .
 								   '</li><li><strong>' . __( 'ImageObject details', 'foogallery' ) . '</strong> - ' . __( 'uses attachment titles, captions, descriptions, dates, and full image URLs for each gallery image.', 'foogallery' ) .
@@ -794,7 +794,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 				$fields[] = array(
 					'id'       => 'promo_filtering',
 					'title'    => __( 'PRO Expert Feature : Filtering by Tags or Categories', 'foogallery' ),
-					'section'  => __( 'Filtering', 'foogallery' ),
+					'section_id' => 'filtering',
 					'desc'     => __( 'Add frontend filtering to your gallery, simply by assigning media tags or media categories to your gallery attachments. Other filtering features include:', 'foogallery' ) .
 					              '<ul class="ul-disc"><li><strong>' . __('Filter Source' ,'foogallery') . '</strong> - ' . __( 'choose to filter the gallery by tag or category, or any other attachment taxonomy.', 'foogallery' ) .
 					              '</li><li><strong>' . __('Look &amp; Feel' ,'foogallery') . '</strong> - ' . __( 'display the filters above or below the gallery, and choose a color theme.', 'foogallery' ) .
@@ -831,8 +831,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			$fields[] = array(
 				'id'            => 'promo_colors',
 				'title'         => __( 'PRO Starter Feature : Colors', 'foogallery' ),
-				'section'       => __( 'Colors', 'foogallery' ),
-				'section_order' => 5,
+				'section_id' => 'colors',
 				'desc'          => __( 'Extract dominant colors and palettes from your gallery images, then use those colors to create more art-directed galleries:', 'foogallery' ) .
 				                   '<ul class="ul-disc"><li><strong>' . __( 'Color Extraction', 'foogallery' ) . '</strong> - ' . __( 'extract dominant color metadata and palettes for each gallery image.', 'foogallery' ) .
 				                   '</li><li><strong>' . __( 'Color Sorting', 'foogallery' ) . '</strong> - ' . __( 'sort galleries by hue, saturation, lightness, or an overall color index.', 'foogallery' ) .
@@ -909,7 +908,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			$fields[] = array(
 				'id'       => 'filter_promo',
 				'title'    => __( 'PRO Starter Feature : Thumbnail Effects (Like Instagram!)', 'foogallery' ),
-				'section'  => __( 'Appearance', 'foogallery' ),
+				'section_id' => 'appearance',
 				'desc'     => __( 'Apply an effect to your gallery thumbnails, just like you can in Instagram. Choose from 12 unique effects!', 'foogallery' )
 	                . '<br /><br />' . $this->build_promo_trial_html( 'appearance', __( 'PRO Starter', 'foogallery' )  ) . '<br /><br />',
 				'type'     => 'promo',
@@ -934,7 +933,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 
 			$fields[] = array(
 				'id'       => 'video_promo',
-				'section'  => __( 'Video', 'foogallery' ),
+				'section_id' => 'video',
 				'title'    => __( 'PRO Expert Feature : Video Galleries', 'foogallery' ),
 				'desc'     => __( 'Take your galleries to the next level with full video support:', 'foogallery' ) .
 				              '<ul class="ul-disc"><li><strong>' . __( 'Video Galleries', 'foogallery' ) . '</strong> - ' . __( 'Easily import videos to create beautiful video galleries. Or mix images and videos if you like.', 'foogallery' ) .
@@ -968,7 +967,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 
 			$fields[] = array(
 				'id'      => 'social_addon_promo',
-				'section' => __( 'Social', 'foogallery' ),
+				'section_id' => 'social',
 				'title'   => __( 'Social Addon: Sharing, Likes, and Comments', 'foogallery' ),
 				'desc'    => __( 'Add social engagement and sharing to your galleries:', 'foogallery' ) .
 				             '<ul class="ul-disc"><li><strong>' . __( 'Lightbox Sharing', 'foogallery' ) . '</strong> - ' . __( 'Let visitors share gallery items to social networks from the built-in lightbox.', 'foogallery' ) .
@@ -1057,10 +1056,10 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 					array(
 						'id'      => 'polaroid_promo',
 						'title'   => __( 'Polaroid PRO Gallery Layout', 'foogallery' ),
-						'desc'    => __( 'Available in all PRO plans, the Polaroid PRO gallery layout is a fun take on the simple portfolio gallery. Image thumbnails are framed as Polaroid photos which are staggered on the page.', 'foogallery' ) . '<br />' .
+						'desc'    => __( 'Available in all PRO plans, the Polaroid PRO gallery layout is a fun take on the Portfolio gallery. Image thumbnails are framed as Polaroid photos which are staggered on the page.', 'foogallery' ) . '<br />' .
 						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-polaroid-gallery.jpg" alt="' . esc_attr__( 'Polaroid PRO gallery layout preview', 'foogallery' ) . '" />' .
 						             '<br /><br />' . $this->build_promo_trial_html( 'polaroid', __( 'PRO Starter', 'foogallery' )  ) . '<br /><br />',
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'    => 'promo',
 						'class'   => 'foogallery_promo_prostarter',
 						'keep_in_promo' => true,
@@ -1098,7 +1097,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'desc'    => __( 'Available in all PRO plans, the Grid PRO gallery layout creates a stylish grid gallery that allows you to "preview" each image, similar to how Google Image Search works.', 'foogallery' ) . '<br /><br />' .
 						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-grid-gallery.jpg" alt="' . esc_attr__( 'Grid PRO gallery layout preview', 'foogallery' ) . '" />' .
 						             '<br /><br />' . $this->build_promo_trial_html( 'grid', __( 'PRO Starter', 'foogallery' )  ) . '<br /><br />',
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'    => 'promo',
 						'class'   => 'foogallery_promo_prostarter',
 						'keep_in_promo' => true,
@@ -1133,7 +1132,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-slider-gallery-vertical.jpg" alt="' . esc_attr__( 'Vertical Slider PRO gallery layout preview', 'foogallery' ) . '" /><br /><br />' .
 						             '<img src="https://assets.fooplugins.com/foogallery/foogallery-slider-gallery-horizontal.jpg" alt="' . esc_attr__( 'Horizontal Slider PRO gallery layout preview', 'foogallery' ) . '" /><br /><br />' .
 						             $this->build_promo_trial_html( 'slider', __( 'PRO Starter', 'foogallery' ) ) . '<br /><br />',
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'    => 'promo',
 						'class'   => 'foogallery_promo_prostarter',
 						'keep_in_promo' => true,
@@ -1167,7 +1166,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'desc'          => __( 'Available in all PRO plans, the Spotlight PRO gallery layout offers a clean and effective way to showcase images inline without opening them in a lightbox. Scroll through gallery images with navigational arrows and dots for a modern, focused presentation.', 'foogallery' ) . '<br /><br />' .
 											'<img src="https://assets.fooplugins.com/foogallery/foogallery-spotlight-gallery.png" alt="' . esc_attr__( 'Spotlight PRO gallery layout preview', 'foogallery' ) . '" /><br /><br />' .
 						                   $this->build_promo_trial_html( 'spotlight', __( 'PRO Starter', 'foogallery' ) ) . '<br /><br />',
-						'section'       => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'          => 'promo',
 						'class'         => 'foogallery_promo_prostarter',
 						'keep_in_promo' => true,
@@ -1215,7 +1214,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			$new_fields[] = array(
 				'id'       => 'promo_ecommerce',
 				'title'    => __( 'PRO Commerce Feature : WooCommerce Integration', 'foogallery' ),
-				'section'  => __( 'Ecommerce', 'foogallery' ),
+				'section_id' => 'ecommerce',
 				'desc'     => __( 'Start making money from selling your photographs, with our deep integration with WooCommerce:', 'foogallery' ) .
 				              '<ul class="ul-disc"><li><strong>' . __( 'Product Datasource', 'foogallery' ) . '</strong> - ' . __( 'Create a dynamic product gallery that updates when you add or change products.', 'foogallery' ) .
 				              '</li><li><strong>' . __( 'Filter By Product Categories', 'foogallery' ) . '</strong> - ' . __( 'Filter your gallery images by product category.', 'foogallery' ) .
@@ -1236,7 +1235,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			);
 
 			// find the index of the advanced section.
-			$index = foogallery_admin_fields_find_index_of_section( $fields, __( 'Advanced', 'foogallery' ) );
+			$index = foogallery_admin_fields_find_index_of_section( $fields, 'advanced' );
 
 			array_splice( $fields, $index, 0, $new_fields );
 
@@ -1258,7 +1257,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			$new_fields[] = array(
 				'id'       => 'promo_protection',
 				'title'    => __( 'PRO Commerce Feature : Image Protection', 'foogallery' ),
-				'section'  => __( 'Protection', 'foogallery' ),
+				'section_id' => 'protection',
 				'desc'     => __( 'Protect your images from theft:', 'foogallery' ) .
 				              '<ul class="ul-disc"><li><strong>' . __( 'Disable Right Click', 'foogallery' ) . '</strong> - ' . __( 'Prevent your visitors from being able to right click on thumbnails and full size images in the lightbox.', 'foogallery' ) .
 				              '</li><li><strong>' . __( 'Watermark Generation', 'foogallery' ) . '</strong> - ' . __( 'Generate advanced watermarks for all images in your gallery.', 'foogallery' ) .
@@ -1274,7 +1273,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 			);
 
 			// find the index of the advanced section.
-			$index = foogallery_admin_fields_find_index_of_section( $fields, __( 'Advanced', 'foogallery' ) );
+			$index = foogallery_admin_fields_find_index_of_section( $fields, 'advanced' );
 
 			array_splice( $fields, $index, 0, $new_fields );
 
@@ -1369,7 +1368,7 @@ if ( ! class_exists( 'FooGallery_Pro_Promotion' ) ) {
 						'desc'          => __( 'Only available in the Commerce PRO plan, the Product Gallery layout works out of the box with the WooCommerce Product Datasource, making it very easy for you to start selling your photographs online.', 'foogallery' ) .
 						                   '<br />' . '<img src="https://assets.fooplugins.com/foogallery/foogallery-product-gallery.png" alt="' . esc_attr__( 'Product gallery layout preview', 'foogallery' ) . '" />' .
 						                   '<br /><br />' . $this->build_promo_trial_html( 'product-gallery', __( 'PRO Commerce', 'foogallery' ) ) . '<br /><br />',
-						'section'       => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'          => 'promo',
 						'class'         => 'foogallery_promo_commerce',
 						'keep_in_promo' => true,

@@ -79,8 +79,25 @@ if ( ! class_exists( 'FooGallery_Admin' ) ) {
 
 			if ( $handle ) {
 				$strings = apply_filters( 'foogallery_admin_il8n', array() );
+				$strings = is_array( $strings ) ? $strings : array();
 
-				if ( ! empty( $strings ) && is_array( $strings ) ) {
+				$strings['mobileSettingsPromo'] = array(
+					'title'      => __( 'Give {field} its own mobile value', 'foogallery' ),
+					'body'       => __( 'Mobile currently inherits the desktop value. PRO Starter lets you tune it independently for mobile devices, with live mobile preview.', 'foogallery' ),
+					'trial'      => __( 'Start 7-day free trial', 'foogallery' ),
+					'upgrade'    => __( 'Upgrade to PRO Starter', 'foogallery' ),
+					'compare'    => __( 'Compare plans', 'foogallery' ),
+					'close'      => __( 'Close', 'foogallery' ),
+					'trialUrl'   => foogallery_admin_freetrial_url(),
+					'upgradeUrl' => foogallery_admin_pricing_url(),
+					'compareUrl' => foogallery_admin_url(
+						'https://fooplugins.com/foogallery-wordpress-gallery-plugin/compare-plans/',
+						'promos',
+						'mobile-settings'
+					),
+				);
+
+				if ( ! empty( $strings ) ) {
 					$inline_script = 'window.FOOGALLERY = window.FOOGALLERY || {};'
 						. 'window.FOOGALLERY.il8n = Object.assign({}, window.FOOGALLERY.il8n || {}, '
 						. wp_json_encode( $strings )

@@ -92,16 +92,16 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                 'fields'	  => array(
                     array(
                         'id'	  => 'help',
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'type'	  => 'html',
                         'help'	  => true,
-                        'desc'	  => __( 'The Simple Portfolio template works best when you have <strong>captions and descriptions</strong> set for every attachment in the gallery. To change captions and descriptions, simply hover over the thumbnail above and click the "i" icon.', 'foogallery' ),
+                        'desc'	  => __( 'The Portfolio template works best when you have <strong>captions and descriptions</strong> set for every attachment in the gallery. To change captions and descriptions, simply hover over the thumbnail above and click the "i" icon.', 'foogallery' ),
                     ),
                     array(
                         'id'      => 'thumbnail_dimensions',
                         'title'   => __( 'Thumbnail Size', 'foogallery' ),
 	                        'desc'    => __( 'Choose the size of your thumbnails.', 'foogallery' ),
-	                        'section' => __( 'General', 'foogallery' ),
+	                        'section_id' => 'general',
 	                        'alias'   => 'thumbnail_size',
 	                        'type'    => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
@@ -117,7 +117,7 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                     array(
                         'id'      => 'thumbnail_link',
                         'title'   => __( 'Thumbnail Link', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default' => 'image',
                         'type'    => 'thumb_link',
                     ),
@@ -129,12 +129,13 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                         'id'      => 'gutter',
                         'title'   => __( 'Thumbnail Gap', 'foogallery' ),
                         'desc'    => __( 'The spacing or gap between each thumbnail in the gallery.', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
                         'type'    => 'slider',
                         'default' => 5,
                         'step'    => 1,
                         'min'     => 0,
                         'max'     => 100,
+						'mobile'  => true,
 						'row_data'=> array(
 							'data-foogallery-change-selector' => 'range-input',
 							'data-foogallery-preview' => 'shortcode',
@@ -144,7 +145,7 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                         'id'      => 'align',
                         'title'   => __( 'Alignment', 'foogallery' ),
                         'desc'    => __( 'The horizontal alignment of the thumbnails inside the gallery.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'type'    => 'radio',
                         'default' => 'center',
                         'choices' => array(
@@ -178,7 +179,7 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 				'id'      => 'caption_position',
 				'title' => __('Caption Position', 'foogallery'),
 				'desc' => __('Where the captions are displayed in relation to the thumbnail.', 'foogallery'),
-				'section' => __( 'Captions', 'foogallery' ),
+				'section_id' => 'captions',
 				'default' => '',
 				'type'    => 'radio',
 				'choices' => array(
@@ -196,15 +197,15 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 			$index = 0;
 
 			//update specific fields
-			foreach ($fields as &$field) {
+			foreach ( $fields as &$field ) {
+				$field         = foogallery_normalize_gallery_setting_field_sections( $field );
+				$field_section = $field['section_id'];
 
-				$field_section = array_key_exists( 'section', $field ) ? $field['section'] : '';
-
-				if ( $index_of_captions_field === 0 && __( 'Captions', 'foogallery' ) === $field_section ) {
+				if ( $index_of_captions_field === 0 && 'captions' === $field_section ) {
 					$index_of_captions_field = $index;
 				}
 
-				$index++;
+				++$index;
 
 				if ( 'hover_effect_caption_visibility' === $field['id'] 
 					|| 'caption_visibility_no_hover_effect' === $field['id'] ) {
@@ -375,6 +376,14 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 			}
 			$css[] = '#' . $id . '.fg-simple_portfolio { justify-content: ' . $alignment . '; --fg-gutter: ' . $gutter . 'px; }';
 			$css[] = '#' . $id . '.fg-simple_portfolio .fg-item { flex-basis: ' . $thumb_width . 'px; }';
+
+			$mobile_gutter = foogallery_gallery_template_mobile_setting( 'mobile_gutter', null );
+			if ( is_scalar( $mobile_gutter ) && is_numeric( trim( (string) $mobile_gutter ) ) ) {
+				$mobile_gutter = max( 0, min( 100, intval( $mobile_gutter ) ) );
+				$mobile_rule   = '#' . $id . '.fg-simple_portfolio { --fg-gutter: ' . $mobile_gutter . 'px; }';
+				$css[]         = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]         = '.foogallery-preview-wrapper.viewport-mobile ' . $mobile_rule;
+			}
 			return $css;
 		}
 

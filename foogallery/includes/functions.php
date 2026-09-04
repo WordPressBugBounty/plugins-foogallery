@@ -21,6 +21,28 @@ function foogallery_plugin_name() {
 }
 
 /**
+ * Checks whether a plugin is active for the current site or network.
+ *
+ * WordPress caches option reads, so activation changes made during the current
+ * request remain visible without causing repeated database queries.
+ *
+ * @param string $plugin_file Plugin file relative to the plugins directory.
+ *
+ * @return bool
+ */
+function foogallery_is_plugin_active(  $plugin_file  ) {
+    $active_plugins = (array) get_option( 'active_plugins', array() );
+    if ( in_array( $plugin_file, $active_plugins, true ) ) {
+        return true;
+    }
+    if ( !is_multisite() ) {
+        return false;
+    }
+    $network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', array() );
+    return isset( $network_active_plugins[$plugin_file] );
+}
+
+/**
  * Return all the gallery templates used within FooGallery
  *
  * @return array
@@ -289,29 +311,45 @@ function foogallery_admin_url_for_page(  $admin_page  ) {
  * @return mixed
  */
 function foogallery_gallery_template_setting(  $key, $default = ''  ) {
+    if ( foogallery_gallery_template_mobile_key_is_declared( $key ) ) {
+        return foogallery_gallery_template_mobile_setting( $key, $default );
+    }
+    return foogallery_gallery_template_setting_raw( $key, $default );
+}
+
+/**
+ * Read a gallery template setting without applying the mobile entitlement
+ * boundary. Callers must first establish that a responsive variant is Free.
+ *
+ * @param string $key            Setting key.
+ * @param mixed  $default_value  Default value.
+ * @param string $declared_alias Optional declared responsive alias.
+ * @return mixed
+ */
+function foogallery_gallery_template_setting_raw(  $key, $default_value = '', $declared_alias = ''  ) {
     global $current_foogallery;
     global $current_foogallery_arguments;
     global $current_foogallery_template;
     $settings_key = "{$current_foogallery_template}_{$key}";
     $arguments_key = apply_filters( 'foogallery_gallery_template_argument_alias', $key, $current_foogallery_template );
-    if ( $current_foogallery_arguments && array_key_exists( $arguments_key, $current_foogallery_arguments ) ) {
-        //try to get the value from the arguments using the alias
+    if ( $current_foogallery_arguments && $arguments_key !== $key && array_key_exists( $arguments_key, $current_foogallery_arguments ) ) {
+        // Try to get the value from the arguments using the alias.
         $value = $current_foogallery_arguments[$arguments_key];
+    } elseif ( $current_foogallery_arguments && '' !== $declared_alias && array_key_exists( $declared_alias, $current_foogallery_arguments ) ) {
+        // Try the alias declared by an explicitly Free responsive field.
+        $value = $current_foogallery_arguments[$declared_alias];
+    } elseif ( $current_foogallery_arguments && array_key_exists( $key, $current_foogallery_arguments ) ) {
+        // Try to get the value from the arguments using the original key.
+        $value = $current_foogallery_arguments[$key];
+    } elseif ( !empty( $current_foogallery ) && $current_foogallery->settings && array_key_exists( $settings_key, $current_foogallery->settings ) ) {
+        // Then get the value out of the saved gallery settings.
+        $value = $current_foogallery->settings[$settings_key];
     } else {
-        if ( $current_foogallery_arguments && array_key_exists( $key, $current_foogallery_arguments ) ) {
-            //try to get the value from the arguments using the original key
-            $value = $current_foogallery_arguments[$key];
-        } else {
-            if ( !empty( $current_foogallery ) && $current_foogallery->settings && array_key_exists( $settings_key, $current_foogallery->settings ) ) {
-                //then get the value out of the saved gallery settings
-                $value = $current_foogallery->settings[$settings_key];
-            } else {
-                //otherwise set it to the default
-                $value = $default;
-            }
-        }
+        // Otherwise set it to the default.
+        $value = $default_value;
     }
     $value = apply_filters( 'foogallery_gallery_template_setting-' . $key, $value );
+    // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- Existing public hook.
     return $value;
 }
 
@@ -349,10 +387,11 @@ function foogallery_build_admin_menu_url(  $extra_args = array()  ) {
 /**
  * Helper function for adding a foogallery sub menu
  *
- * @param $menu_title
- * @param string $capability
- * @param string $menu_slug
- * @param $function
+ * @param string   $menu_title Menu title.
+ * @param string   $capability Required capability.
+ * @param string   $menu_slug  Menu slug.
+ * @param callable $function   Page-render callback.
+ * @return string|false Resulting page hook suffix, or false when the user lacks the required capability.
  */
 function foogallery_add_submenu_page(
     $menu_title,
@@ -360,7 +399,7 @@ function foogallery_add_submenu_page(
     $menu_slug,
     $function
 ) {
-    add_submenu_page(
+    return add_submenu_page(
         foogallery_admin_menu_parent_slug(),
         $menu_title,
         $menu_title,
@@ -494,9 +533,9 @@ function foogallery_build_class_attribute_render_safe(  $gallery  ) {
 }
 
 /**
- * Removes custom attribute overrides from render arguments.
+ * Removes privileged custom overrides from render arguments.
  *
- * Custom gallery container attributes must only come from saved gallery settings.
+ * Developer-only custom attributes and settings must come from saved gallery settings.
  *
  * @param mixed $args Render arguments.
  * @return mixed
@@ -505,7 +544,7 @@ function foogallery_strip_custom_attribute_render_args(  $args  ) {
     if ( !is_array( $args ) ) {
         return $args;
     }
-    unset($args['custom_attribute_key'], $args['custom_attribute_value']);
+    unset($args['custom_attribute_key'], $args['custom_attribute_value'], $args['custom_settings']);
     return $args;
 }
 
@@ -587,6 +626,11 @@ function foogallery_build_container_attributes_safe(  $gallery, $attributes  ) {
     $attributes['id'] = $gallery->container_id();
     //add the standard data-foogallery attribute so that the JS initializes correctly
     $attributes['data-foogallery'] = foogallery_build_container_data_options( $gallery, $attributes );
+    // Add optional mobile overrides. The client merges these over the standard options on mobile.
+    $mobile_data_options = foogallery_build_container_mobile_data_options( $gallery, $attributes );
+    if ( '' !== $mobile_data_options ) {
+        $attributes['data-foogallery-mobile'] = $mobile_data_options;
+    }
     //allow others to add their own attributes globally
     $attributes = apply_filters( 'foogallery_build_container_attributes', $attributes, $gallery );
     //allow others to add their own attributes for a specific gallery template
@@ -631,6 +675,429 @@ function foogallery_build_container_data_options(  $gallery, $attributes  ) {
         $attributes
     );
     return foogallery_json_encode( $options );
+}
+
+/**
+ * Builds optional mobile overrides for the core JavaScript gallery options.
+ *
+ * The client recursively merges these options over data-foogallery when its
+ * mobile mode is active. An empty result omits the data attribute entirely.
+ *
+ * @param FooGallery $gallery    Gallery instance.
+ * @param array      $attributes Gallery container attributes.
+ *
+ * @return string JSON-encoded mobile options, or an empty string.
+ */
+function foogallery_build_container_mobile_data_options(  $gallery, $attributes  ) {
+    $options = foogallery_build_mobile_field_data_options( array(), $gallery );
+    $options = apply_filters(
+        'foogallery_build_container_mobile_data_options',
+        $options,
+        $gallery,
+        $attributes
+    );
+    $options = apply_filters(
+        'foogallery_build_container_mobile_data_options-' . $gallery->gallery_template,
+        $options,
+        $gallery,
+        $attributes
+    );
+    if ( !foogallery_mobile_settings_is_entitled() && foogallery_mobile_settings_is_core_template( $gallery->gallery_template ) && foogallery_gallery_template_has_paid_mobile_fields( $gallery->gallery_template ) ) {
+        // Rebuild from declarations that are explicitly Free. This prevents a
+        // mobile-options filter from smuggling paid values into a gated template.
+        // Templates without paid declarations retain their existing filter API.
+        $options = foogallery_build_mobile_field_data_options( array(), $gallery );
+    }
+    return ( empty( $options ) ? '' : foogallery_json_encode( $options ) );
+}
+
+/**
+ * Add declaratively mapped mobile field values to the client options.
+ *
+ * A mobile field can declare a nested client option path using
+ * `mobile.data_option`, for example array( 'template', 'rowHeight' ).
+ *
+ * @param array      $options Mobile client options collected so far.
+ * @param FooGallery $gallery Gallery instance.
+ *
+ * @return array
+ */
+function foogallery_build_mobile_field_data_options(  $options, $gallery  ) {
+    if ( !is_array( $options ) || !$gallery instanceof FooGallery ) {
+        return ( is_array( $options ) ? $options : array() );
+    }
+    $template = foogallery_get_gallery_template( $gallery->gallery_template );
+    if ( !is_array( $template ) || !isset( $template['fields'] ) || !is_array( $template['fields'] ) ) {
+        return $options;
+    }
+    $fields = foogallery_get_fields_for_template( $template );
+    foreach ( $fields as $field ) {
+        if ( !isset( $field['mobile'] ) || !is_array( $field['mobile'] ) || empty( $field['mobile']['data_option'] ) || !is_array( $field['mobile']['data_option'] ) ) {
+            continue;
+        }
+        $path = $field['mobile']['data_option'];
+        $valid_path_keys = array_filter( $path, function ( $key ) {
+            return is_string( $key ) && 1 === preg_match( '/^[A-Za-z][A-Za-z0-9_-]*$/', $key );
+        } );
+        if ( empty( $path ) || count( $valid_path_keys ) !== count( $path ) ) {
+            continue;
+        }
+        $mobile_field = foogallery_get_mobile_field_for_template_field( $field, null, $gallery->gallery_template );
+        if ( false === $mobile_field ) {
+            continue;
+        }
+        $value = foogallery_gallery_template_mobile_setting( $mobile_field['id'], null );
+        if ( !is_scalar( $value ) || '' === trim( (string) $value ) ) {
+            continue;
+        }
+        $type = ( isset( $mobile_field['type'] ) ? $mobile_field['type'] : '' );
+        $option_type = ( isset( $field['mobile']['data_option_type'] ) ? $field['mobile']['data_option_type'] : '' );
+        if ( isset( $mobile_field['choices'] ) && is_array( $mobile_field['choices'] ) && !array_key_exists( (string) $value, $mobile_field['choices'] ) ) {
+            continue;
+        }
+        if ( 'boolean' === $option_type ) {
+            if ( !in_array( (string) $value, array(
+                'true',
+                'false',
+                '1',
+                '0'
+            ), true ) ) {
+                continue;
+            }
+            $value = in_array( (string) $value, array('true', '1'), true );
+        } elseif ( 'number' === $type || 'slider' === $type ) {
+            if ( !is_numeric( $value ) ) {
+                continue;
+            }
+            $value = ( false === strpos( (string) $value, '.' ) ? intval( $value ) : floatval( $value ) );
+            if ( isset( $mobile_field['min'] ) && is_numeric( $mobile_field['min'] ) ) {
+                $value = max( $value, $mobile_field['min'] + 0 );
+            }
+            if ( isset( $mobile_field['max'] ) && is_numeric( $mobile_field['max'] ) ) {
+                $value = min( $value, $mobile_field['max'] + 0 );
+            }
+        }
+        $target =& $options;
+        foreach ( $path as $key ) {
+            if ( !isset( $target[$key] ) || !is_array( $target[$key] ) ) {
+                $target[$key] = array();
+            }
+            $target =& $target[$key];
+        }
+        $target = $value;
+        unset($target);
+    }
+    return $options;
+}
+
+/**
+ * Return the shared mobile breakpoint used by gallery CSS and JavaScript.
+ *
+ * @return int Mobile breakpoint in pixels.
+ */
+function foogallery_get_mobile_size() {
+    $mobile_size = absint( apply_filters( 'foogallery_mobile_size', 600 ) );
+    return ( 0 === $mobile_size ? 600 : $mobile_size );
+}
+
+/**
+ * Get the entitled per-setting mobile override provider.
+ *
+ * This intentionally has no filter. The provider is loaded from PRO and is
+ * reached only after the existing Freemius checks succeed.
+ *
+ * @return FooGallery_Pro_Mobile_Settings|null
+ */
+function foogallery_mobile_settings_provider() {
+    if ( !function_exists( 'foogallery_is_pro' ) || !foogallery_is_pro() || !function_exists( 'foogallery_fs' ) ) {
+        return null;
+    }
+    $fs = foogallery_fs();
+    if ( !is_object( $fs ) || !method_exists( $fs, 'is_plan_or_trial' ) || !$fs->is_plan_or_trial( FOOGALLERY_PRO_PLAN_STARTER ) ) {
+        return null;
+    }
+    if ( !class_exists( 'FooGallery_Pro_Mobile_Settings', false ) ) {
+        return null;
+    }
+    return FooGallery_Pro_Mobile_Settings::instance();
+}
+
+/**
+ * Determine whether per-setting mobile overrides are entitled.
+ *
+ * @return bool
+ */
+function foogallery_mobile_settings_is_entitled() {
+    return null !== foogallery_mobile_settings_provider();
+}
+
+/**
+ * Return the built-in template slugs whose mobile settings are product-gated.
+ *
+ * This list intentionally has no filter. Third-party templates remain free to
+ * declare their own responsive controls without weakening built-in gating.
+ *
+ * @return array
+ */
+function foogallery_mobile_settings_core_template_slugs() {
+    return array(
+        'default',
+        'masonry',
+        'justified',
+        'simple_portfolio',
+        'thumbnail',
+        'carousel',
+        'image-viewer',
+        'foogridpro',
+        'polaroid_new',
+        'product',
+        'slider',
+        'spotlight'
+    );
+}
+
+/**
+ * Determine whether a template uses the built-in mobile product boundary.
+ *
+ * @param string $template_slug Template slug.
+ * @return bool
+ */
+function foogallery_mobile_settings_is_core_template(  $template_slug  ) {
+    return in_array( sanitize_key( $template_slug ), foogallery_mobile_settings_core_template_slugs(), true );
+}
+
+/**
+ * Expand a mobile declaration without applying entitlement checks.
+ *
+ * @param array  $field         Desktop field definition.
+ * @param mixed  $default_value Default value.
+ * @param string $template_slug Template slug.
+ * @return array|false
+ */
+function foogallery_expand_mobile_field_unchecked(  $field, $default_value = null, $template_slug = ''  ) {
+    if ( !is_array( $field ) || !isset( $field['id'] ) || !isset( $field['mobile'] ) || true !== $field['mobile'] && !is_array( $field['mobile'] ) ) {
+        return false;
+    }
+    $mobile = ( is_array( $field['mobile'] ) ? $field['mobile'] : array() );
+    $mobile_field = array_replace( $field, $mobile );
+    $mobile_field['id'] = ( isset( $mobile['id'] ) ? $mobile['id'] : 'mobile_' . $field['id'] );
+    if ( !array_key_exists( 'alias', $mobile ) ) {
+        $base_alias = ( !empty( $field['alias'] ) ? $field['alias'] : $field['id'] );
+        $mobile_field['alias'] = 'mobile_' . $base_alias;
+    }
+    $mobile_field['default'] = ( array_key_exists( 'default', $mobile ) ? $mobile['default'] : $default_value );
+    $mobile_field['_foogallery_mobile_variant'] = true;
+    $mobile_field['_foogallery_mobile_free'] = foogallery_mobile_field_is_free( $field, $template_slug );
+    if ( !array_key_exists( 'for', $mobile ) ) {
+        unset($mobile_field['for']);
+    }
+    unset($mobile_field['mobile']);
+    unset($mobile_field['free']);
+    return $mobile_field;
+}
+
+/**
+ * Determine whether a mobile declaration is explicitly allowed in Free.
+ *
+ * Built-in fields use a fixed exception for the legacy Free Columns setting,
+ * so a public field-alteration filter cannot opt other built-in fields into
+ * Free. A third-party template may still declare its own Free mobile fields.
+ *
+ * @param array  $field         Field definition.
+ * @param string $template_slug Template slug.
+ * @return bool
+ */
+function foogallery_mobile_field_is_free(  $field, $template_slug = ''  ) {
+    if ( !is_array( $field ) || !isset( $field['mobile'] ) || !is_array( $field['mobile'] ) || true !== ($field['mobile']['free'] ?? false) ) {
+        return false;
+    }
+    $template_slug = sanitize_key( $template_slug );
+    if ( '' !== $template_slug && !foogallery_mobile_settings_is_core_template( $template_slug ) ) {
+        return true;
+    }
+    $mobile_id = ( isset( $field['mobile']['id'] ) ? sanitize_key( $field['mobile']['id'] ) : '' );
+    $mobile_alias = ( isset( $field['mobile']['alias'] ) ? sanitize_key( $field['mobile']['alias'] ) : '' );
+    return ('' === $template_slug || 'default' === $template_slug) && 'layout' === sanitize_key( $field['id'] ?? '' ) && 'mobile_columns' === $mobile_id && 'mobile_columns' === $mobile_alias;
+}
+
+/**
+ * Determine whether a setting key is a declared responsive field variant.
+ *
+ * This declaration-aware check protects existing third-party runtime calls to
+ * foogallery_gallery_template_setting() without broadly gating unrelated keys
+ * that merely contain the word "mobile".
+ *
+ * @param string $key Setting ID or alias.
+ * @return bool
+ */
+function foogallery_gallery_template_mobile_key_is_declared(  $key  ) {
+    global $current_foogallery;
+    global $current_foogallery_template;
+    static $checking_fields = false;
+    if ( $checking_fields || empty( $current_foogallery_template ) || !is_string( $key ) || '' === $key ) {
+        return false;
+    }
+    $template = foogallery_get_gallery_template( $current_foogallery_template );
+    if ( !is_array( $template ) || !isset( $template['fields'] ) ) {
+        return false;
+    }
+    $cache_key = 'mobile_setting_declarations_' . sanitize_key( $current_foogallery_template );
+    if ( !empty( $current_foogallery ) && isset( $current_foogallery->cached_values[$cache_key] ) && is_array( $current_foogallery->cached_values[$cache_key] ) ) {
+        return isset( $current_foogallery->cached_values[$cache_key][$key] );
+    }
+    $declarations = array();
+    $checking_fields = true;
+    try {
+        foreach ( foogallery_get_fields_for_template( $template ) as $field ) {
+            $mobile_field = foogallery_expand_mobile_field_unchecked( $field, null, $current_foogallery_template );
+            if ( !is_array( $mobile_field ) || empty( $mobile_field['id'] ) ) {
+                continue;
+            }
+            $declarations[$mobile_field['id']] = true;
+            if ( !empty( $mobile_field['alias'] ) ) {
+                $declarations[$mobile_field['alias']] = true;
+            }
+        }
+    } finally {
+        $checking_fields = false;
+    }
+    if ( !empty( $current_foogallery ) ) {
+        if ( !isset( $current_foogallery->cached_values ) || !is_array( $current_foogallery->cached_values ) ) {
+            $current_foogallery->cached_values = array();
+        }
+        $current_foogallery->cached_values[$cache_key] = $declarations;
+    }
+    return isset( $declarations[$key] );
+}
+
+/**
+ * Read a declared mobile setting through the entitlement boundary.
+ *
+ * Paid values return a neutral null in Free rather than activating a caller's
+ * mobile-specific default. The normal setting accessor remains unchanged for
+ * unrelated keys such as lightbox_mobile_layout.
+ *
+ * @param string $key           Declared mobile field ID or alias.
+ * @param mixed  $default_value Value when no mobile override is available.
+ * @return mixed
+ */
+function foogallery_gallery_template_mobile_setting(  $key, $default_value = null  ) {
+    global $current_foogallery_template;
+    if ( empty( $current_foogallery_template ) ) {
+        return $default_value;
+    }
+    $template = foogallery_get_gallery_template( $current_foogallery_template );
+    if ( !is_array( $template ) || !isset( $template['fields'] ) ) {
+        return $default_value;
+    }
+    foreach ( foogallery_get_fields_for_template( $template ) as $field ) {
+        $mobile_field = foogallery_expand_mobile_field_unchecked( $field, $default_value, $current_foogallery_template );
+        if ( !is_array( $mobile_field ) || !in_array( $key, array($mobile_field['id'], $mobile_field['alias'] ?? ''), true ) ) {
+            continue;
+        }
+        if ( foogallery_mobile_field_is_free( $field, $current_foogallery_template ) ) {
+            $mobile_default = ( array_key_exists( 'default', $mobile_field ) ? $mobile_field['default'] : $default_value );
+            return foogallery_gallery_template_setting_raw( $mobile_field['id'], $mobile_default, $mobile_field['alias'] ?? '' );
+        }
+        $provider = foogallery_mobile_settings_provider();
+        if ( null === $provider ) {
+            return null;
+        }
+        return $provider->resolve_value( $mobile_field, $default_value );
+    }
+    return $default_value;
+}
+
+/**
+ * Determine whether a template contains any paid mobile declarations.
+ *
+ * @param string $template Template slug.
+ * @return bool
+ */
+function foogallery_gallery_template_has_paid_mobile_fields(  $template  ) {
+    $template_slug = sanitize_key( $template );
+    $template = foogallery_get_gallery_template( $template );
+    if ( !is_array( $template ) || !isset( $template['fields'] ) ) {
+        return false;
+    }
+    foreach ( foogallery_get_fields_for_template( $template ) as $field ) {
+        if ( isset( $field['mobile'] ) && (true === $field['mobile'] || is_array( $field['mobile'] )) && !foogallery_mobile_field_is_free( $field, $template_slug ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Build the registered paid mobile storage-key map.
+ *
+ * Aliases map back to the canonical field ID so incoming alias keys can be
+ * rejected while an existing canonical value is preserved.
+ *
+ * @param string $selected_template Optional selected template slug.
+ * @param array  $candidate_settings Optional stored/submitted settings to scan.
+ * @return array<string,string> Incoming storage key => canonical storage key.
+ */
+function foogallery_get_paid_mobile_setting_storage_keys(  $selected_template = '', $candidate_settings = array()  ) {
+    $template_definitions = foogallery_gallery_templates();
+    $selected_definition = foogallery_get_gallery_template( $selected_template );
+    if ( is_array( $selected_definition ) ) {
+        $template_definitions[] = $selected_definition;
+    }
+    $storage_keys = array();
+    $free_storage_keys = array();
+    $processed_templates = array();
+    // Keep historical built-in slugs in Free so a downgrade can still freeze
+    // paired values declared by a PRO-only field that is no longer registered.
+    $template_slugs = foogallery_mobile_settings_core_template_slugs();
+    if ( '' !== sanitize_key( $selected_template ) ) {
+        $template_slugs[] = sanitize_key( $selected_template );
+    }
+    foreach ( $template_definitions as $template_definition ) {
+        if ( !is_array( $template_definition ) || empty( $template_definition['slug'] ) ) {
+            continue;
+        }
+        $template_slug = sanitize_key( $template_definition['slug'] );
+        if ( isset( $processed_templates[$template_slug] ) ) {
+            continue;
+        }
+        $processed_templates[$template_slug] = true;
+        $template_slugs[] = $template_slug;
+        foreach ( foogallery_get_fields_for_template( $template_definition ) as $field ) {
+            $mobile_field = foogallery_expand_mobile_field_unchecked( $field, null, $template_slug );
+            if ( !is_array( $mobile_field ) || empty( $mobile_field['id'] ) ) {
+                continue;
+            }
+            $canonical_key = $template_slug . '_' . $mobile_field['id'];
+            $alias_key = ( !empty( $mobile_field['alias'] ) ? $template_slug . '_' . $mobile_field['alias'] : '' );
+            if ( foogallery_mobile_field_is_free( $field, $template_slug ) ) {
+                $free_storage_keys[$canonical_key] = true;
+                if ( '' !== $alias_key ) {
+                    $free_storage_keys[$alias_key] = true;
+                }
+                continue;
+            }
+            $storage_keys[$canonical_key] = $canonical_key;
+            if ( '' !== $alias_key && $canonical_key !== $alias_key ) {
+                $storage_keys[$alias_key] = $canonical_key;
+            }
+        }
+    }
+    $template_slugs = array_values( array_unique( $template_slugs ) );
+    foreach ( array_keys( ( is_array( $candidate_settings ) ? $candidate_settings : array() ) ) as $candidate_key ) {
+        if ( !is_string( $candidate_key ) || isset( $free_storage_keys[$candidate_key] ) ) {
+            continue;
+        }
+        foreach ( $template_slugs as $template_slug ) {
+            if ( 0 === strpos( $candidate_key, $template_slug . '_mobile_' ) ) {
+                if ( !isset( $storage_keys[$candidate_key] ) ) {
+                    $storage_keys[$candidate_key] = $candidate_key;
+                }
+                break;
+            }
+        }
+    }
+    return $storage_keys;
 }
 
 /**
@@ -1232,6 +1699,282 @@ function foogallery_get_attachment_field_friendly_name(  $field  ) {
 }
 
 /**
+ * Return the registered gallery-setting sections.
+ *
+ * Section and subsection IDs are stable, untranslated identifiers. Labels are
+ * centralized here so field definitions can reference a section without
+ * repeating translated strings or using translations as array keys.
+ *
+ * @return array
+ */
+function foogallery_get_gallery_setting_sections() {
+    $labels = array(
+        'advanced'       => __( 'Advanced', 'foogallery' ),
+        'appearance'     => __( 'Appearance', 'foogallery' ),
+        'buttons'        => __( 'Buttons', 'foogallery' ),
+        'captions'       => __( 'Captions', 'foogallery' ),
+        'colors'         => __( 'Colors', 'foogallery' ),
+        'controls'       => __( 'Controls', 'foogallery' ),
+        'ecommerce'      => __( 'Ecommerce', 'foogallery' ),
+        'exif'           => __( 'EXIF', 'foogallery' ),
+        'filtering'      => __( 'Filtering', 'foogallery' ),
+        'general'        => __( 'General', 'foogallery' ),
+        'hover-effects'  => __( 'Hover Effects', 'foogallery' ),
+        'lightbox'       => __( 'Lightbox', 'foogallery' ),
+        'master-product' => __( 'Master Product', 'foogallery' ),
+        'paging'         => __( 'Paging', 'foogallery' ),
+        'panel'          => __( 'Panel', 'foogallery' ),
+        'protection'     => __( 'Protection', 'foogallery' ),
+        'ribbons'        => __( 'Ribbons', 'foogallery' ),
+        'search'         => __( 'Search', 'foogallery' ),
+        'seo'            => __( 'SEO', 'foogallery' ),
+        'slider'         => __( 'Slider', 'foogallery' ),
+        'social'         => __( 'Social', 'foogallery' ),
+        'thumbnails'     => __( 'Thumbnails', 'foogallery' ),
+        'video'          => __( 'Video', 'foogallery' ),
+    );
+    $lightbox_subsections = array(
+        'lightbox-general'    => array(
+            'label' => $labels['general'],
+            'order' => 0,
+        ),
+        'lightbox-controls'   => array(
+            'label' => $labels['controls'],
+            'order' => 10,
+        ),
+        'lightbox-thumbnails' => array(
+            'label' => $labels['thumbnails'],
+            'order' => 20,
+        ),
+        'lightbox-captions'   => array(
+            'label' => $labels['captions'],
+            'order' => 30,
+        ),
+    );
+    $sections = array(
+        'general'       => array(
+            'label' => $labels['general'],
+            'order' => 0,
+        ),
+        'lightbox'      => array(
+            'label'       => $labels['lightbox'],
+            'order'       => 1,
+            'subsections' => $lightbox_subsections,
+        ),
+        'panel'         => array(
+            'label'       => $labels['panel'],
+            'order'       => 1,
+            'subsections' => $lightbox_subsections,
+        ),
+        'slider'        => array(
+            'label'       => $labels['slider'],
+            'order'       => 1,
+            'subsections' => $lightbox_subsections,
+        ),
+        'appearance'    => array(
+            'label' => $labels['appearance'],
+            'order' => 2,
+        ),
+        'hover-effects' => array(
+            'label' => $labels['hover-effects'],
+            'order' => 3,
+        ),
+        'captions'      => array(
+            'label' => $labels['captions'],
+            'order' => 4,
+        ),
+        'paging'        => array(
+            'label' => $labels['paging'],
+            'order' => 5,
+        ),
+        'colors'        => array(
+            'label' => $labels['colors'],
+            'order' => 5,
+        ),
+        'filtering'     => array(
+            'label'       => $labels['filtering'],
+            'order'       => 20,
+            'subsections' => array(
+                'filtering-general'  => array(
+                    'label' => $labels['general'],
+                    'order' => 0,
+                ),
+                'filtering-search'   => array(
+                    'label' => $labels['search'],
+                    'order' => 10,
+                ),
+                'filtering-advanced' => array(
+                    'label' => $labels['advanced'],
+                    'order' => 20,
+                ),
+            ),
+        ),
+        'exif'          => array(
+            'label' => $labels['exif'],
+            'order' => 25,
+        ),
+        'video'         => array(
+            'label' => $labels['video'],
+            'order' => 30,
+        ),
+        'ecommerce'     => array(
+            'label'       => $labels['ecommerce'],
+            'order'       => 40,
+            'subsections' => array(
+                'ecommerce-buttons'        => array(
+                    'label' => $labels['buttons'],
+                    'order' => 0,
+                ),
+                'ecommerce-ribbons'        => array(
+                    'label' => $labels['ribbons'],
+                    'order' => 10,
+                ),
+                'ecommerce-lightbox'       => array(
+                    'label' => $labels['lightbox'],
+                    'order' => 20,
+                ),
+                'ecommerce-master-product' => array(
+                    'label' => $labels['master-product'],
+                    'order' => 30,
+                ),
+            ),
+        ),
+        'protection'    => array(
+            'label' => $labels['protection'],
+            'order' => 50,
+        ),
+        'social'        => array(
+            'label' => $labels['social'],
+            'order' => 60,
+        ),
+        'seo'           => array(
+            'label' => $labels['seo'],
+            'order' => 98,
+        ),
+        'advanced'      => array(
+            'label' => $labels['advanced'],
+            'order' => 9999,
+        ),
+    );
+    /**
+     * Filter the gallery-setting section registry.
+     *
+     * Extensions should use stable section IDs and provide a translated label,
+     * order, and optional subsection definitions.
+     *
+     * @param array $sections Registered gallery-setting sections.
+     */
+    $sections = apply_filters( 'foogallery_gallery_setting_sections', $sections );
+    return ( is_array( $sections ) ? $sections : array() );
+}
+
+/**
+ * Resolve the icon class for a gallery-setting section.
+ *
+ * Canonical section IDs are offered to the icon filter first. When no callback
+ * handles the ID, the filter is retried with the legacy section slug so add-ons
+ * written before section IDs continue to provide their tab icons.
+ *
+ * @param string $section_id    Canonical section ID.
+ * @param string $section_label Translated section label.
+ * @return string
+ */
+function foogallery_get_gallery_setting_section_icon(  $section_id, $section_label = ''  ) {
+    $section_id = sanitize_key( $section_id );
+    $icon_class = apply_filters( 'foogallery_gallery_settings_metabox_section_icon', $section_id );
+    if ( $icon_class !== $section_id || '' === $section_label ) {
+        return $icon_class;
+    }
+    $legacy_section_slug = apply_filters( 'foogallery_gallery_settings_metabox_section_slug', $section_label );
+    if ( !is_scalar( $legacy_section_slug ) ) {
+        return $icon_class;
+    }
+    $legacy_section_slug = (string) $legacy_section_slug;
+    if ( '' === $legacy_section_slug || $section_id === $legacy_section_slug ) {
+        return $icon_class;
+    }
+    $legacy_icon_class = apply_filters( 'foogallery_gallery_settings_metabox_section_icon', $legacy_section_slug );
+    return ( $legacy_icon_class !== $legacy_section_slug ? $legacy_icon_class : $icon_class );
+}
+
+/**
+ * Normalize a gallery field's section and subsection identifiers.
+ *
+ * Legacy third-party fields using translated `section` and `subsection`
+ * values remain supported. FooGallery fields should declare `section_id` and
+ * `subsection_id` directly.
+ *
+ * @param array      $field    Gallery field definition.
+ * @param array|null $sections Optional preloaded section registry.
+ * @return array
+ */
+function foogallery_normalize_gallery_setting_field_sections(  $field, $sections = null  ) {
+    if ( !is_array( $field ) ) {
+        return $field;
+    }
+    $sections = ( is_array( $sections ) ? $sections : foogallery_get_gallery_setting_sections() );
+    $section_id = ( isset( $field['section_id'] ) ? sanitize_key( $field['section_id'] ) : '' );
+    if ( empty( $section_id ) && isset( $field['section'] ) && is_scalar( $field['section'] ) ) {
+        $legacy_label = (string) $field['section'];
+        foreach ( $sections as $registered_id => $section ) {
+            if ( isset( $section['label'] ) && $legacy_label === (string) $section['label'] ) {
+                $section_id = sanitize_key( $registered_id );
+                break;
+            }
+        }
+        if ( empty( $section_id ) ) {
+            $legacy_slug = apply_filters( 'foogallery_gallery_settings_metabox_section_slug', $legacy_label );
+            $section_id = sanitize_title( $legacy_slug );
+        }
+    }
+    if ( empty( $section_id ) ) {
+        $section_id = 'general';
+    }
+    $field['section_id'] = $section_id;
+    if ( empty( $field['subsection_id'] ) && isset( $field['subsection'] ) ) {
+        if ( is_array( $field['subsection'] ) ) {
+            $subsection_id = key( $field['subsection'] );
+        } else {
+            $subsection_id = ( is_scalar( $field['subsection'] ) ? $field['subsection'] : '' );
+        }
+        if ( is_string( $subsection_id ) ) {
+            $field['subsection_id'] = sanitize_key( $subsection_id );
+        }
+    } elseif ( isset( $field['subsection_id'] ) ) {
+        $field['subsection_id'] = sanitize_key( $field['subsection_id'] );
+    }
+    return $field;
+}
+
+/**
+ * Determine whether a gallery setting field can be copied between galleries.
+ *
+ * @param array $field Gallery field definition.
+ * @return bool
+ */
+function foogallery_gallery_setting_field_is_bulk_copyable(  $field  ) {
+    if ( !is_array( $field ) || empty( $field['id'] ) ) {
+        return false;
+    }
+    if ( !empty( $field['_foogallery_mobile_variant'] ) && empty( $field['_foogallery_mobile_free'] ) && !foogallery_mobile_settings_is_entitled() ) {
+        return false;
+    }
+    if ( array_key_exists( 'bulk_copy', $field ) ) {
+        $copyable = (bool) $field['bulk_copy'];
+    } else {
+        $field_type = ( isset( $field['type'] ) ? sanitize_key( $field['type'] ) : '' );
+        $copyable = !in_array( $field_type, array(
+            'help',
+            'html',
+            'promo',
+            'warning',
+            'color_status'
+        ), true );
+    }
+    return (bool) apply_filters( 'foogallery_gallery_setting_field_is_bulk_copyable', $copyable, $field );
+}
+
+/**
  * Returns the fields for a specific gallery template
  *
  * @param $template mixed
@@ -1258,9 +2001,11 @@ function foogallery_get_fields_for_template(  $template  ) {
     $fields_to_hide = apply_filters( 'foogallery_override_gallery_template_fields_hidden', array(), $template );
     $fields_to_hide = apply_filters( "foogallery_override_gallery_template_fields_hidden-{$template['slug']}", $fields_to_hide );
     $indexes_to_remove = array();
+    $gallery_setting_sections = foogallery_get_gallery_setting_sections();
     foreach ( $fields as $key => &$field ) {
         // Allow for the field to be altered by extensions. Also used by the build-in fields, e.g. lightbox.
         $field = apply_filters( 'foogallery_alter_gallery_template_field', $field, $template['slug'] );
+        $field = foogallery_normalize_gallery_setting_field_sections( $field, $gallery_setting_sections );
         if ( in_array( $field['id'], $fields_to_remove ) ) {
             $indexes_to_remove[] = $key;
         } else {
@@ -1314,9 +2059,35 @@ function foogallery_sort_template_fields(  $a, $b  ) {
 }
 
 /**
- * Builds default settings for the supplied gallery template
+ * Build the normalized mobile variant for an opted-in template field.
  *
- * @param $template_name
+ * Mobile fields keep their values in the existing flat settings array while
+ * inheriting the desktop field's control configuration by default.
+ *
+ * @param array  $field         Desktop field definition.
+ * @param mixed  $default_value Default to use when the mobile definition omits one.
+ * @param string $template_slug Template slug.
+ *
+ * @return array|false Mobile field definition, or false when not opted in.
+ */
+function foogallery_get_mobile_field_for_template_field(  $field, $default_value = null, $template_slug = ''  ) {
+    if ( !is_array( $field ) || !isset( $field['id'] ) || !isset( $field['mobile'] ) || true !== $field['mobile'] && !is_array( $field['mobile'] ) ) {
+        return false;
+    }
+    if ( foogallery_mobile_field_is_free( $field, $template_slug ) ) {
+        return foogallery_expand_mobile_field_unchecked( $field, $default_value, $template_slug );
+    }
+    $provider = foogallery_mobile_settings_provider();
+    if ( null !== $provider ) {
+        return $provider->expand_field( $field, $default_value );
+    }
+    return false;
+}
+
+/**
+ * Builds default settings for the supplied gallery template.
+ *
+ * @param string $template_name Gallery template slug.
  * @return array
  */
 function foogallery_build_default_settings_for_gallery_template(  $template_name  ) {
@@ -1324,8 +2095,106 @@ function foogallery_build_default_settings_for_gallery_template(  $template_name
     $settings = array();
     // Loop through the fields and build up an array of keys and default values.
     foreach ( $fields as $field ) {
-        if ( array_key_exists( 'default', $field ) && null !== $field['default'] ) {
-            $settings["{$template_name}_{$field['id']}"] = $field['default'];
+        $field_variants = array($field);
+        $mobile_field = foogallery_get_mobile_field_for_template_field( $field, null, $template_name );
+        if ( false !== $mobile_field ) {
+            $field_variants[] = $mobile_field;
+        }
+        foreach ( $field_variants as $field_variant ) {
+            if ( array_key_exists( 'default', $field_variant ) && null !== $field_variant['default'] ) {
+                $settings["{$template_name}_{$field_variant['id']}"] = $field_variant['default'];
+            }
+        }
+    }
+    return $settings;
+}
+
+/**
+ * Compare responsive setting values after normalizing scalar form values.
+ *
+ * HTML form controls submit numbers and booleans as strings, while template
+ * defaults may use their native PHP types. Treat those representations as the
+ * same value, but retain recursive array shape and keys.
+ *
+ * @param mixed $left  First value.
+ * @param mixed $right Second value.
+ * @return bool
+ */
+function foogallery_mobile_setting_values_match(  $left, $right  ) {
+    if ( is_array( $left ) || is_array( $right ) ) {
+        if ( !is_array( $left ) || !is_array( $right ) || array_keys( $left ) !== array_keys( $right ) ) {
+            return false;
+        }
+        foreach ( $left as $key => $value ) {
+            if ( !foogallery_mobile_setting_values_match( $value, $right[$key] ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    if ( (is_scalar( $left ) || null === $left) && (is_scalar( $right ) || null === $right) ) {
+        return (string) $left === (string) $right;
+    }
+    return $left === $right;
+}
+
+/**
+ * Remove submitted mobile values that are identical to their fallback.
+ *
+ * The editor always submits its visible mobile control. Keeping only values
+ * that differ from the declared mobile default (or desktop value for inherited
+ * fields) makes the stored setting itself the source of truth for an override.
+ *
+ * @param array  $settings Submitted settings.
+ * @param string $template Template slug.
+ * @return array
+ */
+function foogallery_normalize_mobile_settings_for_save(  $settings, $template  ) {
+    if ( !is_array( $settings ) || !is_string( $template ) || '' === $template ) {
+        return $settings;
+    }
+    foreach ( foogallery_get_fields_for_template( $template ) as $field ) {
+        if ( !is_array( $field ) || empty( $field['id'] ) ) {
+            continue;
+        }
+        $desktop_key = $template . '_' . $field['id'];
+        $desktop_default = ( array_key_exists( 'default', $field ) ? $field['default'] : null );
+        $desktop_value = ( array_key_exists( $desktop_key, $settings ) ? $settings[$desktop_key] : $desktop_default );
+        $mobile_field = foogallery_expand_mobile_field_unchecked( $field, $desktop_value, $template );
+        if ( false === $mobile_field ) {
+            continue;
+        }
+        $mobile_key = $template . '_' . $mobile_field['id'];
+        if ( array_key_exists( $mobile_key, $settings ) && foogallery_mobile_setting_values_match( $settings[$mobile_key], $mobile_field['default'] ) ) {
+            unset($settings[$mobile_key]);
+        }
+    }
+    return $settings;
+}
+
+/**
+ * Preserve paid mobile values while Free settings are saved.
+ *
+ * The settings form intentionally does not contain paid mobile inputs in
+ * Free. Existing values therefore need to survive a full settings replacement
+ * and any incoming paid-mobile keys must be ignored.
+ *
+ * @param array  $settings Submitted settings.
+ * @param string $template Template slug.
+ * @param int    $post_id  Gallery post ID.
+ * @return array
+ */
+function foogallery_preserve_paid_mobile_settings(  $settings, $template, $post_id  ) {
+    if ( !is_array( $settings ) || foogallery_mobile_settings_is_entitled() ) {
+        return $settings;
+    }
+    $existing = get_post_meta( absint( $post_id ), FOOGALLERY_META_SETTINGS, true );
+    $existing = ( is_array( $existing ) ? $existing : array() );
+    $storage_keys = foogallery_get_paid_mobile_setting_storage_keys( $template, array_merge( $existing, $settings ) );
+    foreach ( $storage_keys as $incoming_key => $canonical_key ) {
+        unset($settings[$incoming_key]);
+        if ( $incoming_key === $canonical_key && array_key_exists( $canonical_key, $existing ) ) {
+            $settings[$canonical_key] = $existing[$canonical_key];
         }
     }
     return $settings;
@@ -1555,7 +2424,7 @@ function foogallery_marketing_demos() {
         'href'    => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/image-viewer-gallery/',
     );
     $demos[] = array(
-        'demo'    => __( 'Simple Portfolio Gallery', 'foogallery' ),
+        'demo'    => __( 'Portfolio Gallery', 'foogallery' ),
         'section' => __( 'Standard Gallery Demos', 'foogallery' ),
         'href'    => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/wordpress-portfolio-gallery/',
     );
@@ -1628,8 +2497,8 @@ function foogallery_marketing_pro_features() {
         'demo'    => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/filtering/',
     );
     $features[] = array(
-        'feature' => __( 'More Gallery Templates', 'foogallery' ),
-        'desc'    => __( '3 more awesome gallery templates, including Slider, Grid and Polaroid.', 'foogallery' ),
+        'feature' => __( 'More Gallery Layouts', 'foogallery' ),
+        'desc'    => __( '3 more awesome gallery layouts, including Slider, Grid and Polaroid.', 'foogallery' ),
         'demo'    => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/slider-gallery/',
     );
     $features[] = array(
@@ -2522,18 +3391,35 @@ function foogallery_extract_gallery_id(  $full_gallery_id  ) {
 /**
  * Return the index of a specific section with the gallery template fields array
  *
- * @param $fields
- * @param $section
+ * @param array  $fields  Gallery template fields.
+ * @param string $section Section or subsection ID, or a legacy label.
  *
  * @return int
  */
 function foogallery_admin_fields_find_index_of_section(  $fields, $section  ) {
+    $requested_section = sanitize_title( apply_filters( 'foogallery_gallery_settings_metabox_section_slug', $section ) );
+    $sections = foogallery_get_gallery_setting_sections();
+    foreach ( $sections as $section_id => $section_config ) {
+        if ( isset( $section_config['label'] ) && (string) $section_config['label'] === (string) $section ) {
+            $requested_section = sanitize_key( $section_id );
+            break;
+        }
+        if ( !empty( $section_config['subsections'] ) ) {
+            foreach ( $section_config['subsections'] as $subsection_id => $subsection_config ) {
+                if ( isset( $subsection_config['label'] ) && (string) $subsection_config['label'] === (string) $section ) {
+                    $requested_section = sanitize_key( $subsection_id );
+                    break 2;
+                }
+            }
+        }
+    }
     $index = 0;
     foreach ( $fields as $field ) {
-        if ( isset( $field['section'] ) && $section === $field['section'] ) {
+        $field = foogallery_normalize_gallery_setting_field_sections( $field, $sections );
+        if ( $requested_section === $field['section_id'] || isset( $field['subsection_id'] ) && $requested_section === $field['subsection_id'] ) {
             return $index;
         }
-        $index++;
+        ++$index;
     }
     return $index;
 }

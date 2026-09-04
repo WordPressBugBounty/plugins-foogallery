@@ -64,13 +64,19 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 			$fields = foogallery_get_fields_for_template( $gallery_template );
 
 			foreach ( $fields as $field ) {
-				$field_id = isset( $field['id'] ) ? $field['id'] : false;
-				$field_type = isset( $field['type'] ) ? $field['type'] : false;
-				if ( $field_id && $field_type ) {
-					if ( $field_type === 'text' || $field_type === 'textarea' ) {
+				$field_variants = array( $field );
+				$mobile_field   = foogallery_get_mobile_field_for_template_field( $field, null, $gallery_template );
+				if ( false !== $mobile_field ) {
+					$field_variants[] = $mobile_field;
+				}
+
+				foreach ( $field_variants as $field_variant ) {
+					$field_id   = isset( $field_variant['id'] ) ? $field_variant['id'] : false;
+					$field_type = isset( $field_variant['type'] ) ? $field_variant['type'] : false;
+					if ( $field_id && ( 'text' === $field_type || 'textarea' === $field_type ) ) {
 						$setting_id = $gallery_template . '_' . $field_id;
-						if ( isset( $settings[$setting_id] ) ) {
-							$settings[$setting_id] = foogallery_sanitize_full( $settings[$setting_id] );
+						if ( isset( $settings[ $setting_id ] ) ) {
+							$settings[ $setting_id ] = foogallery_sanitize_full( $settings[ $setting_id ] );
 						}
 					}
 				}
@@ -261,6 +267,8 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 
 				$settings = apply_filters( 'foogallery_save_gallery_settings', $settings, $post_id, $_POST );
 				$settings = apply_filters( 'foogallery_save_gallery_settings-'. $gallery_template, $settings, $post_id, $_POST );
+				$settings = foogallery_normalize_mobile_settings_for_save( $settings, $gallery_template );
+				$settings = foogallery_preserve_paid_mobile_settings( $settings, $gallery_template, $post_id );
 
 				$settings = $this->sanitize_gallery_settings( $settings, $gallery_template );
 

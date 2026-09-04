@@ -222,12 +222,30 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			return $test_thumb_url;
 		}
 
-		static function find_first_image_in_media_library( $min_width = 50, $min_height = 50 ) {
+		/**
+		 * Finds a suitable image in the Media Library for thumbnail test pages.
+		 *
+		 * @param int   $min_width               Minimum image width.
+		 * @param int   $min_height              Minimum image height.
+		 * @param int[] $excluded_attachment_ids Attachment IDs that must not be selected.
+		 * @param array $excluded_image_urls     Image URLs that must not be selected.
+		 * @return string|false Image URL, or false when no suitable image exists.
+		 */
+		public static function find_first_image_in_media_library( $min_width = 50, $min_height = 50, $excluded_attachment_ids = array(), $excluded_image_urls = array() ) {
 			static $cached = array();
 
-			$min_width  = absint( $min_width );
-			$min_height = absint( $min_height );
-			$cache_key  = $min_width . 'x' . $min_height;
+			$min_width               = absint( $min_width );
+			$min_height              = absint( $min_height );
+			$excluded_attachment_ids = array_values( array_filter( array_map( 'absint', (array) $excluded_attachment_ids ) ) );
+			$excluded_image_urls     = array_values( array_filter( array_map( 'trim', (array) $excluded_image_urls ) ) );
+			$cache_key               = $min_width . 'x' . $min_height . ':' . wp_json_encode( array( $excluded_attachment_ids, $excluded_image_urls ) );
+			$excluded_image_paths    = array();
+			foreach ( $excluded_image_urls as $excluded_image_url ) {
+				$excluded_image_path = wp_parse_url( $excluded_image_url, PHP_URL_PATH );
+				if ( ! empty( $excluded_image_path ) ) {
+					$excluded_image_paths[] = rawurldecode( $excluded_image_path );
+				}
+			}
 
 			if ( array_key_exists( $cache_key, $cached ) ) {
 				return $cached[ $cache_key ];
@@ -246,6 +264,9 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
 			);
+			if ( ! empty( $excluded_attachment_ids ) ) {
+				$args['post__not_in'] = $excluded_attachment_ids;
+			}
 
 			$query_images = new WP_Query( $args );
 			if ( empty( $query_images->posts ) ) {
@@ -255,8 +276,11 @@ if ( !class_exists( 'FooGallery_Thumbnails' ) ) {
 			foreach ( $query_images->posts as $image_id ) {
 				$local_path = get_attached_file( $image_id );
 				$image_url  = wp_get_attachment_url( $image_id );
+				$image_path = is_string( $image_url ) ? wp_parse_url( $image_url, PHP_URL_PATH ) : '';
 
-				if ( empty( $image_url ) || ! self::image_meets_minimum_test_dimensions( $image_id, $local_path, $min_width, $min_height ) ) {
+				if ( empty( $image_url )
+					|| ( ! empty( $image_path ) && in_array( rawurldecode( $image_path ), $excluded_image_paths, true ) )
+					|| ! self::image_meets_minimum_test_dimensions( $image_id, $local_path, $min_width, $min_height ) ) {
 					continue;
 				}
 

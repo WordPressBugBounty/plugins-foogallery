@@ -333,15 +333,15 @@ public function column_default( $item, $column_name ) {
 				$actions  .= '<a href="' . esc_url( $addon_url ) . '">' . esc_html__( 'View Addon', 'foogallery' ) . '</a>';
             } elseif ( $upgrade ) {
 				$actions     .= '<a href="' . esc_url( foogallery_fs()->checkout_url( WP_FS__PERIOD_ANNUALLY, true ) ) . '">' . __( 'Start FREE Trial', 'foogallery' ) . '</a>';
-			} elseif ( !$downloaded ) {
+			} elseif ( !$downloaded && FooGallery_Admin_Extensions::can_manage_extension_action( 'download', $item['slug'] ) ) {
                 $base_url     = add_query_arg( array( 'extension' => $item['slug'], '_wpnonce' => wp_create_nonce( 'foogallery_extension_action' ) ) );
                 $download_url = add_query_arg( 'action', 'download', $base_url );
                 $actions     .= '<a href="' . esc_url( $download_url ) . '">' . __( 'Download', 'foogallery' ) . '</a>';
-            } elseif ( $is_active ) {
+			} elseif ( $is_active && FooGallery_Admin_Extensions::can_manage_extension_action( 'deactivate', $item['slug'] ) ) {
                 $base_url         = add_query_arg( array( 'extension' => $item['slug'], '_wpnonce' => wp_create_nonce( 'foogallery_extension_action' ) ) );
                 $deactivate_url   = add_query_arg( 'action', 'deactivate', $base_url );
                 $actions         .= '<a href="' . esc_url( $deactivate_url ) . '">' . __( 'Deactivate', 'foogallery' ) . '</a>';
-            } else {
+			} elseif ( $downloaded && !$is_active && FooGallery_Admin_Extensions::can_manage_extension_action( 'activate', $item['slug'] ) ) {
                 $base_url     = add_query_arg( array( 'extension' => $item['slug'], '_wpnonce' => wp_create_nonce( 'foogallery_extension_action' ) ) );
                 $activate_url = add_query_arg( 'action', 'activate', $base_url );
                 $actions     .= '<a href="' . esc_url( $activate_url ) . '">' . __( 'Activate', 'foogallery' ) . '</a>';

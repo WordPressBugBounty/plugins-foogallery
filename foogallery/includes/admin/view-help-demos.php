@@ -49,7 +49,7 @@ function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc,
 		<a href="#foogallery-admin-help-demo-2" class="foogallery-admin-help-demo foogallery-admin-help-button"><?php esc_html_e( 'Masonry', 'foogallery' ); ?></a>
 		<a href="#foogallery-admin-help-demo-3" class="foogallery-admin-help-demo foogallery-admin-help-button"><?php esc_html_e( 'Image Viewer', 'foogallery' ); ?></a>
 		<a href="#foogallery-admin-help-demo-4" class="foogallery-admin-help-demo foogallery-admin-help-button"><?php esc_html_e( 'Justified', 'foogallery' ); ?></a>
-		<a href="#foogallery-admin-help-demo-5" class="foogallery-admin-help-demo foogallery-admin-help-button"><?php esc_html_e( 'Simple Portfolio', 'foogallery' ); ?></a>
+		<a href="#foogallery-admin-help-demo-5" class="foogallery-admin-help-demo foogallery-admin-help-button"><?php esc_html_e( 'Portfolio', 'foogallery' ); ?></a>
 		<a href="#foogallery-admin-help-demo-6" class="foogallery-admin-help-demo foogallery-admin-help-button"><?php esc_html_e( 'Carousel', 'foogallery' ); ?></a>
 		<a href="<?php echo esc_url( foogallery_admin_url( 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/demos/', 'help' ) ); ?>" target="_blank" class="foogallery-admin-help-button"><?php esc_html_e( 'More Demos', 'foogallery' ); ?><i class="dashicons dashicons-external"></i></a>
 	</header>
@@ -57,7 +57,7 @@ function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc,
 	<div id="foogallery-admin-help-demo-1" class="foogallery-admin-help-demo-content">
 		<header class="foogallery-admin-help-header">
 			<h3 id="default_demo"><?php esc_html_e( 'Default Responsive Gallery Demo', 'foogallery' );?></h3>
-			<p><?php esc_html_e( 'Our default responsive gallery template. You have full control over the image border, captions and hover effects. This demo has a thin white border with a small gutter. An icon and the captions are shown on hover. There is also a dark tint and zoom hover effect.', 'foogallery' );?></p>
+			<p><?php esc_html_e( 'Our default responsive gallery layout. You have full control over the image border, captions and hover effects. This demo has a thin white border with a small gutter. An icon and the captions are shown on hover. There is also a dark tint and zoom hover effect.', 'foogallery' );?></p>
 		</header>
 
 		<div id="foogallery-gallery-0" class="foogallery fg-default fg-center fg-hover-zoomed-semi fg-gutter-10 fg-m-col2 fg-loading-default fg-loaded-fade-in fg-light fg-shadow-inset-small fg-caption-hover fg-hover-fade fg-hover-zoom4"
@@ -78,7 +78,7 @@ function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc,
 	<div id="foogallery-admin-help-demo-2" class="foogallery-admin-help-demo-content" style="display: none">
 		<header class="foogallery-admin-help-header">
 			<h3 id="masonry_demo"><?php esc_html_e( 'Masonry Demo', 'foogallery' );?></h3>
-			<p><?php esc_html_e( 'A masonry-style gallery template, which keeps all images at a constant width while packing them in to best fill the space. This demo has a thin white border and captions are below the image. Images also have hover effects.', 'foogallery' );?></p>
+			<p><?php esc_html_e( 'A masonry-style gallery layout, which keeps all images at a constant width while packing them in to best fill the space. This demo has a thin white border and captions are below the image. Images also have hover effects.', 'foogallery' );?></p>
 		</header>
 		<style>
 	        #foogallery-gallery-1.fg-masonry .fg-item {
@@ -107,7 +107,7 @@ function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc,
 	<div id="foogallery-admin-help-demo-3" class="foogallery-admin-help-demo-content" style="display: none">
 		<header class="foogallery-admin-help-header">
 			<h3 id="iv_demo"><?php esc_html_e( 'Image Viewer Demo', 'foogallery' );?></h3>
-			<p><?php esc_html_e( 'Our image viewer gallery template, which showcases a single image at a time. In this demo, captions are always shown, and a white hover effect is also enabled.', 'foogallery' );?></p>
+			<p><?php esc_html_e( 'Our image viewer gallery layout, which showcases a single image at a time. In this demo, captions are always shown, and a white hover effect is also enabled.', 'foogallery' );?></p>
 		</header>
 		<div id="foogallery-gallery-2" class="foogallery foogallery-link-image fg-center fg-image-viewer fg-light fg-border-thin fg-shadow-outline fg-loading-default fg-loaded-fade-in fg-caption-always fg-hover-fade fg-hover-zoom fg-ready fg-light-overlays fg-round-small"
 		     data-foogallery="{&quot;item&quot;:{&quot;showCaptionTitle&quot;:true,&quot;showCaptionDescription&quot;:true},&quot;lazy&quot;:true,&quot;template&quot;:{&quot;loop&quot;:true}}">
@@ -131,7 +131,7 @@ function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc,
 	<div id="foogallery-admin-help-demo-4" class="foogallery-admin-help-demo-content" style="display: none">
 		<header class="foogallery-admin-help-header">
 			<h3 id="justified_demo"><?php esc_html_e( 'Justified Demo', 'foogallery' );?></h3>
-			<p><?php esc_html_e( 'A justified gallery template, where the images have a similar height. This demo has no image borders, the captions are always visible and overlaid on top of the images. There is also a simple hover effect.', 'foogallery' );?></p>
+			<p><?php esc_html_e( 'A justified gallery layout, where the images have a similar height. This demo has no image borders, the captions are always visible and overlaid on top of the images. There is also a simple hover effect.', 'foogallery' );?></p>
 		</header>
 		<style>
 	        #foogallery-gallery-3.fg-justified .fg-item {
@@ -161,8 +161,8 @@ function foogallery_admin_help_demo_item( $seed, $width, $height, $title, $desc,
 
 	<div id="foogallery-admin-help-demo-5" class="foogallery-admin-help-demo-content" style="display: none">
 		<header class="foogallery-admin-help-header">
-			<h3 id="portfolio_demo"><?php esc_html_e( 'Simple Portfolio Gallery Demo', 'foogallery' );?></h3>
-			<p><?php esc_html_e( 'A portfolio gallery template that keeps all items in a row at the same height. Captions are visible below the images and centered.', 'foogallery' );?></p>
+			<h3 id="portfolio_demo"><?php esc_html_e( 'Portfolio Gallery Demo', 'foogallery' );?></h3>
+			<p><?php esc_html_e( 'A portfolio gallery layout that keeps all items in a row at the same height. Captions are visible below the images and centered.', 'foogallery' );?></p>
 		</header>
 		<style>
 	        #foogallery-gallery-4.fg-simple_portfolio {

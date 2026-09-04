@@ -25,6 +25,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 
             //add the paging options to the gallery container
             add_filter( 'foogallery_build_container_data_options', array( $this, 'add_paging_data_options' ), 20, 3 );
+			add_filter( 'foogallery_build_container_mobile_data_options', array( $this, 'add_mobile_paging_data_options' ), 20, 3 );
 
             //limit the number of attachments returned when rendering a gallery if paging is enabled
             add_filter( 'foogallery_gallery_attachments_override_for_rendering', array( $this, 'attachments_override' ), 10, 3 );
@@ -198,8 +199,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_type',
 					'title'   => __( 'Paging Type', 'foogallery' ),
 					'desc'    => __( 'Add paging to a large gallery.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
-                    'section_order' => 5,
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => '',
 					'choices' => apply_filters( 'foogallery_gallery_template_paging_type_choices', array(
@@ -218,12 +218,16 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_size',
 					'title'   => __( 'Page Size', 'foogallery' ),
 					'desc'    => __( 'The size of your pages.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'number',
 					'class'   => 'small-text',
 					'default' => 20,
 					'step'    => '1',
 					'min'     => '0',
+					'mobile'  => array(
+						'default'     => 6,
+						'data_option' => array( 'paging', 'size' ),
+					),
 					'row_data'=> array(
 						'data-foogallery-change-selector' 		   => 'input',
 						'data-foogallery-preview'				   => 'shortcode',
@@ -239,7 +243,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_position',
 					'title'   => __( 'Position', 'foogallery' ),
 					'desc'    => __( 'The position of the paging for either dots or pagination.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => 'bottom',
 					'choices' => apply_filters( 'foogallery_gallery_template_paging_position_choices', array(
@@ -263,7 +267,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_theme',
 					'title'   => __( 'Theme', 'foogallery' ),
 					'desc'    => __( 'The theme used for pagination. Default uses the theme of the gallery.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => '',
 					'choices' => apply_filters( 'foogallery_gallery_template_paging_theme_choices', array(
@@ -287,7 +291,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_scroll',
 					'title'   => __( 'Scroll To Top', 'foogallery' ),
 					'desc'    => __( 'Whether or not it should scroll to the top of the gallery when paging is changed.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => 'false',
 					'choices' => array(
@@ -309,12 +313,16 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_limit',
 					'title'   => __( 'Paging Limit', 'foogallery' ),
 					'desc'    => __( 'The maximum number of page links to display for the gallery.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'number',
 					'class'   => 'small-text',
 					'default' => 5,
 					'step'    => '1',
 					'min'     => '0',
+					'mobile'  => array(
+						'default'     => 3,
+						'data_option' => array( 'paging', 'limit' ),
+					),
 					'row_data'=> array(
 						'data-foogallery-hidden'                   => true,
 						'data-foogallery-show-when-field-operator' => '===',
@@ -330,12 +338,17 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_showFirstLast',
 					'title'   => __( 'First &amp; Last Buttons', 'foogallery' ),
 					'desc'    => __( 'Whether or not to show the first &amp; last buttons for numbered pagination.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => 'true',
 					'choices' => array(
 						'true'  => __( 'Show', 'foogallery' ),
 						'false'  => __( 'Hide', 'foogallery' ),
+					),
+					'mobile'  => array(
+						'default'          => 'false',
+						'data_option'      => array( 'paging', 'showFirstLast' ),
+						'data_option_type' => 'boolean',
 					),
 					'row_data'=> array(
 						'data-foogallery-hidden'                   => true,
@@ -352,7 +365,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_showPrevNext',
 					'title'   => __( 'Prev &amp; Next Buttons', 'foogallery' ),
 					'desc'    => __( 'Whether or not to show the previous &amp; next buttons for numbered pagination.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => 'true',
 					'choices' => array(
@@ -374,12 +387,17 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_showPrevNextMore',
 					'title'   => __( 'More Buttons', 'foogallery' ),
 					'desc'    => __( 'Whether or not to show the previous &amp; next more buttons for numbered pagination.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => 'true',
 					'choices' => array(
 						'true'  => __( 'Show', 'foogallery' ),
 						'false'  => __( 'Hide', 'foogallery' ),
+					),
+					'mobile'  => array(
+						'default'          => 'false',
+						'data_option'      => array( 'paging', 'showPrevNextMore' ),
+						'data_option_type' => 'boolean',
 					),
 					'row_data'=> array(
 						'data-foogallery-hidden'                   => true,
@@ -396,7 +414,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'id'      => 'paging_output',
 					'title'   => __( 'Paging Output', 'foogallery' ),
 					'desc'    => __( 'How the paging items are output. We recommend that very large galleries output as JSON.', 'foogallery' ),
-					'section' => __( 'Paging', 'foogallery' ),
+					'section_id' => 'paging',
 					'type'    => 'radio',
 					'default' => '',
 					'choices' => array(
@@ -431,6 +449,34 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 			if ( foogallery_current_gallery_has_cached_value('paging' ) ) {
 				$options['paging'] = foogallery_current_gallery_get_cached_value( 'paging' );
 			}
+			return $options;
+		}
+
+		/**
+		 * Add the optional mobile page size to the client paging options.
+		 *
+		 * @param array      $options    Mobile client options.
+		 * @param FooGallery $_gallery   Gallery instance (unused).
+		 * @param array      $_attributes Gallery container attributes (unused).
+		 *
+		 * @return array
+		 */
+		function add_mobile_paging_data_options( $options, $_gallery, $_attributes ) {
+			$paging = foogallery_current_gallery_get_cached_value( 'paging' );
+			if ( ! is_array( $paging ) ) {
+				return $options;
+			}
+
+			$page_size = foogallery_gallery_template_mobile_setting( 'mobile_paging_size', null );
+			if ( null === $page_size ) {
+				return $options;
+			}
+			if ( ! is_scalar( $page_size ) || ! is_numeric( trim( (string) $page_size ) ) ) {
+				$page_size = 6;
+			}
+
+			$options['paging']['size'] = max( 0, intval( $page_size ) );
+
 			return $options;
 		}
 

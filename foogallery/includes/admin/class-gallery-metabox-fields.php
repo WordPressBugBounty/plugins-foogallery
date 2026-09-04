@@ -133,7 +133,8 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 				case 'number':
 					$min = isset($min) ? $min : 0;
 					$step = isset($step) ? $step : 1;
-					echo '<input class="small-text ' . $class . '" type="number" step="' . $step . '" min="' . $min .'" id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" placeholder="' . $placeholder . '" value="' . esc_attr( $field['value'] ) . '" />';
+					$max_attribute = isset( $max ) ? ' max="' . esc_attr( $max ) . '"' : '';
+					echo '<input class="small-text ' . $class . '" type="number" step="' . $step . '" min="' . $min . '"' . $max_attribute . ' id="FooGallerySettings_' . $id . '" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . ']" placeholder="' . $placeholder . '" value="' . esc_attr( $field['value'] ) . '" />';
 
 					break;
 					

@@ -109,6 +109,14 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 				$css[] = '#' . $id . ' { --fg-gutter: ' . $spacing . 'px; }';
 			}
 
+			$mobile_spacing = foogallery_gallery_template_mobile_setting( 'mobile_spacing', null );
+			if ( is_scalar( $mobile_spacing ) && '' !== trim( (string) $mobile_spacing ) ) {
+				$mobile_spacing = max( 0, min( 100, foogallery_intval( $mobile_spacing ) ) );
+				$mobile_rule    = '#' . $id . ' { --fg-gutter: ' . $mobile_spacing . 'px; }';
+				$css[]          = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]          = '.foogallery-preview-wrapper.viewport-mobile ' . $mobile_rule;
+			}
+
 			return $css;
 		}
 
@@ -155,7 +163,7 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 						'id'       => 'thumbnail_dimensions',
 						'title'    => __( 'Thumbnail Size', 'foogallery' ),
 							'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
-							'section'  => __( 'General', 'foogallery' ),
+							'section_id' => 'general',
 							'alias'    => 'thumbnail_size',
 							'type'     => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
@@ -168,8 +176,8 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 					array(
 						'id'       => 'layout',
 						'title'    => __( 'Columns', 'foogallery' ),
-						'desc'     => __( 'The number of columns to use. Auto will use all available space. Otherwise, you can force the number of columns to show on desktop.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'desc'     => __( 'The number of columns to use. Auto will use all available space.', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => '',
 						'type'     => 'radio',
 						'alias'    => 'columns',
@@ -183,24 +191,17 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 							'fg-d-col5' => __( '5 Columns', 'foogallery' ),
 							'fg-d-col6' => __( '6 Columns', 'foogallery' ),
 						),
-						'row_data' => array(
-							'data-foogallery-change-selector' => 'input:radio',
-							'data-foogallery-preview'         => 'shortcode'
-						)
-					),
-					array(
-						'id'       => 'mobile_columns',
-						'title'    => __( 'Mobile Columns', 'foogallery' ),
-						'desc'     => __( 'Number of columns to show on mobile (screen widths less than 600px)', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
-						'default'  => '',
-						'type'     => 'radio',
-						'class'    => 'foogallery-radios-stacked',
-						'choices'  => array(
-							''   => __( 'Auto', 'foogallery' ),
-							'fg-m-col1'   => __( '1 Column', 'foogallery' ),
-							'fg-m-col2' => __( '2 Columns', 'foogallery' ),
-							'fg-m-col3'  => __( '3 Columns', 'foogallery' ),
+						'mobile'   => array(
+							'free'    => true,
+							'id'      => 'mobile_columns',
+							'alias'   => 'mobile_columns',
+							'default' => 'fg-m-col2',
+							'choices' => array(
+								''            => __( 'Auto', 'foogallery' ),
+								'fg-m-col1'   => __( '1 Column', 'foogallery' ),
+								'fg-m-col2'   => __( '2 Columns', 'foogallery' ),
+								'fg-m-col3'   => __( '3 Columns', 'foogallery' ),
+							),
 						),
 						'row_data' => array(
 							'data-foogallery-change-selector' => 'input:radio',
@@ -210,7 +211,7 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 					array(
 						'id'      => 'thumbnail_link',
 						'title'   => __( 'Thumbnail Link', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default' => 'image',
 						'type'    => 'thumb_link',
 					),
@@ -222,13 +223,14 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 						'id'       => 'spacing',
 						'title'    => __( 'Thumbnail Gap', 'foogallery' ),
 						'desc'     => __( 'The spacing or gap between thumbnails in the gallery.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'alias'    => 'gap',
 						'type'     => 'slider',
 						'min'      => 0,
 						'max'      => 100,
 						'step'     => 1,
 						'default'  => '10',
+						'mobile'   => true,
 						'row_data' => array(
 							'data-foogallery-change-selector' => 'range-input',
 							'data-foogallery-preview'         => 'shortcode'
@@ -238,7 +240,7 @@ if ( ! class_exists( 'FooGallery_Default_Gallery_Template' ) ) {
 						'id'       => 'alignment',
 						'title'    => __( 'Alignment', 'foogallery' ),
 						'desc'     => __( 'The horizontal alignment of the thumbnails inside the gallery.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => 'fg-center',
 						'type'     => 'radio',
 						'choices'  => array(

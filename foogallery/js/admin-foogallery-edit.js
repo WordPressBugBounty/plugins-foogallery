@@ -33,20 +33,67 @@ FooGallery.autoEnabled = false;
             }
         });
 
+		$container.find('.foogallery-setting-control-mobile').each(function() {
+			var $control = $(this),
+				$field = $control.closest('.foogallery_template_field'),
+				locked = $field.attr('data-foogallery-locked') !== undefined,
+				hidden = $field.hasClass('foogallery_template_field_template_hidden');
+
+			$control.prop('disabled', locked || hidden);
+		});
+
         FOOGALLERY.enforceLockedSettingFields($container);
     };
 
     // Viewport controller for responsive preview
     FOOGALLERY.previewActionsController = {
         currentViewport: 'desktop',
+        viewports: ['desktop', 'tablet', 'mobile'],
+		mobilePromoId: 0,
         
         init: function() {
             this.bindEvents();
             this.setViewport('desktop'); // Default to desktop
         },
         
-        bindEvents: function() {
-            var self = this;
+		bindEvents: function() {
+			var self = this;
+
+			$('#foogallery_settings').on('click', '.foogallery-setting-mobile-locked', function(e) {
+				e.preventDefault();
+				var $button = $(this),
+					$field = $button.closest('.foogallery_template_field'),
+					label = $button.attr('data-foogallery-mobile-promo-label') || $.trim($field.find('.foogallery-setting-label').first().text()),
+					promo = FOOGALLERY.il8n && FOOGALLERY.il8n.mobileSettingsPromo;
+
+				if (!promo) return;
+				self.setResponsiveSettingViewport($field, 'mobile');
+				FOOGALLERY.handleSettingsShowRules();
+				$('.foogallery-mobile-settings-promo').each(function() {
+					$(this).find('.notice-dismiss').trigger('click');
+				});
+				self.mobilePromoId++;
+				var title = (promo.title || '').replace('{field}', label),
+					promoId = 'foogallery-mobile-settings-promo-' + self.mobilePromoId,
+					titleId = promoId + '-title',
+					$trayRow = $('<tr class="foogallery-mobile-settings-promo-row"><th aria-hidden="true"></th><td></td></tr>'),
+					$tray = $('<div class="foogallery-mobile-settings-promo" role="dialog" aria-modal="false" tabindex="-1">')
+						.attr({id: promoId, 'aria-labelledby': titleId})
+						.append($('<button type="button" class="notice-dismiss" aria-label="">').attr('aria-label', promo.close || 'Close'))
+						.append($('<strong>').attr('id', titleId).text(title))
+						.append($('<p>').text(promo.body || ''))
+						.append($('<a class="button button-primary" target="_blank" rel="noopener">').attr('href', promo.trialUrl || '#').text(promo.trial || ''))
+						.append($('<a class="button" target="_blank" rel="noopener">').attr('href', promo.upgradeUrl || '#').text(promo.upgrade || ''))
+						.append($('<a class="button" target="_blank" rel="noopener">').attr('href', promo.compareUrl || '#').text(promo.compare || ''));
+				$trayRow.find('td').append($tray);
+				$field.after($trayRow);
+				$button.attr({'aria-expanded': 'true', 'aria-controls': promoId});
+				var closePromo = function() { $trayRow.remove(); $button.removeAttr('aria-controls').attr('aria-expanded', 'false').trigger('focus'); $(document).off('mousedown.foogalleryMobilePromo'); };
+				$tray.find('.notice-dismiss').on('click', closePromo);
+				$tray.on('keydown', function(event) { if ('Escape' === event.key) { $tray.find('.notice-dismiss').trigger('click'); } });
+				$(document).on('mousedown.foogalleryMobilePromo', function(event) { if (!$(event.target).closest('.foogallery-mobile-settings-promo, .foogallery-setting-mobile-locked').length) { closePromo(); } });
+				$tray.trigger('focus');
+			});
 
 			// Refresh buttons click
 			$('.foogallery-preview-actions .foogallery-preview-refresh-btn').on('click', function(e) {
@@ -63,6 +110,13 @@ FooGallery.autoEnabled = false;
                 self.setViewport(viewport);
             });
 
+			$('#foogallery_settings').on('click', '.foogallery-setting-viewport-btn', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				self.setResponsiveSettingViewport($(this).closest('.foogallery_template_field'), $(this).data('viewport'));
+				FOOGALLERY.handleSettingsShowRules();
+			});
+
 			var $currentButton = $('.foogallery-items-view-switch-container a.current'),
 				currentValue = $currentButton.data('value');
 
@@ -75,13 +129,24 @@ FooGallery.autoEnabled = false;
         },
         
         setViewport: function(viewport) {
-            if (!viewport) return;
-            
+			if ($.inArray(viewport, this.viewports) === -1) return;
+
+			var previousViewport = this.currentViewport,
+				viewportChanged = previousViewport !== viewport;
+
             this.currentViewport = viewport;
-            
+
+            // The core client already merges data-foogallery-mobile when this is true.
+            // Keep the selected preview viewport authoritative inside the editor.
+			if (typeof FooGallery !== 'undefined') FooGallery.isMobile = viewport === 'mobile';
+
             // Update button states
-            $('.foogallery-viewport-btn').removeClass('active');
-            $('.foogallery-viewport-btn[data-viewport="' + viewport + '"]').addClass('active');
+            $('.foogallery-viewport-btn')
+                .removeClass('active')
+                .attr('aria-pressed', 'false');
+            $('.foogallery-viewport-btn[data-viewport="' + viewport + '"]')
+                .addClass('active')
+                .attr('aria-pressed', 'true');
             
             // Update preview wrapper classes
             var $wrapper = $('.foogallery-preview-wrapper');
@@ -99,7 +164,84 @@ FooGallery.autoEnabled = false;
                 $wrapper.removeClass('viewport-desktop viewport-tablet viewport-mobile')
                         .addClass('viewport-' + viewport);
             }
-        }
+
+            this.updateResponsiveSettings();
+			FOOGALLERY.handleSettingsShowRules();
+
+            // Mobile options are read while the client template is constructed,
+            // so an existing preview must be reinitialized after a viewport change.
+			if (viewportChanged && typeof FooGallery !== 'undefined') {
+				var $gallery = $('.foogallery_preview_container .foogallery'),
+					instance = $gallery.data('__FooGallery__');
+
+                if (instance instanceof FooGallery.Template) {
+                    FOOGALLERY.updateGalleryPreview(true, true);
+                }
+            }
+
+            if (viewportChanged) {
+                $('body').trigger('foogallery-gallery-preview-viewport-changed', [viewport, previousViewport]);
+            }
+        },
+
+		updateResponsiveSettings: function() {
+			var self = this,
+				viewport = this.currentViewport === 'mobile' ? 'mobile' : 'desktop';
+
+			$('.foogallery_template_field[data-foogallery-mobile-friendly]').each(function() {
+				self.setResponsiveSettingViewport($(this), viewport);
+			});
+			$('.foogallery_template_field[data-foogallery-mobile-locked]').each(function() {
+				self.setResponsiveSettingViewport($(this), viewport);
+			});
+		},
+
+		setResponsiveSettingViewport: function($field, viewport) {
+			if (!$field.length || $.inArray(viewport, ['desktop', 'mobile']) === -1) return;
+
+			$field.attr('data-foogallery-setting-viewport', viewport);
+
+			if ($field.is('[data-foogallery-mobile-locked]')) {
+				var isMobile = 'mobile' === viewport,
+					$lockedLabel = $field.find('.foogallery-setting-label').first(),
+					desktopFor = $lockedLabel.attr('data-desktop-for');
+
+				$field.find('.foogallery-setting-mobile-locked')
+					.toggleClass('active', isMobile)
+					.attr('aria-pressed', isMobile ? 'true' : 'false');
+				$field.find('.foogallery-setting-mobile-locked-desktop')
+					.toggleClass('active', !isMobile)
+					.attr('aria-pressed', isMobile ? 'false' : 'true');
+
+				if (desktopFor) {
+					$lockedLabel.attr('for', desktopFor);
+				}
+				return;
+			}
+
+			$field.find('.foogallery-setting-control').each(function() {
+				var $control = $(this),
+					isActive = $control.data('viewport') === viewport;
+
+				$control.prop('hidden', !isActive);
+			});
+
+			$field.find('.foogallery-setting-viewport-btn')
+				.removeClass('active')
+				.attr('aria-pressed', 'false');
+			$field.find('.foogallery-setting-viewport-btn[data-viewport="' + viewport + '"]')
+				.addClass('active')
+				.attr('aria-pressed', 'true');
+
+			var $label = $field.find('.foogallery-setting-label').first(),
+				forAttribute = $label.attr('data-' + viewport + '-for');
+
+			if (forAttribute) {
+				$label.attr('for', forAttribute);
+			} else {
+				$label.removeAttr('for');
+			}
+		}
     };
 
     FOOGALLERY.calculateAttachmentIds = function() {
@@ -143,6 +285,214 @@ FooGallery.autoEnabled = false;
 		}
     };
 
+	FOOGALLERY.persistSettingValue = function($source, $target, settingType) {
+		if (!$source.length || !$target.length) return false;
+
+		switch (settingType) {
+			case 'radio':
+			case 'icon':
+			case 'htmlicon':
+				var selectedRadio = $source.find('input:checked').val();
+				if (selectedRadio !== undefined) {
+					var $newRadio = $target.find('input[value="' + selectedRadio + '"]'),
+						currentRadio = $target.find('input:checked').val();
+					if ($newRadio.length && currentRadio !== selectedRadio) {
+						$newRadio.prop('checked', true).trigger('change');
+						return true;
+					}
+				}
+				break;
+			case 'checkbox':
+				var isChecked = $source.find('input[type="checkbox"]').is(':checked'),
+					$newCheckbox = $target.find('input[type="checkbox"]');
+				if ($newCheckbox.length && $newCheckbox.is(':checked') !== isChecked) {
+					$newCheckbox.prop('checked', isChecked).trigger('change');
+					return true;
+				}
+				break;
+			case 'select':
+				var selectVal = $source.find('select').val(),
+					$newSelect = $target.find('select');
+				if ($newSelect.length && $newSelect.val() !== selectVal) {
+					$newSelect.val(selectVal).trigger('change');
+					return true;
+				}
+				break;
+			case 'text':
+			case 'textarea':
+			case 'number':
+			case 'slider':
+				var $input = $source.find(':input, range-input').first(),
+					value = $input.val(),
+					$newInput = $target.find(':input, range-input').first(),
+					currentValue = $newInput.val();
+
+				if ($newInput.length && currentValue !== value) {
+					$newInput.val(value).trigger('change');
+					return true;
+				}
+				break;
+			default:
+				console.log('Field type ' + settingType + ' is not supported for persisted settings.');
+				break;
+		}
+
+		return false;
+	};
+
+	FOOGALLERY.persistResponsiveSettingState = function($source, $target) {
+		if (!$source.is('[data-foogallery-mobile-friendly]') || !$target.is('[data-foogallery-mobile-friendly]')) {
+			return false;
+		}
+
+		var locked = $target.attr('data-foogallery-locked') !== undefined,
+			hidden = $target.hasClass('foogallery_template_field_template_hidden'),
+			fallbackMode = $target.attr('data-foogallery-mobile-fallback-mode') || 'inherit',
+			settingType = $target.data('foogallery-setting-type'),
+			$desktopControl = $target.find('.foogallery-setting-control-desktop'),
+			$mobileControl = $target.find('.foogallery-setting-control-mobile'),
+			fallbackValue,
+			mobileValue;
+
+		$mobileControl.prop('disabled', locked || hidden);
+		if (locked || hidden) return true;
+
+		if (fallbackMode === 'inherit') {
+			fallbackValue = FOOGALLERY.getSettingControlValue($desktopControl, settingType);
+			$target.attr('data-foogallery-mobile-fallback-value', JSON.stringify(fallbackValue));
+		} else {
+			try {
+				fallbackValue = JSON.parse($target.attr('data-foogallery-mobile-fallback-value'));
+			} catch (error) {
+				return false;
+			}
+		}
+
+		mobileValue = FOOGALLERY.getSettingControlValue($mobileControl, settingType);
+		$target.attr(
+			'data-foogallery-mobile-mode',
+			FOOGALLERY.mobileSettingValuesMatch(mobileValue, fallbackValue) ? fallbackMode : 'custom'
+		);
+
+		return true;
+	};
+
+	FOOGALLERY.setSettingControlValue = function($target, settingType, value) {
+		if (!$target.length) return;
+
+		switch (settingType) {
+			case 'radio':
+			case 'icon':
+			case 'htmlicon':
+				$target.find('input[type="radio"]').prop('checked', false).filter(function() {
+					return $(this).val() === String(value);
+				}).prop('checked', true);
+				break;
+			case 'checkbox':
+				$target.find('input[type="checkbox"]').prop('checked', value === 'on');
+				break;
+			case 'select':
+				$target.find('select').val(value);
+				break;
+			case 'text':
+			case 'textarea':
+			case 'number':
+			case 'slider':
+				$target.find(':input, range-input').first().val(value);
+				break;
+			default:
+				if ($.isPlainObject(value)) {
+					$.each(value, function(key, childValue) {
+						$target.find('[name$="[' + key + ']"]').val(childValue);
+					});
+				}
+				break;
+		}
+	};
+
+	FOOGALLERY.getSettingControlValue = function($source, settingType) {
+		if (!$source.length) return undefined;
+
+		switch (settingType) {
+			case 'radio':
+			case 'icon':
+			case 'htmlicon':
+				return $source.find('input:checked').val();
+			case 'checkbox':
+				return $source.find('input[type="checkbox"]').is(':checked') ? 'on' : '';
+			case 'select':
+				return $source.find('select').val();
+			case 'text':
+			case 'textarea':
+			case 'number':
+			case 'slider':
+				return $source.find(':input, range-input').first().val();
+			default:
+				var value = {};
+				$.each($source.find(':input').serializeArray(), function(index, entry) {
+					var key = entry.name.match(/\[([^\]]+)\]$/);
+					if (key) value[key[1]] = entry.value;
+				});
+				return value;
+		}
+	};
+
+	FOOGALLERY.syncInheritedMobileSetting = function($field, changedElement) {
+		if (!$field.length ||
+			$field.attr('data-foogallery-mobile-fallback-mode') !== 'inherit' ||
+			$field.hasClass('foogallery_template_field_template_hidden') ||
+			$field.attr('data-foogallery-locked') !== undefined) return false;
+
+		var $desktopControl = $(changedElement).closest('.foogallery-setting-control-desktop'),
+			$mobileControl = $field.find('.foogallery-setting-control-mobile'),
+			settingType = $field.data('foogallery-setting-type'),
+			value;
+
+		if (!$desktopControl.length || !$mobileControl.length) return false;
+
+		value = FOOGALLERY.getSettingControlValue($desktopControl, settingType);
+		if (value === undefined) return false;
+
+		$field.attr('data-foogallery-mobile-fallback-value', JSON.stringify(value));
+		if ($field.attr('data-foogallery-mobile-mode') === 'inherit') {
+			FOOGALLERY.setSettingControlValue($mobileControl, settingType, value);
+		}
+
+		return true;
+	};
+
+	FOOGALLERY.mobileSettingValuesMatch = function(left, right) {
+		if ($.isPlainObject(left) || $.isPlainObject(right) || Array.isArray(left) || Array.isArray(right)) {
+			return JSON.stringify(left) === JSON.stringify(right);
+		}
+
+		return String(left == null ? '' : left) === String(right == null ? '' : right);
+	};
+
+	FOOGALLERY.syncMobileSettingMode = function($field, changedElement) {
+		var $mobileControl = $(changedElement).closest('.foogallery-setting-control-mobile'),
+			fallbackValue,
+			value;
+
+		if (!$field.length || !$mobileControl.length) return false;
+
+		try {
+			fallbackValue = JSON.parse($field.attr('data-foogallery-mobile-fallback-value'));
+		} catch (error) {
+			return false;
+		}
+
+		value = FOOGALLERY.getSettingControlValue($mobileControl, $field.data('foogallery-setting-type'));
+		$field.attr(
+			'data-foogallery-mobile-mode',
+			FOOGALLERY.mobileSettingValuesMatch(value, fallbackValue)
+				? ($field.attr('data-foogallery-mobile-fallback-mode') || 'inherit')
+				: 'custom'
+		);
+
+		return true;
+	};
+
 	FOOGALLERY.galleryTemplateChanged = function(reloadPreview) {
 		var selectedTemplate = FOOGALLERY.getSelectedTemplate(),
 			$settingsToShow = $('.foogallery-settings-container-' + selectedTemplate),
@@ -171,61 +521,19 @@ FooGallery.autoEnabled = false;
 			}
 			
 			if ( $newSetting.length ) {
-				switch ( settingType ) {
-					case 'radio':
-					case 'icon':
-					case 'htmlicon':
-						var selectedRadio = $this.find('input:checked').val();
-						if ( selectedRadio !== undefined ) {
-							var $newRadio = $newSetting.find('input[value="' + selectedRadio + '"]'),
-								currentRadio = $newSetting.find('input:checked').val();
-							if ( $newRadio.length && currentRadio !== selectedRadio ) {
-								$newRadio.prop('checked', true).trigger('change');
-								persistedCount++;
-							}
-						}
-						break;
-					case 'checkbox':
-						var isChecked = $this.find('input[type="checkbox"]').is(':checked'),
-							$newCheckbox = $newSetting.find('input[type="checkbox"]');
-						if ( $newCheckbox.length && $newCheckbox.is(':checked') !== isChecked ) {
-							$newCheckbox.prop('checked', isChecked).trigger('change');
-							persistedCount++;
-						}
-						break;
-					case 'select':
-						var selectVal = $this.find('select').val(),
-							$newSelect = $newSetting.find('select');
-						if ( $newSelect.length && $newSelect.val() !== selectVal ) {
-							$newSelect.val(selectVal).trigger('change');
-							persistedCount++;
-						}
-						break;
-					case 'text':
-					case 'textarea':
-					case 'number':
-					case 'slider':
-						var $input = $this.find(':input, range-input').first(),
-							value = $input.is('range-input') ? $input.attr('value') : $input.val(),
-							$newInput = $newSetting.find(':input, range-input').first(),
-							currentValue = $newInput.is('range-input') ? $newInput.attr('value') : ($newInput.is(':checkbox') ? $newInput.is(':checked') : $newInput.val());
-						
-						if ( $newInput.length && currentValue !== value ) {
-							if ( $newInput.is('range-input') ) {
-								$newInput.attr('value', value);
-							} else if ( $newInput.is(':checkbox') ) {
-								$newInput.prop('checked', $input.is(':checked'));
-							} else {
-								$newInput.val(value);
-							}
-							$newInput.trigger('change');
-							persistedCount++;
-						}
-						break;
-					default:
-						console.log('Field type ' + settingType + ' is not supported for persisted settings.');
-						break;
-				}
+				var $sources = $this.is('[data-foogallery-mobile-friendly]') ? $this.find('.foogallery-setting-control') : $this;
+
+				$sources.each(function() {
+					var $source = $(this),
+						viewport = $source.data('viewport'),
+						$target = viewport ? $newSetting.find('.foogallery-setting-control[data-viewport="' + viewport + '"]') : $newSetting;
+
+					if (FOOGALLERY.persistSettingValue($source, $target, settingType)) {
+						persistedCount++;
+					}
+				});
+
+				FOOGALLERY.persistResponsiveSettingState($this, $newSetting);
 			}
 		});
 
@@ -243,6 +551,7 @@ FooGallery.autoEnabled = false;
 			.addClass('foogallery-settings-container-active');
 
 		FOOGALLERY.enableUnlockedSettingFields($settingsToShow);
+		FOOGALLERY.previewActionsController.updateResponsiveSettings();
 
 		if (currentTab) {
 			currentTab = currentTab.replace( previousSelectedTemplate, selectedTemplate );
@@ -280,6 +589,20 @@ FooGallery.autoEnabled = false;
 		FOOGALLERY.updateGalleryPreview(reloadPreview, setContainerHeight);
 	};
 
+	FOOGALLERY.handleSettingControlChange = function($fieldContainer, changedElement) {
+		FOOGALLERY.syncInheritedMobileSetting($fieldContainer, changedElement);
+		FOOGALLERY.syncMobileSettingMode($fieldContainer, changedElement);
+
+		if ($fieldContainer.data('foogallery-preview') && $fieldContainer.data('foogallery-preview').indexOf('shortcode') !== -1) {
+			FOOGALLERY.reloadGalleryPreview();
+		} else {
+			FOOGALLERY.handleSettingFieldChange(
+				$fieldContainer.data('foogallery-preview') && $fieldContainer.data('foogallery-preview').indexOf('class') !== -1,
+				true
+			);
+		}
+	};
+
 	FOOGALLERY.updateGalleryPreview = function( initGallery, setContainerHeight ) {
 		var $preview = $('.foogallery_preview_container .foogallery'),
 			$preview_container = $('.foogallery_preview_container');
@@ -312,6 +635,21 @@ FooGallery.autoEnabled = false;
 		}
 	};
 
+	FOOGALLERY.getGalleryPreviewSettingsData = function($shortcodeFields) {
+		var data = [];
+
+		if (!$shortcodeFields.length) return data;
+
+		data = $shortcodeFields.find(':input').serializeArray();
+		$shortcodeFields.find('range-input').each(function() {
+			if (!this.hasAttribute('disabled')) {
+				data.push({name: this.name, value: this.value});
+			}
+		});
+
+		return data;
+	};
+
 	FOOGALLERY.reloadGalleryPreview = function() {
 		if ( FOOGALLERY.suppressPreviewRefresh ) {
 			return;
@@ -327,16 +665,9 @@ FooGallery.autoEnabled = false;
 		$preview_container.css('height', $preview_container.height());
 
 		//build up all the data to generate a preview
-        var $shortcodeFields = $('.foogallery-settings-container-active .foogallery-metabox-settings .foogallery_template_field[data-foogallery-preview*="shortcode"]'),
-			data = [],
+		var $shortcodeFields = $('.foogallery-settings-container-active .foogallery-metabox-settings .foogallery_template_field[data-foogallery-preview*="shortcode"]'),
+			data = FOOGALLERY.getGalleryPreviewSettingsData($shortcodeFields),
 			foogallery_id = $('#post_ID').val();
-
-        if ($shortcodeFields.length) {
-			data = $shortcodeFields.find(':input').serializeArray();
-			$shortcodeFields.find('range-input:not(:disabled)').each(function() {
-				data.push({name: $(this).attr('name'), value: $(this).val()});
-			});
-        }
 
         //clear any items just in case
 		window['foogallery-gallery-' + foogallery_id + '_items'] = null;
@@ -403,7 +734,8 @@ FooGallery.autoEnabled = false;
 				$fieldRow = $('.foogallery_template_field_template_id-' + selectedTemplate + '-' + fieldId),
 				$fieldSelector = $fieldRow.data('foogallery-value-selector'),
 				fieldValueAttribute = $fieldRow.data('foogallery-value-attribute'),
-				$field = $fieldRow.find($fieldSelector),
+				$fieldScope = $fieldRow.is('[data-foogallery-mobile-friendly]') ? $fieldRow.find('.foogallery-setting-control:not([hidden])') : $fieldRow,
+				$field = $fieldScope.find($fieldSelector),
 				showField = false;
 
 			if ( $fieldRow.length === 0 ) {
@@ -604,12 +936,8 @@ FooGallery.autoEnabled = false;
 			var $fieldContainer = $(item),
 				selector = $fieldContainer.data('foogallery-change-selector');
 
-            $fieldContainer.find(selector).on('change', function() {
-                if ( $fieldContainer.data('foogallery-preview') && $fieldContainer.data('foogallery-preview').indexOf('shortcode') !== -1 ) {
-                    FOOGALLERY.reloadGalleryPreview();
-                } else {
-					FOOGALLERY.handleSettingFieldChange( $fieldContainer.data('foogallery-preview') && $fieldContainer.data('foogallery-preview').indexOf('class') !== -1, true );
-				}
+			$fieldContainer.find(selector).on('change', function() {
+				FOOGALLERY.handleSettingControlChange($fieldContainer, this);
 			});
         });
 

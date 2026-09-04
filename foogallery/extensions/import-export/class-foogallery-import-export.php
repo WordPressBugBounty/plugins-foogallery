@@ -341,7 +341,7 @@ if ( ! class_exists( 'FooGallery_Import_Export' ) ) {
 					FOOGALLERY_META_SORT       => isset( $gallery['sorting'] ) ? $gallery['sorting'] : array(),
 					FOOGALLERY_META_DATASOURCE => $datasource_name,
 					FOOGALLERY_META_RETINA     => isset( $gallery['retina'] ) ? $gallery['retina'] : '',
-					FOOGALLERY_META_CUSTOM_CSS => isset( $gallery['custom_css'] ) ? $gallery['custom_css'] : '',
+					FOOGALLERY_META_CUSTOM_CSS => isset( $gallery['custom_css'] ) ? foogallery_sanitize_full( $gallery['custom_css'] ) : '',
 				),
 			);
 

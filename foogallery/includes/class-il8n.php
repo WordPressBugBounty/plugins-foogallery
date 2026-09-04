@@ -67,11 +67,18 @@ if ( ! class_exists( 'FooGallery_il8n' ) ) {
 
 			$il8n = apply_filters( 'foogallery_il8n', $il8n );
 
-			// Only add the script to the page if there is data to be added.
+			// Keep client-side mobile options aligned with the Responsive template's CSS breakpoint.
+			$mobile_size = foogallery_get_mobile_size();
+
+			$script  = 'var FooGallery_mobileSize = ' . wp_json_encode( $mobile_size . 'px' ) . ';';
+			$script .= "\nvar FooGallery_autoMobileBreakpoint = " . wp_json_encode( ! is_admin() ) . ';';
+
+			// Only add the localization object when there is data to be added.
 			if ( count( $il8n ) > 0 ) {
-				$script = "var FooGallery_il8n = " . foogallery_json_encode( $il8n ) . ';';
-				wp_add_inline_script( 'foogallery-core', $script, 'before' );
+				$script .= "\nvar FooGallery_il8n = " . foogallery_json_encode( $il8n ) . ';';
 			}
+
+			wp_add_inline_script( 'foogallery-core', $script, 'before' );
 
 			$foogallery_enqueue_il8n = true; // To ensure we do not add multiple times on a page with more than 1 gallery.
 		}

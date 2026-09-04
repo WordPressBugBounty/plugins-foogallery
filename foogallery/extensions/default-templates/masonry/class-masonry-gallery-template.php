@@ -27,6 +27,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
 
 			//add the data options needed for masonry
 			add_filter( 'foogallery_build_container_data_options-masonry', array( $this, 'add_masonry_options' ), 10, 3 );
+			add_filter( 'foogallery_build_container_mobile_data_options-masonry', array( $this, 'add_mobile_masonry_options' ), 10, 3 );
 
 			//build up the thumb dimensions from some arguments
 			add_filter( 'foogallery_calculate_thumbnail_dimensions-masonry', array( $this, 'build_thumbnail_dimensions_from_arguments' ), 10, 2 );
@@ -144,13 +145,14 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         'id'      => 'thumbnail_width',
                         'title'   => __( 'Thumbnail Width', 'foogallery' ),
                         'desc'    => __( 'Choose the width of your thumbnails. Thumbnails will be generated on the fly and cached once generated', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'alias'   => 'thumbnail_size',
                         'type'    => 'number',
                         'class'   => 'small-text',
                         'default' => 250,
                         'step'    => '1',
                         'min'     => '0',
+						'mobile'  => true,
 						'row_data'=> array(
 							'data-foogallery-change-selector' => 'input',
 							'data-foogallery-preview' => 'shortcode'
@@ -160,12 +162,13 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         'id'      => 'gutter_width',
                         'title'   => __( 'Thumbnail Gap', 'foogallery' ),
                         'desc'    => __( 'The spacing or gap between your thumbnails.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'type'    => 'slider',
                         'min'     => 0,
                         'max'     => 100,
                         'step'    => 1,
                         'default' => 10,
+						'mobile'  => true,
                         'row_data'=> array(
 							'data-foogallery-change-selector' => 'range-input',
 							'data-foogallery-preview' => 'shortcode',
@@ -175,7 +178,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         'id'      => 'layout',
                         'title'   => __( 'Masonry Layout', 'foogallery' ),
                         'desc'    => __( 'Choose a fixed width thumb layout, or responsive columns.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'type'    => 'radio',
                         'choices' => array(
                             'fixed'  => __( 'Fixed Width', 'foogallery' ),
@@ -187,6 +190,14 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         ),
 						'class' => 'foogallery-radios-stacked',
                         'default' => 'fixed',
+						'mobile'  => array(
+							'choices' => array(
+								'fixed' => __( 'Fixed Width', 'foogallery' ),
+								'col3'  => __( '3 Columns', 'foogallery' ),
+								'col2'  => __( '2 Columns', 'foogallery' ),
+								'col1'  => __( '1 Column', 'foogallery' ),
+							),
+						),
                         'row_data'=> array(
                             'data-foogallery-change-selector' => 'input:radio',
                             'data-foogallery-value-selector' => 'input:checked',
@@ -197,7 +208,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
 	                    'id'      => 'horizontal',
 	                    'title'   => __( 'Horizontal Layout', 'foogallery' ),
 	                    'desc'    => __( 'You can choose to lay out items to (mostly) maintain horizontal left-to-right order.', 'foogallery' ),
-	                    'section' => __( 'General', 'foogallery' ),
+	                    'section_id' => 'general',
 	                    'type'    => 'radio',
 	                    'choices' => array(
 		                    ''  => __( 'Disabled', 'foogallery' ),
@@ -215,7 +226,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         'id'      => 'gutter_percent',
                         'title'   => __( 'Gutter Size', 'foogallery' ),
                         'desc'    => __( 'Choose a gutter size when using responsive columns.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'type'    => 'radio',
                         'choices' => array(
                             'fg-gutter-none'   => __( 'No Gutter', 'foogallery' ),
@@ -223,6 +234,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                             'fg-gutter-large'   => __( 'Larger Gutter', 'foogallery' )
                         ),
                         'default' => '',
+						'mobile'  => true,
                         'row_data'=> array(
                             'data-foogallery-hidden' => true,
 							'data-foogallery-change-selector' => 'input:radio',
@@ -237,7 +249,7 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
                         'id'      => 'alignment',
                         'title'   => __( 'Alignment', 'foogallery' ),
                         'desc'    => __( 'You can choose to center align your images or leave them at the default (left). Only applicable when using a fixed layout!', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'    => 'radio',
                         'choices' => array(
                             ''  => __( 'Left', 'foogallery' ),
@@ -327,6 +339,54 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
 				$options['template']['horizontalOrder'] = true;
 			}
 			return $options;
+		}
+
+		/**
+		 * Add the fixed-layout mobile gutter understood by the Masonry client.
+		 *
+		 * @param array      $options    Mobile client options.
+		 * @param FooGallery $_gallery    Gallery instance (unused).
+		 * @param array      $_attributes Gallery container attributes (unused).
+		 *
+		 * @return array
+		 */
+		function add_mobile_masonry_options( $options, $_gallery, $_attributes ) {
+			$mobile_layout = foogallery_gallery_template_mobile_setting( 'mobile_layout', null );
+			if ( is_scalar( $mobile_layout ) && in_array( (string) $mobile_layout, array( 'fixed', 'col1', 'col2', 'col3' ), true ) ) {
+				$options['template']['layout'] = (string) $mobile_layout;
+			}
+
+			$effective_layout = isset( $options['template']['layout'] ) ? $options['template']['layout'] : $this->get_effective_mobile_layout();
+			if ( 'fixed' !== $effective_layout ) {
+				return $options;
+			}
+
+			$mobile_gutter = foogallery_gallery_template_mobile_setting( 'mobile_gutter_width', null );
+			if ( is_scalar( $mobile_gutter ) && is_numeric( trim( (string) $mobile_gutter ) ) ) {
+				$options['template']['gutter'] = max( 0, min( 100, intval( $mobile_gutter ) ) );
+			}
+
+			$mobile_width = foogallery_gallery_template_mobile_setting( 'mobile_thumbnail_width', null );
+			if ( is_scalar( $mobile_width ) && is_numeric( trim( (string) $mobile_width ) ) ) {
+				$options['template']['columnWidth'] = max( 0, intval( $mobile_width ) );
+			}
+
+			return $options;
+		}
+
+		/**
+		 * Get the layout family that applies on mobile.
+		 *
+		 * @return string
+		 */
+		private function get_effective_mobile_layout() {
+			$mobile_layout = foogallery_gallery_template_mobile_setting( 'mobile_layout', null );
+
+			if ( is_scalar( $mobile_layout ) && in_array( (string) $mobile_layout, array( 'fixed', 'col1', 'col2', 'col3' ), true ) ) {
+				return (string) $mobile_layout;
+			}
+
+			return foogallery_gallery_template_setting( 'layout', 'fixed' );
 		}
 
 		/**
@@ -450,9 +510,10 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
 		 */
 		function add_css( $css, $gallery ) {
 
-			$id         = $gallery->container_id();
-			$layout = foogallery_gallery_template_setting( 'layout', 'fixed' );
-			$gutter_width = intval( foogallery_gallery_template_setting( 'gutter_width', 10 ) );
+			$id            = $gallery->container_id();
+			$layout        = foogallery_gallery_template_setting( 'layout', 'fixed' );
+			$mobile_layout = $this->get_effective_mobile_layout();
+			$gutter_width  = intval( foogallery_gallery_template_setting( 'gutter_width', 10 ) );
 
 			//get out early if the layout is not fixed
 			if ( 'fixed' === $layout ) {
@@ -468,6 +529,43 @@ if ( !class_exists( 'FooGallery_Masonry_Gallery_Template' ) ) {
 			}
 
 			$css[] = '#' . $id . '.fg-masonry { --fg-gutter: ' . $gutter_width . 'px; }';
+
+			$mobile_gutter_width = null;
+			if ( 'fixed' === $mobile_layout ) {
+				$mobile_gutter = foogallery_gallery_template_mobile_setting( 'mobile_gutter_width', null );
+				if ( is_scalar( $mobile_gutter ) && is_numeric( trim( (string) $mobile_gutter ) ) ) {
+					$mobile_gutter_width = max( 0, min( 100, intval( $mobile_gutter ) ) );
+				}
+			} else {
+				$mobile_gutter = foogallery_gallery_template_mobile_setting( 'mobile_gutter_percent', null );
+				if ( 'fg-gutter-none' === $mobile_gutter ) {
+					$mobile_gutter_width = 0;
+				} elseif ( 'fg-gutter-large' === $mobile_gutter ) {
+					$mobile_gutter_width = 20;
+				} elseif ( '' === $mobile_gutter ) {
+					$mobile_gutter_width = 10;
+				}
+			}
+
+			if ( null !== $mobile_gutter_width ) {
+				$mobile_rule = '#' . $id . '.fg-masonry { --fg-gutter: ' . $mobile_gutter_width . 'px; }';
+				$css[]       = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]       = '.foogallery-preview-wrapper.viewport-mobile ' . $mobile_rule;
+			}
+
+			if ( 'fixed' === $mobile_layout ) {
+				$mobile_thumbnail_width = foogallery_gallery_template_mobile_setting( 'mobile_thumbnail_width', null );
+				if ( is_scalar( $mobile_thumbnail_width ) && is_numeric( trim( (string) $mobile_thumbnail_width ) ) ) {
+					$mobile_thumbnail_width = max( 0, intval( $mobile_thumbnail_width ) );
+					$mobile_rule            = '#' . $id . '.fg-masonry .fg-item { width: ' . $mobile_thumbnail_width . 'px; }';
+					$css[]                  = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+					$css[]                  = '.foogallery-preview-wrapper.viewport-mobile ' . $mobile_rule;
+				}
+			} elseif ( 'fixed' === $layout ) {
+				$mobile_rule = '#' . $id . '.fg-masonry .fg-item { width: var(--fg-column-width); }';
+				$css[]       = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]       = '.foogallery-preview-wrapper.viewport-mobile ' . $mobile_rule;
+			}
 
 			return $css;
 		}

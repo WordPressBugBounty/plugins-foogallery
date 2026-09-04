@@ -283,7 +283,7 @@ return array(
 	), //Demo : Masonry
 	array(
 		'key'         => 'portfolio',
-		'post_title'  => 'Demo : Simple Portfolio',
+		'post_title'  => 'Demo : Portfolio',
 		'post_status' => 'publish',
 		'post_type'   => FOOGALLERY_CPT_GALLERY,
 		'items'       => array( 'demo5', 'demo1', 'demo2', 'demo3', 'demo4', 'demo6', 'demo7', 'demo8', 'demo9', 'demo10' ),
@@ -353,7 +353,7 @@ return array(
 	), //Demo : Simple Portfolio
 	array(
 		'key'         => 'portfolio2',
-		'post_title'  => 'Demo : Simple Portfolio (Variation)',
+		'post_title'  => 'Demo : Portfolio (Variation)',
 		'post_status' => 'publish',
 		'post_type'   => FOOGALLERY_CPT_GALLERY,
 		'items'       => array( 'demo6', 'demo1', 'demo2', 'demo3', 'demo4', 'demo5', 'demo7', 'demo8', 'demo9', 'demo10' ),

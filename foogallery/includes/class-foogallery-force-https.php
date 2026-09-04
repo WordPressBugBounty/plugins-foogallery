@@ -39,9 +39,10 @@ if ( ! class_exists( 'FooGallery_ForceHttps' ) ) {
 			$settings['settings'][] = array(
 				'id'      => 'force_https',
 				'title'   => __( 'Force HTTPS', 'foogallery' ),
-				'desc'    => __( 'Force all assets (thumbnails, javascript, css) to load over the HTTPS protocol. This can help overcome some issues when moving your site across to HTTPS and you get mixed content errors.', 'foogallery' ),
+				'desc'    => __( 'Convert gallery image, stylesheet, and script URLs from HTTP to HTTPS. This can help resolve mixed-content warnings after moving a site to HTTPS.', 'foogallery' ),
 				'type'    => 'checkbox',
-				'tab'     => 'advanced'
+				'tab'     => 'advanced',
+				'section' => __( 'Gallery Loading & Compatibility', 'foogallery' ),
 			);
 			return $settings;
 		}

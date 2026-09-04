@@ -24,6 +24,9 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 			// add the data options needed for justified.
 			add_filter( 'foogallery_build_container_data_options-justified', array( $this, 'add_justified_options' ), 10, 3 );
 
+			// Sanitize the optional mobile-only settings.
+			add_filter( 'foogallery_save_gallery_settings-justified', array( $this, 'sanitize_mobile_settings' ) );
+
 			// build up the thumb dimensions from some arguments.
 			add_filter( 'foogallery_calculate_thumbnail_dimensions-justified', array( $this, 'build_thumbnail_dimensions_from_arguments' ), 10, 2 );
 
@@ -84,12 +87,15 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'id'       => 'row_height',
 						'title'    => __( 'Row Height', 'foogallery' ),
 						'desc'     => __( 'The preferred height of your gallery rows. Depending on the aspect ratio of your images and the viewport, the row height might increase up to Max Row Height.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'     => 'number',
 						'class'    => 'small-text',
 						'default'  => 200,
 						'step'     => '10',
 						'min'      => '0',
+						'mobile'   => array(
+							'data_option' => array( 'template', 'rowHeight' ),
+						),
 						'row_data' => array(
 							'data-foogallery-change-selector' => 'input',
 							'data-foogallery-value-selector'  => 'input',
@@ -100,12 +106,15 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'id'       => 'thumb_height',
 						'title'    => __( 'Max Row Height', 'foogallery' ),
 						'desc'     => __( 'Choose the max height of your gallery rows. It should always be larger than Row Height by about 150%.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'     => 'number',
 						'class'    => 'small-text',
 						'default'  => 300,
 						'step'     => '10',
 						'min'      => '0',
+						'mobile'   => array(
+							'data_option' => array( 'template', 'maxRowHeight' ),
+						),
 						'row_data' => array(
 							'data-foogallery-preview'         => 'shortcode',
 							'data-foogallery-change-selector' => 'input',
@@ -115,21 +124,24 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'id'       => 'margins',
 						'title'    => __( 'Thumbnail Gap', 'foogallery' ),
 						'desc'     => __( 'The spacing or gap between your thumbnails.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'     => 'slider',
 						'default'  => 2,
 						'step'     => 1,
 						'min'      => 0,
 						'max'      => 50,
+						'mobile'   => array(
+							'data_option' => array( 'template', 'margins' ),
+						),
 						'row_data' => array(
-							'data-foogallery-change-selector' => 'range-input',
+							'data-foogallery-change-selector' => ':input, range-input',
 							'data-foogallery-preview'         => 'shortcode',
 						),
 					),
 					array(
 						'id'      => 'thumbnail_link',
 						'title'   => __( 'Thumbnail Link', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default' => 'image',
 						'type'    => 'thumb_link',
 					),
@@ -141,7 +153,7 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'id'       => 'align',
 						'title'    => __( 'Alignment', 'foogallery' ),
 						'desc'     => __( 'For rows that cannot be justified, what alignment should be used?', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'     => 'radio',
 						'default'  => 'center',
 						'choices'  => array(
@@ -159,7 +171,7 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 						'id'       => 'last-row',
 						'title'    => __( 'Last Row', 'foogallery' ),
 						'desc'     => __( 'Decide what happens to the last row, when there are not enough images to full it completely.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'type'     => 'radio',
 						'default'  => 'smart',
 						'choices'  => array(
@@ -221,6 +233,64 @@ if ( ! class_exists( 'FooGallery_Justified_Gallery_Template' ) ) {
 			$options['template']['lastRow']      = $last_row;
 
 			return $options;
+		}
+
+		/**
+		 * Sanitize optional mobile Justified values before gallery settings are stored.
+		 *
+		 * @param array $settings Submitted gallery settings.
+		 *
+		 * @return array
+		 */
+		function sanitize_mobile_settings( $settings ) {
+			if ( ! is_array( $settings ) ) {
+				return array();
+			}
+
+			$mobile_fields = array(
+				'mobile_row_height'   => null,
+				'mobile_thumb_height' => null,
+				'mobile_margins'      => 50,
+			);
+
+			foreach ( $mobile_fields as $field_id => $maximum ) {
+				$key = self::TEMPLATE_ID . '_' . $field_id;
+				if ( ! array_key_exists( $key, $settings ) ) {
+					continue;
+				}
+
+				$value = $this->normalize_mobile_number( wp_unslash( $settings[ $key ] ), $maximum );
+				if ( null === $value ) {
+					unset( $settings[ $key ] );
+				} else {
+					$settings[ $key ] = (string) $value;
+				}
+			}
+
+			return $settings;
+		}
+
+		/**
+		 * Normalize an optional mobile numeric setting.
+		 *
+		 * @param mixed    $value   Raw setting value.
+		 * @param int|null $maximum Optional maximum value.
+		 *
+		 * @return int|null
+		 */
+		private function normalize_mobile_number( $value, $maximum = null ) {
+			if ( ! is_scalar( $value ) ) {
+				return null;
+			}
+
+			$value = trim( (string) $value );
+			if ( '' === $value || ! is_numeric( $value ) ) {
+				return null;
+			}
+
+			$value = max( 0, intval( $value ) );
+
+			return null === $maximum ? $value : min( $maximum, $value );
 		}
 
 		/**

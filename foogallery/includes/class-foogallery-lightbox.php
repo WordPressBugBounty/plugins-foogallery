@@ -144,7 +144,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				$use_lightbox = false;
 			}
 
-			$section = $use_lightbox ? __( 'Lightbox', 'foogallery' ) : __( 'Panel', 'foogallery' );
+			$section_id = $use_lightbox ? 'lightbox' : 'panel';
 
             if ( $use_lightbox ) {
                 if ( foogallery_admin_fields_has_field( $fields, 'thumbnail_link' ) &&
@@ -156,8 +156,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
                             'id' => 'lightbox_warning',
                             'title' => __('Your Lightbox Will Not Work!', 'foogallery'),
                             'desc' => __('No lightbox will be shown, because under the General tab, you have set the Thumbnail Link to "Not linked".', 'foogallery'),
-                            'section' => __( 'Lightbox', 'foogallery' ),
-                            'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+                            'section_id' => 'lightbox',
+                            'subsection_id' => 'lightbox-general',
                             'type' => 'help',
                             'row_data' => array(
                                 'data-foogallery-hidden' => true,
@@ -177,8 +177,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
                     'id' => 'lightbox_promo',
                     'title' => __('Your Gallery Needs A Lightbox!', 'foogallery'),
                     'desc' => __('Website visitors prefer a gallery with a lightbox. A lightbox allows you to showcase your images, as well as improve navigation between images in your gallery.', 'foogallery'),
-                    'section' => $section,
-                    'subsection' => array('lightbox-general' => __('General', 'foogallery')),
+                    'section_id' => $section_id,
+                    'subsection_id' => 'lightbox-general',
                     'type' => 'help',
                     'row_data' => array(
                         'data-foogallery-hidden' => true,
@@ -193,8 +193,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'         => 'lightbox_theme',
 				'title'      => __( 'Theme', 'foogallery' ),
 				'desc'       => __( 'The overall appearance including background and button color. By default it will inherit from Appearance -> Theme', 'foogallery' ),
-				'section'    => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'       => 'radio',
 				'default'    => '',
 				'choices'    => apply_filters(
@@ -222,8 +222,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 					'id'      => 'lightbox_help_controls',
                     'title'      => __( 'Lightbox Control Settings', 'foogallery' ),
 					'desc'    => __( 'The Lightbox Controls are the action buttons that are shown within the lightbox, e.g. the Close button or the Navigation buttons', 'foogallery' ),
-					'section' => $section,
-					'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+					'section_id' => $section_id,
+					'subsection_id' => 'lightbox-controls',
 					'type'    => 'help',
 					'row_data'   => array(
 						'data-foogallery-hidden'                   => true,
@@ -238,8 +238,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_button_theme',
 				'title'   => __( 'Control Color', 'foogallery' ),
 				'desc'    => __( 'You can override the button controls color. By default it will inherit from the theme.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_button_theme_choices', array(
@@ -261,8 +261,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_custom_button_theme',
 				'title'   => __( 'Custom Control Color', 'foogallery' ),
 				'desc'    => __( 'You can override the button controls color by selecting a color.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'spacer'  => '<span class="spacer"></span>',
 				'type'    => 'htmlicon',
 				'default' => 'fg-button-light',
@@ -290,8 +290,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_button_highlight',
 				'title'   => __( 'Control Hover Color', 'foogallery' ),
 				'desc'    => __( 'You can override the button controls hover color. By default it will inherit from the theme.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_button_highlight_choices', array(
@@ -313,8 +313,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_custom_button_highlight',
 				'title'   => __( 'Custom Control Hover Color', 'foogallery' ),
 				'desc'    => __( 'You can override the button controls hover color by selecting a color.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'spacer'  => '<span class="spacer"></span>',
 				'type'    => 'htmlicon',
 				'default' => 'fg-highlight-light',
@@ -349,8 +349,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 					'id'      => 'lightbox_help_thumbnails',
 					'title'   => __( 'Thumbnail Strip Settings', 'foogallery' ),
 					'desc'    => __( 'The below settings will control the thumbnail strip that is shown within the lightbox.', 'foogallery' ),
-					'section' => $section,
-					'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
+					'section_id' => $section_id,
+					'subsection_id' => 'lightbox-thumbnails',
 					'type'    => 'help',
 					'row_data' => array(
 						'data-foogallery-hidden'                   => true,
@@ -365,8 +365,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_thumbs',
 				'title'    => __( 'Thumbnail Strip', 'foogallery' ),
 				'desc'     => __( 'You can change the position of the thumbnails, or hide them completely.', 'foogallery' ),
-				'section'  => $section,
-				'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-thumbnails',
 				'type'     => 'radio',
 				'default'  => $hide_thumbs_by_default ? 'none' : 'bottom',
 				'choices'  => apply_filters( 'foogallery_gallery_template_lightbox_thumbs_choices', array(
@@ -391,8 +391,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_thumbs_captions',
 				'title'   => __( 'Thumbnail Strip Captions', 'foogallery' ),
 				'desc'    => __( 'Whether or not the thumbnail strip should contain captions.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-thumbnails',
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_thumbs_captions_choices', array(
@@ -413,8 +413,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			$field[] = array(
 				'id'       => 'lightbox_thumbs_captions_alignment',
 				'title'    => __( 'Thumbnail Caption Alignment', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-thumbnails',
 				'type'    => 'radio',
 				'default' => 'default',
 				'choices' => array(
@@ -438,8 +438,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_thumbs_bestfit',
 				'title'   => __( 'Thumbnails Best Fit', 'foogallery' ),
 				'desc'    => __( 'Adjust the size of the displayed thumbnails so that they fill the entire space within the strip.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-thumbnails',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_thumbs_bestfit_choices', array(
@@ -461,8 +461,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_thumbs_size',
 				'title'   => __( 'Thumbnail Size', 'foogallery' ),
 				'desc'    => __( 'Adjust the size of the thumbnail image to display as either small (square) or large (landscape).', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-thumbnails' => __( 'Thumbnails', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-thumbnails',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_thumbs_size_choices', array(
@@ -484,8 +484,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_transition',
 				'title'   => __( 'Transition', 'foogallery' ),
 				'desc'    => __( 'The transition to apply to the main content area when switching between items.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'default' => 'fade',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_button_highlight_choices', array(
@@ -508,8 +508,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			$field[] = array(
 				'id'      => 'lightbox_info_enabled',
 				'title'   => __( 'Captions Enabled', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_info_enabled_choices', array(
@@ -532,8 +532,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_info_position',
 				'title'   => __( 'Caption Position', 'foogallery' ),
 				'desc'    => __( 'The position of the captions within the lightbox.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => 'bottom',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_info_position_choices', array(
@@ -558,8 +558,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_info_alignment',
 				'title'    => __( 'Caption Text Alignment', 'foogallery' ),
 				'desc'     => __( 'Change the horizontal text alignment of the captions', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'     => 'radio',
 				'default'  => 'default',
 				'choices'  => array(
@@ -583,8 +583,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_info_overlay',
 				'title'   => __( 'Caption Display', 'foogallery' ),
 				'desc'    => __( 'Whether or not the caption is overlaid on top of the content, or is inline (outside of the content).', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => 'yes',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_info_choices', array(
@@ -606,8 +606,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_info_autohide_mobile',
 				'title'   => __( 'Auto-hide on Mobile', 'foogallery' ),
 				'desc'    => __( 'Whether captions should automatically hide on mobile devices. When disabled, captions will remain visible on mobile.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => 'yes',
 				'choices' => array(
@@ -629,8 +629,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_caption_override',
 				'title'   => __( 'Caption Source', 'foogallery' ),
 				'desc'    => __( 'The captions can be different to the thumbnail captions.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_caption_override_choices', array(
@@ -653,8 +653,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_caption_override_title',
 				'title'   => __( 'Override Caption Title', 'foogallery' ),
 				'desc'    => __( 'You can override the caption title to be different from the thumbnail caption title.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_caption_title_choices', array(
@@ -680,8 +680,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_caption_override_desc',
 				'title'   => __( 'Override Caption Desc.', 'foogallery' ),
 				'desc'    => __( 'You can override the caption description to be different from the thumbnail caption description.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-captions' => __( 'Captions', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-captions',
 				'type'    => 'radio',
 				'default' => '',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_caption_title_choices', array(
@@ -707,8 +707,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_auto_progress',
 				'title'   => __( 'Auto Progress', 'foogallery' ),
 				'desc'    => __( 'Auto progress to the next item after a specified time.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_auto_progress_choices', array(
@@ -730,8 +730,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_auto_progress_seconds',
 				'title'   => __( 'Auto Progress Seconds', 'foogallery' ),
 				'desc'    => __( 'The time in seconds to display content before auto progressing to the next item.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'number',
 				'default' => '10',
 				'row_data'=> array(
@@ -749,8 +749,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_auto_progress_start',
 				'title'   => __( 'Auto Progress Start', 'foogallery' ),
 				'desc'    => __( 'If the auto-progress will automatically start or not.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'choices' => array(
 					'yes' => __( 'Yes', 'foogallery' ),
@@ -772,8 +772,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_auto_progress_button',
 				'title'   => __( 'Auto Progress Button', 'foogallery' ),
 				'desc'    => __( 'Show or hide the auto progress control button. Hiding the button does not stop auto progress.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'choices' => array(
 					'yes' => __( 'Shown', 'foogallery' ),
@@ -795,8 +795,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_fit_media',
 				'title'   => __( 'Fit Media', 'foogallery' ),
 				'desc'    => __( 'Whether or not to force images to fill the content area. Aspect ratios are maintained, the image is simply scaled so it covers the entire available area.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_fit_media_choices', array(
@@ -818,8 +818,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_no_scrollbars',
 				'title'   => __( 'Scroll Bars', 'foogallery' ),
 				'desc'    => __( 'Whether or not to hide the page scrollbars when maximizing.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_no_scrollbars_choices', array(
@@ -841,8 +841,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_mobile_layout',
 				'title'   => __( 'Mobile Layout', 'foogallery' ),
 				'desc'    => __( 'Which layout to use for the lightbox when on mobile.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-general' => __( 'General', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-general',
 				'type'    => 'radio',
 				'class'   => 'foogallery-radios-stacked',
 				'default' => '',
@@ -865,8 +865,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_buttons_display',
 				'title'   => __( 'Controls Display', 'foogallery' ),
 				'desc'    => __( 'Whether or not the control buttons are overlaid on top of the content, or are inline (outside of the content).', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_buttons_display', array(
@@ -888,8 +888,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'      => 'lightbox_hover_buttons',
 				'title'   => __( 'Show Controls On Hover', 'foogallery' ),
 				'desc'    => __( 'Only show the control buttons when you hover the mouse over.', 'foogallery' ),
-				'section' => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'    => 'radio',
 				'default' => 'no',
 				'choices' => apply_filters( 'foogallery_gallery_template_lightbox_hover_buttons_choices', array(
@@ -912,8 +912,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_show_fullscreen_button',
 				'title'    => __( 'Fullscreen Button', 'foogallery' ),
 				'desc'     => __( 'Whether of not to show the Fullscreen button', 'foogallery' ),
-				'section'  => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'     => 'radio',
 				'default'  => $use_lightbox ? 'yes' : 'no',
 				'choices'  => array(
@@ -937,8 +937,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 					'id'       => 'lightbox_show_maximize_button',
 					'title'    => __( 'Maximise Button', 'foogallery' ),
 					'desc'     => __( 'Whether of not to show the Maximise button', 'foogallery' ),
-					'section'  => $section,
-					'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+					'section_id' => $section_id,
+					'subsection_id' => 'lightbox-controls',
 					'type'     => 'radio',
 					'default'  => 'yes',
 					'choices'  => array(
@@ -961,8 +961,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_show_caption_button',
 				'title'    => __( 'Caption Button', 'foogallery' ),
 				'desc'     => __( 'Whether of not to show the Caption button', 'foogallery' ),
-				'section'  => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'     => 'radio',
 				'default'  => 'yes',
 				'choices'  => array(
@@ -984,8 +984,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_show_thumbstrip_button',
 				'title'    => __( 'Thumbnail Strip Button', 'foogallery' ),
 				'desc'     => __( 'Whether of not to show the thumbnail strip control button', 'foogallery' ),
-				'section'  => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'     => 'radio',
 				'default'  => 'no',
 				'choices'  => array(
@@ -1007,8 +1007,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_show_download_button',
 				'title'    => __( 'Download Button', 'foogallery' ),
 				'desc'     => __( 'Whether of not to show the download button', 'foogallery' ),
-				'section'  => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'     => 'radio',
 				'default'  => 'no',
 				'choices'  => array(
@@ -1030,8 +1030,8 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				'id'       => 'lightbox_show_nav_buttons',
 				'title'    => __( 'Prev/Next Buttons', 'foogallery' ),
 				'desc'     => __( 'Whether of not to show the navigation (prev/next) buttons', 'foogallery' ),
-				'section'  => $section,
-				'subsection' => array( 'lightbox-controls' => __( 'Controls', 'foogallery' ) ),
+				'section_id' => $section_id,
+				'subsection_id' => 'lightbox-controls',
 				'type'     => 'radio',
 				'default'  => 'yes',
 				'choices'  => array(
@@ -1050,7 +1050,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 			);
 
 			//find the index of the first Hover Effect field
-			$index = foogallery_admin_fields_find_index_of_section( $fields, __( 'Hover Effects', 'foogallery' ) );
+			$index = foogallery_admin_fields_find_index_of_section( $fields, 'hover-effects' );
 
 			array_splice( $fields, $index, 0, $field );
 

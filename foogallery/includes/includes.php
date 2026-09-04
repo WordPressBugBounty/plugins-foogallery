@@ -52,6 +52,7 @@ require_once FOOGALLERY_PATH . 'includes/class-foogallery-animated-gif-support.p
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-cache.php';
 require_once FOOGALLERY_PATH . 'includes/class-thumbnail-dimensions.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-common-fields.php';
+require_once FOOGALLERY_PATH . 'includes/class-foogallery-no-javascript-fallback.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-lazyload.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-paging.php';
 require_once FOOGALLERY_PATH . 'includes/class-foogallery-license-constant-handler.php';

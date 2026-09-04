@@ -36,6 +36,9 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 
 			// Adjust the default settings for this layout
 			add_filter( 'foogallery_override_gallery_template_fields_defaults-thumbnail', array( $this, 'field_defaults' ), 10, 1 );
+
+			// Add responsive position rules for the single thumbnail.
+			add_action( 'foogallery_template_style_block-thumbnail', array( $this, 'add_css' ), 10, 2 );
         }
 
 		/**
@@ -118,7 +121,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
                     array(
                         'id'	  => 'help',
                         'type'	  => 'html',
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'help'	  => true,
 						'title'   => __( 'Single Thumbnail Layout', 'foogallery' ),
                         'desc'	  => __( 'This gallery layout only shows a single thumbnail, but the true power shines through when the thumbnail is clicked, because then the lightbox takes over and the user can view all the images in the gallery.', 'foogallery' ),
@@ -127,7 +130,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
                         'id'      => 'thumbnail_dimensions',
                         'title'   => __( 'Size', 'foogallery' ),
 	                        'desc'    => __( 'Choose the size of your thumbnail.', 'foogallery' ),
-	                        'section' => __( 'General', 'foogallery' ),
+	                        'section_id' => 'general',
 	                        'alias'   => 'thumbnail_size',
 	                        'type'    => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
@@ -144,7 +147,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
                         'id'      => 'position',
                         'title'   => __( 'Position', 'foogallery' ),
                         'desc'    => __( 'The position of the thumbnail related to the content around it.', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default' => 'fg-center',
                         'type'    => 'select',
                         'choices' => array(
@@ -154,6 +157,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 							'fg-float-left' => __( 'Float Left', 'foogallery' ),
                             'fg-float-right' => __( 'Float Right', 'foogallery' ),
                         ),
+						'mobile'  => true,
 						'row_data'=> array(
 							'data-foogallery-change-selector' => 'select',
 							'data-foogallery-preview' => 'shortcode'
@@ -162,7 +166,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 					array(
                         'id'      => 'show_as_stack',
                         'title'   => __( 'Stacked Effect', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default' => 'fg-stacked',
                         'type'    => 'radio',
                         'desc'	  => __( 'Show the thumbnails as a stack or pile of images.', 'foogallery' ),
@@ -179,7 +183,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
                     array(
                         'id'      => 'link_custom_url',
                         'title'   => __( 'Link To Custom URL', 'foogallery' ),
-                        'section' => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default' => '',
                         'type'    => 'checkbox',
                         'desc'	  => __( 'You can link your thumbnails to Custom URL\'s (if they are set on your attachments). Fallback will be to the full size image.', 'foogallery' ),
@@ -196,7 +200,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 	                array(
 		                'id'      => 'exclude_featured_image',
 		                'title'   => __( 'Exclude Featured Image', 'foogallery' ),
-		                'section' => __( 'General', 'foogallery' ),
+		                'section_id' => 'general',
 		                'default' => '',
 		                'type'    => 'checkbox',
 		                'desc'	  => __( 'You can exclude the featured image from the images shown in the lightbox.', 'foogallery' ),
@@ -230,14 +234,14 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 				'id'      => 'caption_override_help',
 				'title'   => __( 'Caption Override Help', 'foogallery' ),
 				'desc'    => __( 'You can include dynamic placeholders in the override title and description, eg. <code>{{gallery-count}}</code> and <code>{{gallery-title}}</code>.', 'foogallery' ),
-				'section' => __( 'Captions', 'foogallery' ),
+				'section_id' => 'captions',
 				'type'    => 'help'
 			);
 
 			$new_fields[] = array(
 				'id'      => 'caption_title',
 				'title'   => __('Override Title', 'foogallery'),
-				'section' => __( 'Captions', 'foogallery' ),
+				'section_id' => 'captions',
 				'desc'    => __('Leave blank if you do not want a caption title.', 'foogallery'),
 				'type'    => 'text',
 				'row_data'=> array(
@@ -248,7 +252,7 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 			$new_fields[] = array(
 				'id'      => 'caption_description',
 				'title'   => __('Override Description', 'foogallery'),
-				'section' => __( 'Captions', 'foogallery' ),
+				'section_id' => 'captions',
 				'desc'    => __('Leave blank if you do not want a caption description.', 'foogallery'),
 				'type'    => 'textarea',
 				'row_data'=> array(
@@ -301,6 +305,39 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 			    $dimensions['crop'] = true;
             }
 			return $dimensions;
+		}
+
+		/**
+		 * Add a mobile-only position override for the single thumbnail.
+		 *
+		 * @param array      $css     Gallery CSS rules.
+		 * @param FooGallery $gallery Gallery instance.
+		 *
+		 * @return array
+		 */
+		function add_css( $css, $gallery ) {
+			$position = foogallery_gallery_template_mobile_setting( 'mobile_position', null );
+			$rules    = array(
+				'fg-center'      => array( 'text-align:center;float:none;width:100%;', 'grid-template-columns:1fr auto 1fr;', 'grid-column:2 / 3;' ),
+				'fg-left'        => array( 'text-align:left;float:none;width:100%;', 'grid-template-columns:auto 1fr;', 'grid-column:1 / 2;' ),
+				'fg-right'       => array( 'text-align:right;float:none;width:100%;', 'grid-template-columns:1fr auto;', 'grid-column:2 / 3;' ),
+				'fg-float-left'  => array( 'text-align:left;float:left;width:auto;', 'display:inline-grid;grid-template-columns:auto;', 'grid-column:1 / 2;' ),
+				'fg-float-right' => array( 'text-align:right;float:right;width:auto;', 'display:inline-grid;grid-template-columns:auto;', 'grid-column:1 / 2;' ),
+			);
+
+			if ( ! isset( $rules[ $position ] ) ) {
+				return $css;
+			}
+
+			$id          = sanitize_html_class( $gallery->container_id() );
+			$rule        = $rules[ $position ];
+			$mobile_rule = '#' . $id . '{' . $rule[0] . '}#' . $id . '.fg-stacked{' . $rule[1] . '}#' . $id . '.fg-stacked .fg-item{' . $rule[2] . '}';
+			$preview     = '.foogallery-preview-wrapper.viewport-mobile #' . $id . '{' . $rule[0] . '}.foogallery-preview-wrapper.viewport-mobile #' . $id . '.fg-stacked{' . $rule[1] . '}.foogallery-preview-wrapper.viewport-mobile #' . $id . '.fg-stacked .fg-item{' . $rule[2] . '}';
+
+			$css[] = '@media only screen and (max-width:' . foogallery_get_mobile_size() . 'px){' . $mobile_rule . '}';
+			$css[] = $preview;
+
+			return $css;
 		}
 
 		/**

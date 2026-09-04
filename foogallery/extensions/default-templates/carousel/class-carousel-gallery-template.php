@@ -33,6 +33,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 
 			//add the data options needed for grid pro
 			add_filter( 'foogallery_build_container_data_options-carousel', array( $this, 'add_data_options' ), 10, 3 );
+			add_filter( 'foogallery_build_container_mobile_data_options-carousel', array( $this, 'add_mobile_data_options' ), 10, 3 );
 
 			add_action( 'foogallery_render_gallery_template_field_custom', array( $this, 'admin_custom_fields' ), 10, 3 );
 
@@ -151,7 +152,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 				?>
 				<script type="text/javascript">
 					jQuery(function ($) {
-						$('.foogallery-field-carousel-gutter-preset').on('click', function(e) {
+						$('.foogallery-field-carousel-gutter-preset[data-target="<?php echo esc_js( $id ); ?>"]').on('click', function(e) {
 							e.preventDefault();
 
 							$('#FooGallerySettings_<?php echo esc_js( $id ); ?>_min').val( $(this).data('min') );
@@ -161,8 +162,8 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					});
 				</script>
 				<?php
-				echo '&nbsp;&nbsp;<a data-min="-40" data-max="-20" data-units="%" class="foogallery-field-carousel-gutter-preset" href="#" >' . esc_html__( 'Preset 1', 'foogallery' ) . '</a>';
-				echo '&nbsp;&nbsp;<a data-min="5" data-max="10" data-units="px" class="foogallery-field-carousel-gutter-preset" href="#" >' . esc_html__( 'Preset 2', 'foogallery' ) . '</a>';
+				echo '&nbsp;&nbsp;<a data-target="' . esc_attr( $id ) . '" data-min="-40" data-max="-20" data-units="%" class="foogallery-field-carousel-gutter-preset" href="#" >' . esc_html__( 'Preset 1', 'foogallery' ) . '</a>';
+				echo '&nbsp;&nbsp;<a data-target="' . esc_attr( $id ) . '" data-min="5" data-max="10" data-units="px" class="foogallery-field-carousel-gutter-preset" href="#" >' . esc_html__( 'Preset 2', 'foogallery' ) . '</a>';
 			}
 		}
 
@@ -199,6 +200,50 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			$options['template']['activePosition'] = foogallery_gallery_template_setting( 'activePosition', 'center' );
 
 			return $options;
+		}
+
+		/**
+		 * Add the custom mobile Carousel gap options.
+		 *
+		 * Max Items is handled by the declarative mobile option mapping.
+		 *
+		 * @param array      $options    Mobile client options.
+		 * @param FooGallery $_gallery    Gallery instance (unused).
+		 * @param array      $_attributes Gallery container attributes (unused).
+		 *
+		 * @return array
+		 */
+		function add_mobile_data_options( $options, $_gallery, $_attributes ) {
+			$gutter = $this->normalize_gutter( foogallery_gallery_template_mobile_setting( 'mobile_gutter', null ) );
+			if ( null !== $gutter ) {
+				$options['template']['gutter'] = $gutter;
+			}
+
+			return $options;
+		}
+
+		/**
+		 * Normalize a Carousel gutter value for the client.
+		 *
+		 * @param mixed $value Raw gutter setting.
+		 *
+		 * @return array|null
+		 */
+		private function normalize_gutter( $value ) {
+			if ( ! is_array( $value ) || ! isset( $value['min'], $value['max'], $value['units'] ) || ! is_numeric( $value['min'] ) || ! is_numeric( $value['max'] ) ) {
+				return null;
+			}
+
+			$unit = in_array( $value['units'], array( '%', 'px' ), true ) ? $value['units'] : null;
+			if ( null === $unit ) {
+				return null;
+			}
+
+			return array(
+				'min'  => max( -1000, min( 1000, intval( $value['min'] ) ) ),
+				'max'  => max( -1000, min( 1000, intval( $value['max'] ) ) ),
+				'unit' => $unit,
+			);
 		}
 
 		/**
@@ -251,7 +296,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'       => 'thumbnail_dimensions',
 						'title'    => __( 'Thumbnail Size', 'foogallery' ),
 							'desc'     => __( 'Choose the size of your thumbnails.', 'foogallery' ),
-							'section'  => __( 'General', 'foogallery' ),
+							'section_id' => 'general',
 							'alias'    => 'thumbnail_size',
 							'type'     => 'thumb_size_no_crop',
 						'for'     => 'thumbnail_dimensions_width',
@@ -269,10 +314,11 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'       => 'gutter',
 						'title'    => __( 'Thumbnail Gap', 'foogallery' ),
 						'desc'     => __( 'The minimum gap or spacing to apply to thumbnails. Negative values create an overlap. ', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => array( 'min' => -40, 'max' => -20, 'units' => '%' ),
 						'type'     => 'carousel_gutter',
 						'for'      => 'gutter_min',
+						'mobile'   => true,
 						'row_data' => array(
 							'data-foogallery-change-selector' => ':input',
 							'data-foogallery-preview'         => 'shortcode'
@@ -283,9 +329,13 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'alias'    => 'max_items',
 						'title'    => __( 'Max Items To Show', 'foogallery' ),
 						'desc'     => __( 'The total number of items displayed in the carousel. This should be an ODD number as the active item is the center and the remainder make up each side.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => '5',
 						'type'     => 'number',
+						'mobile'   => array(
+							'default'     => '3',
+							'data_option' => array( 'template', 'maxItems' ),
+						),
 						'row_data' => array(
 							'data-foogallery-change-selector' => 'input',
 							'data-foogallery-preview'         => 'shortcode'
@@ -295,7 +345,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'       => 'scale',
 						'title'    => __( 'Scaling', 'foogallery' ),
 						'desc'     => __( 'How to scale the items that are not in the center. Each item to the side is scaled down by this factor.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => '0.12',
 						'type'     => 'select',
 						'choices' => array(
@@ -315,7 +365,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'alias'    => 'center_on_click',
 						'title'    => __( 'Side Items Click', 'foogallery' ),
 						'desc'     => __( 'What happens when an item in the carousel is clicked.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => 'true',
 						'type'     => 'radio',
 						'class'    => 'foogallery-radios-12em',
@@ -332,7 +382,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'      => 'align',
 						'title'   => __( 'Alignment', 'foogallery' ),
 						'desc'    => __( 'Visual alignment of the entire visible item set. Use Left or Right to align the whole set to that side.', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default' => 'center',
 						'type'    => 'radio',
 						'choices' => array(
@@ -350,7 +400,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'alias'   => 'active_position',
 						'title'   => __( 'Active Item Position', 'foogallery' ),
 						'desc'    => __( 'Position of the active item in the visible sequence. Use Start or End to keep the active item anchored to that side during navigation.', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default' => 'center',
 						'type'    => 'radio',
 						'choices' => array(
@@ -367,7 +417,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'       => 'autoplay_time',
 						'title'    => __( 'Autoplay Time', 'foogallery' ),
 						'desc'     => __( 'The number in seconds an item is displayed. Set to zero to turn off autoplay.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => '0',
 						'min'      => 0,
 						'type'     => 'number',
@@ -380,7 +430,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'       => 'autoplay_interaction',
 						'title'    => __( 'Autoplay Mode', 'foogallery' ),
 						'desc'     => __( 'Specifies what occurs once/when a user has interacted with the carousel. Please Note: for touch devices autoplay is paused on "touchstart" and is only resumed once the user has not interacted with the carousel for the supplied time.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => 'pause',
 						'type'     => 'radio',
 						'choices' => array(
@@ -396,7 +446,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 						'id'       => 'inverted',
 						'title'    => __( 'Invert Control Theme', 'foogallery' ),
 						'desc'     => __( 'Inverts the theme used for the carousel controls (paging and navigation buttons) based on the theme under appearance.', 'foogallery' ),
-						'section'  => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default'  => '',
 						'type'     => 'radio',
 						'choices' => array(
@@ -411,13 +461,14 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
                     array(
                         'id'       => 'show_nav_arrows',
                         'title'    => __( 'Show Nav. Arrows', 'foogallery' ),
-                        'section'  => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default'  => '',
                         'type'     => 'radio',
                         'choices' => array(
                             '' => __( 'Shown', 'foogallery' ),
                             'fg-carousel-hide-nav-arrows' => __( 'Hidden', 'foogallery' ),
                         ),
+						'mobile' => true,
                         'row_data' => array(
                             'data-foogallery-change-selector' => 'input',
                             'data-foogallery-preview'         => 'shortcode'
@@ -426,13 +477,14 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
                     array(
                         'id'       => 'show_pagination',
                         'title'    => __( 'Show Pagination Dots', 'foogallery' ),
-                        'section'  => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default'  => '',
                         'type'     => 'radio',
                         'choices' => array(
                             '' => __( 'Shown', 'foogallery' ),
                             'fg-carousel-hide-pagination' => __( 'Hidden', 'foogallery' ),
                         ),
+						'mobile' => true,
                         'row_data' => array(
                             'data-foogallery-change-selector' => 'input',
                             'data-foogallery-preview'         => 'shortcode'
@@ -442,7 +494,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
                         'id'       => 'show_progress',
                         'title'    => __( 'Show Progress Bar', 'foogallery' ),
 						'desc'     => __( 'The progress bar is only shown when the carousel is in autoplay mode (set Autoplay Time to a value greater than 0).', 'foogallery' ),
-                        'section'  => __( 'General', 'foogallery' ),
+                        'section_id' => 'general',
                         'default'  => '',
                         'type'     => 'radio',
                         'choices' => array(
@@ -457,7 +509,7 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					array(
 						'id'      => 'thumbnail_link',
 						'title'   => __( 'Thumbnail Link', 'foogallery' ),
-						'section' => __( 'General', 'foogallery' ),
+						'section_id' => 'general',
 						'default' => 'image',
 						'type'    => 'thumb_link',
 					),
@@ -557,6 +609,25 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 			if ( is_array( $dimensions ) && array_key_exists( 'width', $dimensions ) && intval( $dimensions['width'] ) > 0 ) {
 				$width = intval( $dimensions['width'] );
 				$css[] = '#' . $id . ' .fg-image { width: ' . $width . 'px; }';
+			}
+
+			$mobile_nav = foogallery_gallery_template_mobile_setting( 'mobile_show_nav_arrows', null );
+			if ( is_scalar( $mobile_nav ) && in_array( (string) $mobile_nav, array( '', 'fg-carousel-hide-nav-arrows' ), true ) ) {
+				$display      = 'fg-carousel-hide-nav-arrows' === $mobile_nav ? 'none' : 'flex';
+				$size         = 'fg-carousel-hide-nav-arrows' === $mobile_nav ? '0px' : '48px';
+				$mobile_rule  = '#' . $id . '.foogallery { --fg-carousel-navigation-size: ' . $size . '; } #' . $id . ' .fg-carousel-prev, #' . $id . ' .fg-carousel-next { display: ' . $display . '; }';
+				$preview_rule = '.foogallery-preview-wrapper.viewport-mobile #' . $id . '.foogallery { --fg-carousel-navigation-size: ' . $size . '; } .foogallery-preview-wrapper.viewport-mobile #' . $id . ' .fg-carousel-prev, .foogallery-preview-wrapper.viewport-mobile #' . $id . ' .fg-carousel-next { display: ' . $display . '; }';
+				$css[]        = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]        = $preview_rule;
+			}
+
+			$mobile_pagination = foogallery_gallery_template_mobile_setting( 'mobile_show_pagination', null );
+			if ( is_scalar( $mobile_pagination ) && in_array( (string) $mobile_pagination, array( '', 'fg-carousel-hide-pagination' ), true ) ) {
+				$display      = 'fg-carousel-hide-pagination' === $mobile_pagination ? 'none' : 'flex';
+				$mobile_rule  = '#' . $id . ' .fg-carousel-bottom { display: ' . $display . '; }';
+				$preview_rule = '.foogallery-preview-wrapper.viewport-mobile #' . $id . ' .fg-carousel-bottom { display: ' . $display . '; }';
+				$css[]        = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]        = $preview_rule;
 			}
 
 			return $css;
