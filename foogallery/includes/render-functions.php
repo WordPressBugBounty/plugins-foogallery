@@ -28,6 +28,91 @@ function foogallery_attachment_html_image_src( $foogallery_attachment, $args = a
 }
 
 /**
+ * Return explicitly selected, valid mobile caption source settings.
+ *
+ * Missing and empty settings inherit the desktop DOM (Same as desktop).
+ *
+ * @return array
+ */
+function foogallery_get_mobile_caption_sources() {
+	global $current_foogallery_template;
+	if ( empty( $current_foogallery_template ) ) {
+		return array();
+	}
+
+	$template = foogallery_get_gallery_template( $current_foogallery_template );
+	if ( ! is_array( $template ) || ! isset( $template['fields'] ) ) {
+		return array();
+	}
+
+	$sources = array();
+	$fields  = foogallery_get_fields_for_template( $template );
+	foreach ( array( 'title' => 'caption_title_source', 'description' => 'caption_desc_source' ) as $key => $field_id ) {
+		foreach ( $fields as $field ) {
+			if ( ! is_array( $field ) || $field_id !== ( $field['id'] ?? '' ) || ! is_array( $field['choices'] ?? null ) ) {
+				continue;
+			}
+
+			$source = foogallery_gallery_template_mobile_setting( 'mobile_' . $field_id, '__foogallery_mobile_inherit__' );
+			if ( is_scalar( $source ) && '' !== (string) $source && array_key_exists( (string) $source, $field['choices'] ) ) {
+				$sources[ $key ] = (string) $source;
+			}
+			break;
+		}
+	}
+
+	return $sources;
+}
+
+/**
+ * Resolve explicitly selected mobile thumbnail caption sources.
+ *
+ * The returned values are thumbnail-only overrides. The canonical attachment
+ * caption properties remain untouched for desktop and lightbox consumers.
+ *
+ * @param FooGalleryAttachment $foogallery_attachment FooGallery attachment.
+ * @return array
+ */
+function foogallery_get_mobile_caption_overrides( $foogallery_attachment ) {
+	if ( ! is_object( $foogallery_attachment ) ) {
+		return array();
+	}
+
+	$sources       = foogallery_get_mobile_caption_sources();
+	$overrides     = array();
+	$caption_types = array(
+		'title'       => array( 'general' => 'foogallery_caption_title_source', 'type' => 'title' ),
+		'description' => array( 'general' => 'foogallery_caption_desc_source', 'type' => 'desc' ),
+	);
+
+	foreach ( $caption_types as $key => $caption ) {
+		if ( ! array_key_exists( $key, $sources ) ) {
+			continue;
+		}
+
+		$source = $sources[ $key ];
+		if ( '' === $source ) {
+			$source = call_user_func( $caption['general'] );
+		}
+
+		if ( 'none' === $source ) {
+			$value = '';
+		} elseif ( 'title' === $caption['type'] && $foogallery_attachment->_post instanceof WP_Post ) {
+			$value = foogallery_get_caption_title_for_attachment( $foogallery_attachment->_post, $source );
+		} elseif ( 'desc' === $caption['type'] && $foogallery_attachment->_post instanceof WP_Post ) {
+			$value = foogallery_get_caption_desc_for_attachment( $foogallery_attachment->_post, $source );
+		} else {
+			$value = foogallery_get_caption_by_source( $foogallery_attachment, $source, $caption['type'] );
+		}
+		$value = is_scalar( $value ) ? foogallery_sanitize_full( (string) $value ) : '';
+
+		$overrides[ $key ] = $value;
+	}
+
+	return $overrides;
+}
+
+/**
  * Returns the attachment img HTML
  *
  * @param FooGalleryAttachment $foogallery_attachment
@@ -180,6 +265,11 @@ function foogallery_build_attachment_html_anchor_attributes( $foogallery_attachm
 
 	if ( isset( $foogallery_attachment->caption_desc ) ) {
 		$attr['data-caption-desc'] = foogallery_sanitize_full( $foogallery_attachment->caption_desc );
+	}
+
+	$mobile_captions = foogallery_get_mobile_caption_overrides( $foogallery_attachment );
+	if ( ! empty( $mobile_captions ) ) {
+		$attr['data-mobile-captions'] = wp_json_encode( $mobile_captions );
 	}
 
 	// set the ID attribute for the attachment.
@@ -591,7 +681,7 @@ function foogallery_build_json_from_attachment( $foogallery_attachment, $args = 
 
 		$json_object = foogallery_build_json_object_from_attachment( $foogallery_attachment, $args );
 
-		return foogallery_json_encode( $json_object );
+		return foogallery_json_encode( $json_object, true );
 	}
 
 	return '';

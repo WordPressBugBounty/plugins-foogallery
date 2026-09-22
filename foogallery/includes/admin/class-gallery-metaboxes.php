@@ -73,6 +73,10 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 				foreach ( $field_variants as $field_variant ) {
 					$field_id   = isset( $field_variant['id'] ) ? $field_variant['id'] : false;
 					$field_type = isset( $field_variant['type'] ) ? $field_variant['type'] : false;
+					// Developer JSON is authorized and validated by the advanced-settings save filter.
+					if ( 'custom_settings' === $field_id ) {
+						continue;
+					}
 					if ( $field_id && ( 'text' === $field_type || 'textarea' === $field_type ) ) {
 						$setting_id = $gallery_template . '_' . $field_id;
 						if ( isset( $settings[ $setting_id ] ) ) {

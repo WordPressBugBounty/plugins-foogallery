@@ -209,11 +209,13 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Fields' ) ) {
 
 				case 'thumb_size_no_crop':
 					$width = is_array( $field['value'] ) ? $field['value']['width'] : 150;
-					$height = is_array( $field['value'] ) ? $field['value']['height'] : 150;
 					echo '<label for="FooGallerySettings_' . $id . '_width">' . esc_html__( 'Width', 'foogallery' ) . '</label>';
 					echo '<input class="small-text" type="number" step="1" min="0" id="FooGallerySettings_' . $id . '_width" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . '][width]" value="' . esc_attr( $width ) . '" />';
-					echo '<label for="FooGallerySettings_' . $id . '_width">' . esc_html__( 'Height', 'foogallery' ) . '</label>';
-					echo '<input class="small-text" type="number" step="1" min="0" id="FooGallerySettings_' . $id . '_height" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . '][height]" value="' . esc_attr( $height ) . '" />';
+					if ( empty( $field['width_only'] ) ) {
+						$height = is_array( $field['value'] ) ? $field['value']['height'] : 150;
+						echo '<label for="FooGallerySettings_' . $id . '_width">' . esc_html__( 'Height', 'foogallery' ) . '</label>';
+						echo '<input class="small-text" type="number" step="1" min="0" id="FooGallerySettings_' . $id . '_height" name="' . FOOGALLERY_META_SETTINGS . '[' . $id . '][height]" value="' . esc_attr( $height ) . '" />';
+					}
 					break;
 
 				default:

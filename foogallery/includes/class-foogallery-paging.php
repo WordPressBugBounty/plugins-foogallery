@@ -158,9 +158,10 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 		function output_pagination_placeholder( $foogallery, $position ) {
 			if ( foogallery_current_gallery_has_cached_value('paging' ) ) {
 				$paging_options = foogallery_current_gallery_get_cached_value( 'paging' );
+				$page_size      = intval( $paging_options['size'] );
 
-				//check to see if the page size is less than the number of items
-				if ( $foogallery->attachment_count() > intval( $paging_options['size'] ) ) {
+				// Check that finite desktop paging creates more than one page.
+				if ( $page_size > 0 && $foogallery->attachment_count() > $page_size ) {
 
 					$paging_position = $paging_options['position'];
 					if ( $position === $paging_position || 'both' === $paging_position ) {
@@ -225,8 +226,8 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 					'step'    => '1',
 					'min'     => '0',
 					'mobile'  => array(
-						'default'     => 6,
-						'data_option' => array( 'paging', 'size' ),
+						'initial_value' => 6,
+						'data_option'   => array( 'paging', 'size' ),
 					),
 					'row_data'=> array(
 						'data-foogallery-change-selector' 		   => 'input',
@@ -472,7 +473,7 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 				return $options;
 			}
 			if ( ! is_scalar( $page_size ) || ! is_numeric( trim( (string) $page_size ) ) ) {
-				$page_size = 6;
+				return $options;
 			}
 
 			$options['paging']['size'] = max( 0, intval( $page_size ) );

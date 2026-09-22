@@ -21,7 +21,7 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 			//add custom attributes
 			add_filter( 'foogallery_build_container_attributes', array( $this, 'add_container_attributes' ), 10, 3 );
 
-			//sanitize custom attributes when gallery settings are saved
+			//sanitize and authorize developer settings when gallery settings are saved
 			add_filter( 'foogallery_save_gallery_settings', array( $this, 'save_custom_attribute_settings' ), 20, 3 );
 
 			//add custom class to container
@@ -61,17 +61,19 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 		 * @return array
 		 */
 		function add_advanced_fields( $fields, $template ) {
+			$custom_attribute_disabled = ! current_user_can( 'manage_options' );
+			$custom_attribute_row_data = $custom_attribute_disabled ? array( 'data-foogallery-locked' => 'true' ) : array();
+
 			$fields[] = array(
 				'id'       => 'custom_settings',
+				'disabled' => $custom_attribute_disabled,
+				'row_data' => $custom_attribute_row_data,
 				'title'    => __( 'Custom Settings', 'foogallery' ),
-				'desc'     => __( 'Add any custom settings to the gallery which will be merged with existing settings. To be used by developers only!', 'foogallery' ),
+				'desc'     => __( 'Add any custom settings to the gallery which will be merged with existing settings. Only administrators can edit this setting. JSON must be an object, at most 64 KiB and 32 levels deep, without prototype keys. To be used by developers only!', 'foogallery' ),
 				'section_id' => 'advanced',
 				'type'     => 'textarea',
 				'default'  => '',
 			);
-
-			$custom_attribute_disabled = ! current_user_can( 'manage_options' );
-			$custom_attribute_row_data = $custom_attribute_disabled ? array( 'data-foogallery-locked' => 'true' ) : array();
 
             $fields[] = array(
                 'id'       => 'custom_attribute_key',
@@ -138,14 +140,52 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 			$custom_settings = foogallery_gallery_template_setting( 'custom_settings', '' );
 
 			if ( !empty( $custom_settings ) ) {
-				$settings_array = @json_decode($custom_settings, true);
+				$validated = $this->validate_custom_settings( $custom_settings );
+				$settings_array = false !== $validated ? json_decode( $validated, true ) : null;
 
-				if ( isset( $settings_array ) ) {
+				if ( is_array( $settings_array ) ) {
 					$options = array_replace_recursive( $options, $settings_array );
 				}
 			}
 
 			return $options;
+		}
+
+		/**
+		 * Validate developer JSON before saving and before merging legacy metadata.
+		 *
+		 * @param mixed $value Unslashed JSON string.
+		 * @return string|false Original JSON, or false for invalid input.
+		 */
+		function validate_custom_settings( $value ) {
+			if ( ! is_string( $value ) || strlen( $value ) > 65536 ) {
+				return false;
+			}
+			if ( '' === trim( $value ) ) {
+				return '';
+			}
+			$decoded = json_decode( $value, false, 32 );
+			if ( JSON_ERROR_NONE !== json_last_error() || ! is_object( $decoded ) || ! $this->custom_settings_keys_are_safe( $decoded ) ) {
+				return false;
+			}
+			return $value;
+		}
+
+		/**
+		 * Reject prototype mutation keys at every level, including objects in arrays.
+		 *
+		 * @param mixed $value Decoded JSON value.
+		 * @return bool
+		 */
+		function custom_settings_keys_are_safe( $value ) {
+			if ( is_object( $value ) || is_array( $value ) ) {
+				foreach ( $value as $key => $child ) {
+					if ( in_array( $key, array( '__proto__', 'prototype', 'constructor' ), true ) || ! $this->custom_settings_keys_are_safe( $child ) ) {
+						return false;
+					}
+				}
+			}
+			return true;
 		}
 
 		/**
@@ -167,18 +207,18 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 		}
 
 		/**
-		 * Returns true when a gallery setting key stores custom attribute data.
+		 * Returns true when a gallery setting key stores protected developer data.
 		 *
 		 * @param string $key Setting key.
 		 *
 		 * @return bool
 		 */
 		function is_custom_attribute_setting_key( $key ) {
-			return is_string( $key ) && 1 === preg_match( '/_custom_attribute_(?:key|value)$/', $key );
+			return is_string( $key ) && 1 === preg_match( '/_custom_(?:attribute_(?:key|value)|settings)$/', $key );
 		}
 
 		/**
-		 * Sanitizes and authorizes saved custom attribute settings.
+		 * Sanitizes and authorizes saved custom attributes and developer JSON.
 		 *
 		 * @param array $settings  Incoming settings.
 		 * @param int   $post_id   Gallery post ID.
@@ -200,12 +240,29 @@ if ( ! class_exists( 'FooGallery_Advanced_Gallery_Settings' ) ) {
 				if ( is_array( $existing_settings ) ) {
 					foreach ( $existing_settings as $setting_key => $setting_value ) {
 						if ( $this->is_custom_attribute_setting_key( $setting_key ) ) {
-							$settings[ $setting_key ] = $setting_value;
+							$settings[ $setting_key ] = isset( $post_data[ FOOGALLERY_CPT_GALLERY . '_nonce' ] ) ? wp_slash( $setting_value ) : $setting_value;
 						}
 					}
 				}
 
 				return $settings;
+			}
+
+			foreach ( $settings as $setting_key => $setting_value ) {
+				if ( is_string( $setting_key ) && '_custom_settings' === substr( $setting_key, -16 ) ) {
+					// Native editor submissions are slashed; API callers supply plain values.
+					$slashed = isset( $post_data[ FOOGALLERY_CPT_GALLERY . '_nonce' ] );
+					$value = $this->validate_custom_settings( $slashed ? wp_unslash( $setting_value ) : $setting_value );
+					if ( false !== $value ) {
+						// Retain the existing HTML/JavaScript boundary without storing broken JSON.
+						$value = $this->validate_custom_settings( foogallery_sanitize_full( $value ) );
+					}
+					if ( false === $value ) {
+						$existing = get_post_meta( $post_id, FOOGALLERY_META_SETTINGS, true );
+						$value = isset( $existing[ $setting_key ] ) ? $existing[ $setting_key ] : '';
+					}
+					$settings[ $setting_key ] = $slashed ? wp_slash( $value ) : $value;
+				}
 			}
 
 			$gallery = ( $post_id > 0 && class_exists( 'FooGallery' ) ) ? FooGallery::get_by_id( $post_id ) : null;

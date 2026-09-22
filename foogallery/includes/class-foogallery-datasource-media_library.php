@@ -254,13 +254,18 @@ if ( ! class_exists( 'FooGallery_Datasource_MediaLibrary' ) ) {
 		 * @param $post_id
 		 * @param $form_post
 		 */
-		public function save_gallery_attachments($post_id, $form_post) {
+		public function save_gallery_attachments( $post_id, $form_post ) {
 			$datasource = foogallery_default_datasource();
-			if ( isset( $_POST[FOOGALLERY_META_DATASOURCE] ) ) {
-				$datasource = $_POST[FOOGALLERY_META_DATASOURCE];
+			if ( is_array( $form_post ) && isset( $form_post[ FOOGALLERY_META_DATASOURCE ] ) ) {
+				$datasource = sanitize_key( wp_unslash( $form_post[ FOOGALLERY_META_DATASOURCE ] ) );
 			}
 			if ( $datasource === foogallery_default_datasource() ) {
-				$attachments = apply_filters( 'foogallery_save_gallery_attachments', explode( ',', $_POST[FOOGALLERY_META_ATTACHMENTS] ), $post_id, $_POST );
+				$attachment_ids = is_array( $form_post ) && isset( $form_post[ FOOGALLERY_META_ATTACHMENTS ] )
+					? wp_unslash( $form_post[ FOOGALLERY_META_ATTACHMENTS ] )
+					: '';
+				$attachments    = foogallery_normalize_attachment_ids( $attachment_ids );
+				$attachments    = apply_filters( 'foogallery_save_gallery_attachments', $attachments, $post_id, $form_post );
+				$attachments    = foogallery_normalize_attachment_ids( $attachments );
 				update_post_meta( $post_id, FOOGALLERY_META_ATTACHMENTS, $attachments );
 			}
 		}

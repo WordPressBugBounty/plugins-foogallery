@@ -36,6 +36,7 @@ if ( ! class_exists( 'FooGallery_Admin' ) ) {
 			new FooGallery_Admin_Extensions();
 			new FooGallery_Attachment_Fields();
 			new FooGallery_Admin_Notices();
+			new FooGallery_Whitelabelling_Notice();
 			if ( apply_filters( 'foogallery_enable_custom_css_update_notice', false ) ) {
 				new FooGallery_Admin_Notice_CustomCSS();
 			}

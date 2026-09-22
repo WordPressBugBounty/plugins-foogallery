@@ -203,9 +203,9 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 		}
 
 		/**
-		 * Add the custom mobile Carousel gap options.
+		 * Add the custom mobile Carousel gap options and normalize scaling.
 		 *
-		 * Max Items is handled by the declarative mobile option mapping.
+		 * Max Items and Scaling use the declarative mobile option mapping.
 		 *
 		 * @param array      $options    Mobile client options.
 		 * @param FooGallery $_gallery    Gallery instance (unused).
@@ -214,6 +214,9 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 		 * @return array
 		 */
 		function add_mobile_data_options( $options, $_gallery, $_attributes ) {
+			if ( isset( $options['template']['scale'] ) ) {
+				$options['template']['scale'] = floatval( $options['template']['scale'] );
+			}
 			$gutter = $this->normalize_gutter( foogallery_gallery_template_mobile_setting( 'mobile_gutter', null ) );
 			if ( null !== $gutter ) {
 				$options['template']['gutter'] = $gutter;
@@ -343,6 +346,9 @@ if ( ! class_exists( 'FooGallery_Carousel_Gallery_Template' ) ) {
 					),
 					array(
 						'id'       => 'scale',
+						'mobile'   => array(
+							'data_option' => array( 'template', 'scale' ),
+						),
 						'title'    => __( 'Scaling', 'foogallery' ),
 						'desc'     => __( 'How to scale the items that are not in the center. Each item to the side is scaled down by this factor.', 'foogallery' ),
 						'section_id' => 'general',

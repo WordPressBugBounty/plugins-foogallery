@@ -867,6 +867,26 @@ function foogallery_mobile_settings_is_core_template(  $template_slug  ) {
 }
 
 /**
+ * Build mobile choices with an explicit empty inheritance option when declared.
+ *
+ * Derive from the final desktop choices so extension-provided sources survive.
+ *
+ * @param array $field  Desktop field definition.
+ * @param array $mobile Mobile declaration.
+ * @return array
+ */
+function foogallery_mobile_field_choices(  $field, $mobile  ) {
+    $choices = $mobile['choices'] ?? $field['choices'] ?? array();
+    if ( isset( $mobile['inherit_choice'] ) && is_array( $choices ) ) {
+        unset($choices['']);
+        $choices = array(
+            '' => $mobile['inherit_choice'],
+        ) + $choices;
+    }
+    return $choices;
+}
+
+/**
  * Expand a mobile declaration without applying entitlement checks.
  *
  * @param array  $field         Desktop field definition.
@@ -880,6 +900,9 @@ function foogallery_expand_mobile_field_unchecked(  $field, $default_value = nul
     }
     $mobile = ( is_array( $field['mobile'] ) ? $field['mobile'] : array() );
     $mobile_field = array_replace( $field, $mobile );
+    if ( isset( $mobile['inherit_choice'] ) ) {
+        $mobile_field['choices'] = foogallery_mobile_field_choices( $field, $mobile );
+    }
     $mobile_field['id'] = ( isset( $mobile['id'] ) ? $mobile['id'] : 'mobile_' . $field['id'] );
     if ( !array_key_exists( 'alias', $mobile ) ) {
         $base_alias = ( !empty( $field['alias'] ) ? $field['alias'] : $field['id'] );
@@ -2110,6 +2133,26 @@ function foogallery_build_default_settings_for_gallery_template(  $template_name
 }
 
 /**
+ * Build mobile values to seed only when creating a gallery from scratch.
+ *
+ * Initial values are saved overrides, not fallbacks for existing galleries.
+ * Only mobile fields available to the current user are included.
+ *
+ * @param string $template_name Gallery template slug.
+ * @return array
+ */
+function foogallery_build_initial_mobile_settings(  $template_name  ) {
+    $settings = array();
+    foreach ( foogallery_get_fields_for_template( $template_name ) as $field ) {
+        $mobile_field = foogallery_get_mobile_field_for_template_field( $field, null, $template_name );
+        if ( false !== $mobile_field && isset( $field['mobile']['initial_value'] ) ) {
+            $settings[$template_name . '_' . $mobile_field['id']] = $field['mobile']['initial_value'];
+        }
+    }
+    return $settings;
+}
+
+/**
  * Compare responsive setting values after normalizing scalar form values.
  *
  * HTML form controls submit numbers and booleans as strings, while template
@@ -2334,10 +2377,12 @@ function foogallery_create_gallery(  $template, $attachment_ids  ) {
         true
     );
     $settings = array();
+    $copied_settings = false;
     //set default settings if there are any, and also if the template is the same as the default
     if ( foogallery_default_gallery_template() === $template ) {
         $default_gallery_id = foogallery_get_setting( 'default_gallery_settings' );
         if ( $default_gallery_id ) {
+            $copied_settings = true;
             $settings = get_post_meta( $default_gallery_id, FOOGALLERY_META_SETTINGS, true );
             add_post_meta(
                 $gallery_id,
@@ -2386,13 +2431,16 @@ function foogallery_create_gallery(  $template, $attachment_ids  ) {
                 );
         }
     }
+    if ( !$copied_settings ) {
+        $settings = array_merge( foogallery_build_initial_mobile_settings( $template ), $settings );
+    }
     add_post_meta(
         $gallery_id,
         FOOGALLERY_META_SETTINGS,
         $settings,
         true
     );
-    $attachments = explode( ',', $attachment_ids );
+    $attachments = foogallery_normalize_attachment_ids( $attachment_ids );
     update_post_meta( $gallery_id, FOOGALLERY_META_ATTACHMENTS, $attachments );
     return $gallery_id;
 }
@@ -2755,17 +2803,22 @@ function foogallery_is_pro() {
 /**
  * Safe function for encoding objects to json
  *
- * @param $value
+ * @param mixed $value Value to encode.
+ * @param bool  $html_safe Escape HTML-sensitive characters for inline script contents.
  *
  * @return false|string
  */
-function foogallery_json_encode(  $value  ) {
+function foogallery_json_encode(  $value, $html_safe = false  ) {
     $flags = JSON_UNESCAPED_SLASHES;
     if ( defined( 'JSON_UNESCAPED_UNICODE' ) ) {
         $flags = JSON_UNESCAPED_UNICODE | $flags;
     }
     $flags = apply_filters( 'foogallery_json_encode_flags', $flags );
-    return json_encode( $value, $flags );
+    // Script element contents need HTML-safe JSON regardless of filtered flags.
+    if ( $html_safe ) {
+        $flags |= JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+    }
+    return wp_json_encode( $value, $flags );
 }
 
 /**

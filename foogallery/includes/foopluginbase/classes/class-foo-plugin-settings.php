@@ -217,7 +217,7 @@ if ( !class_exists( 'Foo_Plugin_Settings_v2_2' ) ) {
 
 			$defaults = array(
 				'id'          => 'default_field',
-				'title'       => 'Default Field',
+				'title'       => '',
 				'desc'        => '',
 				'default'     => '',
 				'placeholder' => '',

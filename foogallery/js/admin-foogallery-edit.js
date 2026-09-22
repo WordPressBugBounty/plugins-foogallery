@@ -16,6 +16,12 @@ FooGallery.autoEnabled = false;
     FOOGALLERY.current_media_selector_modals = false;
     FOOGALLERY.current_media_selector_input = false;
 
+    // A visually hidden row may still be needed by the other viewport.
+    FOOGALLERY.isSettingDependencyInactive = function($field) {
+        var active = $field.attr('data-foogallery-dependency-active');
+        return active === 'false' || (active === undefined && $field.hasClass('foogallery_template_field_template_hidden'));
+    };
+
     FOOGALLERY.enforceLockedSettingFields = function($container) {
         $container.find(FOOGALLERY.lockedSettingFieldSelector)
             .find(':input, range-input')
@@ -24,11 +30,13 @@ FooGallery.autoEnabled = false;
 
     FOOGALLERY.enableUnlockedSettingFields = function($container) {
         $container.find(':input').not(function() {
-            return $(this).closest(FOOGALLERY.lockedSettingFieldSelector).length > 0;
+            return $(this).closest(FOOGALLERY.lockedSettingFieldSelector).length > 0 ||
+                FOOGALLERY.isSettingDependencyInactive($(this).closest('.foogallery_template_field'));
         }).prop('disabled', false);
 
         $container.find('range-input').each(function() {
-            if ($(this).closest(FOOGALLERY.lockedSettingFieldSelector).length === 0) {
+            if ($(this).closest(FOOGALLERY.lockedSettingFieldSelector).length === 0 &&
+                !FOOGALLERY.isSettingDependencyInactive($(this).closest('.foogallery_template_field'))) {
                 this.removeAttribute('disabled');
             }
         });
@@ -37,7 +45,7 @@ FooGallery.autoEnabled = false;
 			var $control = $(this),
 				$field = $control.closest('.foogallery_template_field'),
 				locked = $field.attr('data-foogallery-locked') !== undefined,
-				hidden = $field.hasClass('foogallery_template_field_template_hidden');
+				hidden = FOOGALLERY.isSettingDependencyInactive($field);
 
 			$control.prop('disabled', locked || hidden);
 		});
@@ -106,8 +114,9 @@ FooGallery.autoEnabled = false;
 			$('.foogallery-preview-actions .foogallery-viewport-btn').on('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation(); // Prevent event bubbling
-                var viewport = $(this).data('viewport');
-                self.setViewport(viewport);
+                var viewport = $(this).data('viewport'),
+                    scroll = viewport !== self.currentViewport ? FOOGALLERY.preservePreviewViewportScroll(this) : null;
+                self.setViewport(viewport, scroll);
             });
 
 			$('#foogallery_settings').on('click', '.foogallery-setting-viewport-btn', function(e) {
@@ -128,7 +137,7 @@ FooGallery.autoEnabled = false;
 			}
         },
         
-        setViewport: function(viewport) {
+        setViewport: function(viewport, scroll) {
 			if ($.inArray(viewport, this.viewports) === -1) return;
 
 			var previousViewport = this.currentViewport,
@@ -175,13 +184,18 @@ FooGallery.autoEnabled = false;
 					instance = $gallery.data('__FooGallery__');
 
                 if (instance instanceof FooGallery.Template) {
-                    FOOGALLERY.updateGalleryPreview(true, true);
+                    FOOGALLERY.updateGalleryPreview(true, true, scroll && scroll.finish);
+                } else if (scroll) {
+                    scroll.finish();
                 }
+            } else if (scroll) {
+                scroll.finish();
             }
 
             if (viewportChanged) {
                 $('body').trigger('foogallery-gallery-preview-viewport-changed', [viewport, previousViewport]);
             }
+            if (scroll) scroll.restore();
         },
 
 		updateResponsiveSettings: function() {
@@ -189,17 +203,39 @@ FooGallery.autoEnabled = false;
 				viewport = this.currentViewport === 'mobile' ? 'mobile' : 'desktop';
 
 			$('.foogallery_template_field[data-foogallery-mobile-friendly]').each(function() {
-				self.setResponsiveSettingViewport($(this), viewport);
+				self.setResponsiveSettingViewport($(this), viewport, false);
 			});
 			$('.foogallery_template_field[data-foogallery-mobile-locked]').each(function() {
-				self.setResponsiveSettingViewport($(this), viewport);
+				self.setResponsiveSettingViewport($(this), viewport, false);
 			});
 		},
 
-		setResponsiveSettingViewport: function($field, viewport) {
+		setResponsiveSettingViewport: function($field, viewport, updateDependents) {
 			if (!$field.length || $.inArray(viewport, ['desktop', 'mobile']) === -1) return;
 
 			$field.attr('data-foogallery-setting-viewport', viewport);
+			FOOGALLERY.updateShortcodeArgumentHelpers($field);
+
+            // Follow a parent's device switch through shared and responsive children.
+            if (updateDependents !== false) {
+                var self = this,
+                    pending = [$field.attr('data-foogallery-setting-id')],
+                    visited = [],
+                    $dependents = $field.closest('.foogallery-settings-container')
+                        .find('[data-foogallery-show-when-field]');
+                while (pending.length) {
+                    var parentId = pending.shift();
+                    if (!parentId || visited.indexOf(parentId) !== -1) continue;
+                    visited.push(parentId);
+                    $dependents.each(function() {
+                        var $child = $(this);
+                        if ($child.attr('data-foogallery-show-when-field') === parentId) {
+                            pending.push($child.attr('data-foogallery-setting-id'));
+                            self.setResponsiveSettingViewport($child, viewport, false);
+                        }
+                    });
+                }
+            }
 
 			if ($field.is('[data-foogallery-mobile-locked]')) {
 				var isMobile = 'mobile' === viewport,
@@ -346,7 +382,7 @@ FooGallery.autoEnabled = false;
 		}
 
 		var locked = $target.attr('data-foogallery-locked') !== undefined,
-			hidden = $target.hasClass('foogallery_template_field_template_hidden'),
+			hidden = FOOGALLERY.isSettingDependencyInactive($target),
 			fallbackMode = $target.attr('data-foogallery-mobile-fallback-mode') || 'inherit',
 			settingType = $target.data('foogallery-setting-type'),
 			$desktopControl = $target.find('.foogallery-setting-control-desktop'),
@@ -440,7 +476,7 @@ FooGallery.autoEnabled = false;
 	FOOGALLERY.syncInheritedMobileSetting = function($field, changedElement) {
 		if (!$field.length ||
 			$field.attr('data-foogallery-mobile-fallback-mode') !== 'inherit' ||
-			$field.hasClass('foogallery_template_field_template_hidden') ||
+			FOOGALLERY.isSettingDependencyInactive($field) ||
 			$field.attr('data-foogallery-locked') !== undefined) return false;
 
 		var $desktopControl = $(changedElement).closest('.foogallery-setting-control-desktop'),
@@ -493,9 +529,67 @@ FooGallery.autoEnabled = false;
 		return true;
 	};
 
+	/**
+	 * Keep initialized inactive layouts out of the document. Retaining the original
+	 * elements preserves unsaved values, widget instances and direct event handlers.
+	 * Inactive fields are already disabled and excluded from gallery saves.
+	 */
+	FOOGALLERY.initTemplateSettingsStorage = function () {
+		if ( FOOGALLERY.templateSettings ) {
+			return;
+		}
+
+		FOOGALLERY.templateSettings = $(
+			'#foogallery_settings .foogallery-settings-container'
+		);
+		FOOGALLERY.templateSettings.each( function () {
+			const placeholder = document.createComment(
+				'FooGallery layout settings'
+			);
+			this.parentNode.insertBefore( placeholder, this );
+			$( this ).data( 'foogallery-settings-placeholder', placeholder );
+		} );
+
+		FOOGALLERY.templateSettings
+			.not( '.foogallery-settings-container-active' )
+			.detach();
+	};
+
+	/**
+	 * Mount a stored layout before persistence, visibility rules and extension hooks run.
+	 *
+	 * @param {string} template The selected gallery layout slug.
+	 */
+	FOOGALLERY.mountTemplateSettings = function ( template ) {
+		if ( ! FOOGALLERY.templateSettings ) {
+			return;
+		}
+
+		FOOGALLERY.templateSettings
+			.filter( '.foogallery-settings-container-' + template )
+			.each( function () {
+				const placeholder = $( this ).data(
+					'foogallery-settings-placeholder'
+				);
+				if (
+					! this.parentNode &&
+					placeholder &&
+					placeholder.parentNode
+				) {
+					placeholder.parentNode.insertBefore(
+						this,
+						placeholder.nextSibling
+					);
+				}
+			} );
+	};
+
 	FOOGALLERY.galleryTemplateChanged = function(reloadPreview) {
-		var selectedTemplate = FOOGALLERY.getSelectedTemplate(),
-			$settingsToShow = $('.foogallery-settings-container-' + selectedTemplate),
+		const selectedTemplate = FOOGALLERY.getSelectedTemplate();
+
+		FOOGALLERY.mountTemplateSettings( selectedTemplate );
+
+		var $settingsToShow = $('.foogallery-settings-container-' + selectedTemplate),
 			$settingsToHide = $('.foogallery-settings-container').not($settingsToShow),
 			$currentTab = $settingsToHide.find('.foogallery-vertical-tab.foogallery-tab-active'),
 			currentTab = $currentTab.data('name'),
@@ -516,7 +610,7 @@ FooGallery.autoEnabled = false;
 				settingType = $this.data('foogallery-setting-type'),
 				$newSetting = $settingsToShow.find('[data-foogallery-setting-id="' + settingId + '"]');
 			
-			if ( $this.hasClass('foogallery_template_field_template_hidden') ) {
+			if ( FOOGALLERY.isSettingDependencyInactive($this) ) {
 				return;
 			}
 			
@@ -545,6 +639,10 @@ FooGallery.autoEnabled = false;
 		$settingsToHide.hide()
 			.removeClass('foogallery-settings-container-active')
 			.find(':input, range-input').attr('disabled', true);
+
+		if ( FOOGALLERY.templateSettings ) {
+			$settingsToHide.detach();
+		}
 
 		//show all fields for the selected template only
 		$settingsToShow.show()
@@ -603,9 +701,135 @@ FooGallery.autoEnabled = false;
 		}
 	};
 
-	FOOGALLERY.updateGalleryPreview = function( initGallery, setContainerHeight ) {
+	/**
+	 * Keep the clicked preview button in place through reinitialization and the
+	 * wrapper's 300ms width transition. Yield immediately to further user input.
+	 */
+	FOOGALLERY.preservePreviewViewportScroll = function ( button ) {
+		if ( FOOGALLERY.previewViewportScroll )
+			FOOGALLERY.previewViewportScroll.stop();
+		const before = button.getBoundingClientRect();
+		if (
+			! before.height ||
+			before.bottom <= 0 ||
+			before.top >= window.innerHeight
+		)
+			return null;
+
+		let frame,
+			stopped = false,
+			settleUntil = Infinity;
+		const deadline = Date.now() + 10000;
+		const inputs = [ 'wheel', 'touchmove', 'pointerdown', 'keydown' ];
+		const scroll = {
+			restore: function () {
+				if ( stopped ) return;
+				if ( ! button.isConnected || ! button.getClientRects().length ) {
+					scroll.stop();
+					return;
+				}
+				const displacement =
+					button.getBoundingClientRect().top - before.top;
+				if ( Math.abs( displacement ) > 1 ) {
+					window.scrollBy( {
+						top: displacement,
+						left: 0,
+						behavior: 'instant',
+					} );
+				}
+			},
+			finish: function () {
+				// Keep watching until the width animation has had time to finish.
+				settleUntil = Date.now() + 350;
+			},
+			stop: function () {
+				stopped = true;
+				window.cancelAnimationFrame( frame );
+				inputs.forEach( function ( type ) {
+					document.removeEventListener( type, onInput, true );
+				} );
+				if ( FOOGALLERY.previewViewportScroll === scroll )
+					FOOGALLERY.previewViewportScroll = null;
+			},
+		};
+		function onInput( event ) {
+			const activatesButton =
+				event.type === 'pointerdown' ||
+				( event.type === 'keydown' &&
+					( event.key === 'Enter' || event.key === ' ' ) );
+			if (
+				activatesButton &&
+				$( event.target ).closest(
+					'.foogallery-preview-actions .foogallery-viewport-btn'
+				).length
+			)
+				return;
+			scroll.stop();
+		}
+		function tick() {
+			if ( Date.now() >= Math.min( deadline, settleUntil ) ) {
+				scroll.stop();
+				return;
+			}
+			scroll.restore();
+			if ( ! stopped ) frame = window.requestAnimationFrame( tick );
+		}
+		FOOGALLERY.previewViewportScroll = scroll;
+		inputs.forEach( function ( type ) {
+			document.addEventListener( type, onInput, {
+				capture: true,
+				passive: true,
+			} );
+		} );
+		frame = window.requestAnimationFrame( tick );
+		return scroll;
+	};
+
+	/**
+	 * Release the preview's temporary height without moving visible settings.
+	 * Measure at completion so scrolling while an AJAX preview loads is respected.
+	 */
+	FOOGALLERY.releaseGalleryPreviewHeight = function ( $previewContainer ) {
+		if ( FOOGALLERY.previewViewportScroll ) {
+			$previewContainer.css( 'height', '' );
+			FOOGALLERY.previewViewportScroll.restore();
+			return;
+		}
+		const settings = document.getElementById( 'foogallery_settings' ),
+			preview = $previewContainer[ 0 ],
+			before = settings && settings.getBoundingClientRect(),
+			preservePosition =
+				before &&
+				preview &&
+				$previewContainer.is( ':visible' ) &&
+				before.height > 0 &&
+				before.bottom > 0 &&
+				before.top < window.innerHeight &&
+				preview.getBoundingClientRect().bottom <= before.top;
+
+		$previewContainer.css( 'height', '' );
+
+		if ( preservePosition ) {
+			// Use the remaining viewport displacement: native scroll anchoring may
+			// already have compensated for some or all of the height change.
+			const displacement = settings.getBoundingClientRect().top - before.top;
+			if ( Math.abs( displacement ) > 1 ) {
+				window.scrollBy( {
+					top: displacement,
+					left: 0,
+					behavior: 'instant',
+				} );
+			}
+		}
+	};
+
+	FOOGALLERY.updateGalleryPreview = function( initGallery, setContainerHeight, onUpdated ) {
 		var $preview = $('.foogallery_preview_container .foogallery'),
 			$preview_container = $('.foogallery_preview_container');
+		var releaseHeight = function() {
+			FOOGALLERY.releaseGalleryPreviewHeight($preview_container);
+			if (typeof onUpdated === 'function') onUpdated();
+		};
 
 		if ( setContainerHeight ) {
 			$preview_container.css('height', $preview_container.height());
@@ -618,7 +842,7 @@ FooGallery.autoEnabled = false;
 		if ( $preview.data('fg-common-fields') ) {
 			if ( initGallery ) {
 				$preview.foogallery( {}, function() {
-					$preview_container.css( 'height', '' );
+					releaseHeight();
 					if ( !$preview_container.find('.foogallery').data('foogallery-lightbox') ) {
 						$preview_container.find(".fg-thumb").off("click.foogallery").on("click", function (e) {
 							e.preventDefault();
@@ -627,11 +851,11 @@ FooGallery.autoEnabled = false;
 				} );
 			} else {
 				$preview.foogallery( 'layout' );
-				$preview_container.css( 'height', '' );
+				releaseHeight();
 			}
 		} else {
 			//reset the height to what it should be
-			$preview_container.css('height', '');
+			releaseHeight();
 		}
 	};
 
@@ -642,7 +866,7 @@ FooGallery.autoEnabled = false;
 
 		data = $shortcodeFields.find(':input').serializeArray();
 		$shortcodeFields.find('range-input').each(function() {
-			if (!this.hasAttribute('disabled')) {
+			if (!this.hasAttribute('disabled') && !$(this).closest('fieldset:disabled').length) {
 				data.push({name: this.name, value: this.value});
 			}
 		});
@@ -718,72 +942,83 @@ FooGallery.autoEnabled = false;
 	};
 
 	FOOGALLERY.handleSettingsShowRules = function() {
-		var selectedTemplate = FOOGALLERY.getSelectedTemplate();
+        var $rows = $('.foogallery-settings-container-active .foogallery_template_field'),
+            rowsById = Object.create(null),
+            states = { desktop: new Map(), mobile: new Map() },
+            editorViewports = new Map();
 
-		//hide any fields that need to be hidden initially
-		$('.foogallery-settings-container-active .foogallery_template_field[data-foogallery-hidden]').hide()
-			.addClass('foogallery_template_field_template_hidden')
-			.find(':input, range-input').attr('disabled', true);
+        $rows.each(function() {
+            rowsById[$(this).attr('data-foogallery-setting-id')] = $(this);
+        });
 
-		$('.foogallery-settings-container-active .foogallery_template_field[data-foogallery-show-when-field]').each(function(index, item) {
-			var $item = $(item),
-				itemLabel = $item.find('th label').text(),
-				fieldId = $item.data('foogallery-show-when-field'),
-				fieldValue = $item.data('foogallery-show-when-field-value'),
-                fieldOperator = $item.data('foogallery-show-when-field-operator'),
-				$fieldRow = $('.foogallery_template_field_template_id-' + selectedTemplate + '-' + fieldId),
-				$fieldSelector = $fieldRow.data('foogallery-value-selector'),
-				fieldValueAttribute = $fieldRow.data('foogallery-value-attribute'),
-				$fieldScope = $fieldRow.is('[data-foogallery-mobile-friendly]') ? $fieldRow.find('.foogallery-setting-control:not([hidden])') : $fieldRow,
-				$field = $fieldScope.find($fieldSelector),
-				showField = false;
+        function editorViewport($row) {
+            var row = $row[0];
+            if (editorViewports.has(row)) return editorViewports.get(row);
+            editorViewports.set(row, 'desktop');
+            var $parent = rowsById[$row.attr('data-foogallery-show-when-field')],
+                viewport = $row.is('[data-foogallery-mobile-friendly]')
+                    ? $row.attr('data-foogallery-setting-viewport')
+                    : ($parent ? editorViewport($parent) : 'desktop');
+            editorViewports.set(row, viewport || 'desktop');
+            return viewport || 'desktop';
+        }
 
-			if ( $fieldRow.length === 0 ) {
-				// No matching field was found, which means we can un-hide
-				showField = true;
-			} else {
+        // Evaluate ancestors before descendants, independently of DOM order and visibility.
+        function isActive($row, viewport) {
+            var row = $row[0], cache = states[viewport];
+            if (cache.has(row)) return cache.get(row);
+            cache.set(row, false); // A cyclic dependency cannot activate itself.
+            var parentId = $row.attr('data-foogallery-show-when-field'),
+                $parent = rowsById[parentId],
+                active = !$row.is('[data-foogallery-hidden]');
 
-				if ( $fieldRow.hasClass( 'foogallery_template_field_template_hidden' ) ) {
-					// The field we are checking is hidden, which means we should not rely on it
-				} else {
+            if (parentId) {
+                if (!$parent) {
+                    active = true; // Some layouts replace a parent with a separate panel.
+                } else if (isActive($parent, viewport)) {
+                    var $scope = $parent.is('[data-foogallery-mobile-friendly]')
+                            ? $parent.find('.foogallery-setting-control[data-viewport="' + viewport + '"]') : $parent,
+                        selector = $parent.data('foogallery-value-selector'),
+                        attribute = $parent.data('foogallery-value-attribute'),
+                        expected = $row.data('foogallery-show-when-field-value'),
+                        operator = $row.data('foogallery-show-when-field-operator');
+                    active = false;
+                    $scope.find(selector).each(function() {
+                        var actual = attribute ? $(this).attr(attribute) : $(this).val();
+                        if (operator === '!==') active = active || actual !== expected;
+                        else if (operator === 'regex') active = active || new RegExp(expected).test(actual);
+                        else if (operator === 'indexOf') active = active || (actual != null && actual.indexOf(expected) !== -1);
+                        else active = active || actual === expected;
+                    });
+                } else {
+                    active = false;
+                }
+            }
+            cache.set(row, active);
+            return active;
+        }
 
-					$field.each(function () {
-						var actualFieldValue = fieldValueAttribute ? $(this).attr(fieldValueAttribute) : $(this).val();
+        $rows.filter('[data-foogallery-hidden], [data-foogallery-show-when-field]').each(function() {
+            var $row = $(this),
+                visible = isActive($row, editorViewport($row)),
+                required = isActive($row, 'desktop') || isActive($row, 'mobile');
 
-						if (fieldOperator === '!==') {
-							if (actualFieldValue !== fieldValue) {
-								showField = true;
-							}
-						} else if (fieldOperator === 'regex') {
-							var re = new RegExp(fieldValue);
-							if (re.test(actualFieldValue)) {
-								showField = true;
-							}
-						} else if (fieldOperator === 'indexOf') {
-							if (actualFieldValue.indexOf(fieldValue) !== -1) {
-								showField = true;
-							}
-						} else if (actualFieldValue === fieldValue) {
-							showField = true;
-						}
-					});
-				}
+            $row.attr('data-foogallery-dependency-active', String(required))
+                .toggle(visible).toggleClass('foogallery_template_field_template_hidden', !visible);
 
-			}
+            // Submit both variants when either branch needs this row. The desktop
+            // value is also the fallback used when normalizing inherited mobile values.
+            $row.find(':input, range-input').attr('disabled', true);
+            if (required) {
+                FOOGALLERY.enableUnlockedSettingFields($row);
+                FOOGALLERY.persistResponsiveSettingState($row, $row);
+                $row.find('.colorpicker').not(function() {
+                    return $(this).closest(FOOGALLERY.lockedSettingFieldSelector).length > 0;
+                }).spectrum("enable");
+            }
+        });
 
-			if (showField) {
-				$item.show()
-					.removeClass('foogallery_template_field_template_hidden');
-
-				FOOGALLERY.enableUnlockedSettingFields($item);
-				$item.find('.colorpicker').not(function() {
-					return $(this).closest(FOOGALLERY.lockedSettingFieldSelector).length > 0;
-				}).spectrum("enable");
-				FOOGALLERY.enforceLockedSettingFields($item);
-			}
-		});
-
-		FOOGALLERY.handleSettingsTabs();
+        FOOGALLERY.handleSettingsTabs();
 	};
 
 	FOOGALLERY.handleSettingsTabs = function() {
@@ -1157,6 +1392,21 @@ FooGallery.autoEnabled = false;
 		});
 	};
 
+	FOOGALLERY.updateShortcodeArgumentHelpers = function($container) {
+		$container.find('label[data-setting]').each(function() {
+			var $label = $(this),
+				$helper = $label.find('.foogallery-shortcode-argument-helper'),
+				isMobile = $label.closest('.foogallery_template_field').attr('data-foogallery-setting-viewport') === 'mobile',
+				settingId = (isMobile && $label.attr('data-mobile-setting')) || $label.attr('data-setting');
+
+			if ( $helper.find('code').text() !== settingId ) {
+				window.clearTimeout($helper.data('foogalleryCopiedTimeout'));
+				$helper.removeClass('foogallery-shortcode-helper-copied').removeData('foogalleryCopiedTimeout');
+				$helper.find('code').text(settingId);
+			}
+		});
+	};
+
 	FOOGALLERY.initShortcodeHelpers = function() {
 		var $toggle = $('#foogallery_toggle_shortcode_helpers');
 
@@ -1165,9 +1415,9 @@ FooGallery.autoEnabled = false;
 		}
 
 		var helperSelector = '.foogallery-shortcode-argument-helper, .foogallery-shortcode-choice-helper, .foogallery-shortcode-select-helper',
-			copyHelperText = function(text) {
+			copyHelperText = function(text, onCopied) {
 				if (navigator.clipboard && navigator.clipboard.writeText) {
-					navigator.clipboard.writeText(text).catch(fallbackCopy);
+					navigator.clipboard.writeText(text).then(onCopied, fallbackCopy);
 				} else {
 					fallbackCopy();
 				}
@@ -1181,7 +1431,9 @@ FooGallery.autoEnabled = false;
 					$temp[0].select();
 
 					try {
-						document.execCommand('copy');
+						if ( document.execCommand('copy') ) {
+							onCopied();
+						}
 					} catch (err) {
 						console.log('Oops, unable to copy!');
 					}
@@ -1193,7 +1445,6 @@ FooGallery.autoEnabled = false;
 		$(document)
 			.off('mousedown.foogalleryShortcodeHelper', helperSelector)
 			.on('mousedown.foogalleryShortcodeHelper', helperSelector, function(e) {
-				e.preventDefault();
 				e.stopPropagation();
 			})
 			.off('click.foogalleryShortcodeHelper', helperSelector)
@@ -1201,7 +1452,21 @@ FooGallery.autoEnabled = false;
 				e.preventDefault();
 				e.stopPropagation();
 
-				copyHelperText($(this).find('code').text());
+				// Preserve text selected by dragging or double-clicking for manual copying.
+				var selection = window.getSelection();
+				if ( selection && !selection.isCollapsed && selection.containsNode(this, true) ) {
+					return;
+				}
+
+				var $helper = $(this);
+				copyHelperText($helper.find('code').text(), function() {
+					window.clearTimeout($helper.data('foogalleryCopiedTimeout'));
+					$helper.addClass('foogallery-shortcode-helper-copied');
+					$helper.data('foogalleryCopiedTimeout', window.setTimeout(function() {
+						$helper.removeClass('foogallery-shortcode-helper-copied');
+						$helper.removeData('foogalleryCopiedTimeout');
+					}, 1500));
+				});
 			});
 
 		$('.foogallery-metabox-settings label[data-setting]').each(function() {
@@ -1218,6 +1483,8 @@ FooGallery.autoEnabled = false;
 				)
 			);
 		});
+
+		FOOGALLERY.updateShortcodeArgumentHelpers($('.foogallery-metabox-settings'));
 
 		$('.foogallery_metabox_field-radio > label').each(function() {
 			var $label = $(this),
@@ -1406,6 +1673,11 @@ FooGallery.autoEnabled = false;
 		} );
 
 		FOOGALLERY.initDropzone();
+
+		// Let ready handlers initialize all layouts before storing their elements.
+		$( function () {
+			setTimeout( FOOGALLERY.initTemplateSettingsStorage, 0 );
+		} );
     };
 
 	FOOGALLERY.initMediaSelector = function() {

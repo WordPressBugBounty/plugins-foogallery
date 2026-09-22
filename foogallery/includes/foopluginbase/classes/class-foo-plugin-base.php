@@ -113,7 +113,8 @@ if ( !class_exists( 'Foo_Plugin_Base_v2_4' ) ) {
 			$this->_options = new Foo_Plugin_Options_v2_1( $this->plugin_slug );
 
 			// Check that the runtime meets FooGallery's minimum supported PHP version.
-			foo_check_php_version( $this->plugin_title, '7.0.0' );
+			foo_check_php_version( $this->plugin_title, '7.2.0' );
+			foo_check_wp_version( $this->plugin_title, '6.8' );
 
 			// Load plugin text domain
 			add_action( 'init', array( $this, 'load_plugin_textdomain' ) );

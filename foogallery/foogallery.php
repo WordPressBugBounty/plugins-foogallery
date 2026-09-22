@@ -3,19 +3,26 @@
 /*
 Plugin Name: FooGallery
 Description: FooGallery is the most intuitive and extensible gallery management tool ever created for WordPress
-Version:     3.3.3
+Version:     3.3.7
 Author:      FooPlugins
 Plugin URI:  https://fooplugins.com/foogallery-wordpress-gallery-plugin/
 Author URI:  https://fooplugins.com
 Text Domain: foogallery
 License:     GPL-2.0+
 Domain Path: /languages
-Requires at least: 5.3
-Requires PHP: 7.0
+Requires at least: 6.8
+Requires PHP: 7.2
 */
 // If this file is called directly, abort.
 if ( !defined( 'WPINC' ) ) {
     die;
+}
+// Stop before loading dependencies on unsupported runtimes.
+if ( version_compare( PHP_VERSION, '7.2', '<' ) || version_compare( $GLOBALS['wp_version'], '6.8', '<' ) ) {
+    add_action( 'admin_notices', function () {
+        echo '<div class="notice notice-error"><p>' . esc_html__( 'FooGallery requires WordPress 6.8 and PHP 7.2 or newer.', 'foogallery' ) . '</p></div>';
+    } );
+    return;
 }
 if ( function_exists( 'foogallery_fs' ) ) {
     foogallery_fs()->set_basename( false, __FILE__ );
@@ -25,13 +32,16 @@ if ( function_exists( 'foogallery_fs' ) ) {
         define( 'FOOGALLERY_PATH', plugin_dir_path( __FILE__ ) );
         define( 'FOOGALLERY_URL', plugin_dir_url( __FILE__ ) );
         define( 'FOOGALLERY_FILE', __FILE__ );
-        define( 'FOOGALLERY_VERSION', '3.3.3' );
+        define( 'FOOGALLERY_VERSION', '3.3.7' );
         define( 'FOOGALLERY_SETTINGS_VERSION', '2' );
         if ( file_exists( FOOGALLERY_PATH . 'vendor-scoped/scoper-autoload.php' ) ) {
             require_once FOOGALLERY_PATH . 'vendor-scoped/scoper-autoload.php';
         } elseif ( file_exists( FOOGALLERY_PATH . 'vendor-scoped/autoload.php' ) ) {
             require_once FOOGALLERY_PATH . 'vendor-scoped/autoload.php';
         }
+        // Register the bundled version before plugins_loaded priority zero.
+        require_once FOOGALLERY_PATH . 'lib/action-scheduler/action-scheduler.php';
+        require_once FOOGALLERY_PATH . 'includes/background-jobs/class-foogallery-jobs.php';
         require_once FOOGALLERY_PATH . 'includes/constants.php';
         require_once FOOGALLERY_PATH . 'includes/functions.php';
         // Create a helper function for easy SDK access.
@@ -68,6 +78,16 @@ if ( function_exists( 'foogallery_fs' ) ) {
             return $foogallery_fs;
         }
 
+        // Disable extension inventory sharing before SDK initialization, including cron requests.
+        add_filter( 'fs_is_extensions_tracking_allowed_foogallery', '__return_false' );
+        add_filter( 'fs_permission_list_foogallery', function ( $permissions ) {
+            foreach ( $permissions as $key => $permission ) {
+                if ( 'extensions' === $permission['id'] ) {
+                    unset($permissions[$key]);
+                }
+            }
+            return $permissions;
+        } );
         // Init Freemius.
         foogallery_fs();
         // Signal that SDK was initiated.
@@ -98,6 +118,8 @@ if ( function_exists( 'foogallery_fs' ) ) {
             private function __construct() {
                 // include everything we need!
                 require_once FOOGALLERY_PATH . 'includes/includes.php';
+                // Resolve the per-site legacy entitlement before any extensions can load.
+                FooGallery_Whitelabelling_Compatibility::snapshot_legacy_state();
                 register_activation_hook( __FILE__, array('FooGallery_Plugin', 'activate') );
                 FooGallery_License_Constant_Handler::init();
                 // init FooPluginBase.
@@ -116,6 +138,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 new FooGallery_Extensions_Loader();
                 // Load any bundled extension initializers.
                 new FooGallery_Import_Export_Extension();
+                new FooGallery_Media_Audit_Extension();
                 if ( is_admin() ) {
                     new FooGallery_Admin();
                     add_action( 'wpmu_new_blog', array($this, 'set_default_extensions_for_multisite_network_activated') );
@@ -165,11 +188,11 @@ if ( function_exists( 'foogallery_fs' ) ) {
                 // Initialize the FooGallery abilities bridge for WordPress core.
                 new FooGallery_Abilities();
                 new FooGallery_Attachment_Type();
-                $pro_code_included = false;
-                if ( !$pro_code_included ) {
-                    add_filter( 'foogallery_extensions_for_view', array($this, 'add_foogallery_pro_features') );
-                }
+                // Add upgrade rows for premium features that the current plan did not register.
+                add_filter( 'foogallery_extensions_for_view', array($this, 'add_foogallery_pro_features') );
                 add_filter( 'foogallery_extensions_for_view', array($this, 'add_foogallery_addon_features'), 20 );
+                // Add consistent add-on and documentation links after all feature rows have been registered.
+                add_filter( 'foogallery_extensions_for_view', array($this, 'add_foogallery_feature_links'), 30 );
                 // init Gutenberg!
                 new FooGallery_Gutenberg();
                 // init advanced settings.
@@ -180,7 +203,8 @@ if ( function_exists( 'foogallery_fs' ) ) {
 
             function add_foogallery_pro_features( $extensions ) {
                 $pro_features = foogallery_pro_features();
-                $extensions[] = array(
+                $upgrade_features = array();
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-bulk-copy',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Bulk Copy', 'foogallery' ),
@@ -191,18 +215,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
-                    'slug'               => 'foogallery-whitelabeling',
-                    'categories'         => array('Premium'),
-                    'title'              => foogallery__( 'White Labeling', 'foogallery' ),
-                    'description'        => $pro_features['whitelabeling']['desc'],
-                    'external_link_text' => foogallery__( 'Read documentation', 'foogallery' ),
-                    'external_link_url'  => $pro_features['whitelabeling']['link'],
-                    'dashicon'           => 'dashicons-tag',
-                    'tags'               => array('Premium'),
-                    'source'             => 'upgrade',
-                );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-exif',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'EXIF', 'foogallery' ),
@@ -213,7 +226,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-filtering',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Filtering', 'foogallery' ),
@@ -224,7 +237,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-gallery-blueprints',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Gallery Blueprints', 'foogallery' ),
@@ -235,7 +248,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-paging',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Pagination', 'foogallery' ),
@@ -246,7 +259,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-protection',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Watermarking & Protection', 'foogallery' ),
@@ -257,7 +270,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-video',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Video', 'foogallery' ),
@@ -268,7 +281,7 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
-                $extensions[] = array(
+                $upgrade_features[] = array(
                     'slug'               => 'foogallery-woocommerce',
                     'categories'         => array('Premium'),
                     'title'              => foogallery__( 'Ecommerce', 'foogallery' ),
@@ -279,6 +292,11 @@ if ( function_exists( 'foogallery_fs' ) ) {
                     'tags'               => array('Premium'),
                     'source'             => 'upgrade',
                 );
+                foreach ( $upgrade_features as $upgrade_feature ) {
+                    if ( !$this->feature_exists_for_view( $extensions, $upgrade_feature['slug'] ) ) {
+                        $extensions[] = $upgrade_feature;
+                    }
+                }
                 return $extensions;
             }
 
@@ -321,6 +339,77 @@ if ( function_exists( 'foogallery_fs' ) ) {
                         $extensions[] = $addon_feature;
                     }
                 }
+                return $extensions;
+            }
+
+            /**
+             * Add add-on and documentation links to rows on the Features page.
+             *
+             * Documentation links are kept separate from the existing optional external
+             * link so a feature can offer both without overloading the link label.
+             *
+             * @param array $extensions Feature rows prepared for the admin view.
+             * @return array
+             */
+            public function add_foogallery_feature_links( $extensions ) {
+                $documentation_links = array(
+                    'albums'                          => 'https://fooplugins.com/documentation/foogallery/getting-started-foogallery/adding-albums/',
+                    'foogallery-migrate'              => 'https://fooplugins.com/documentation/foogallery/getting-started-foogallery/migrate-to-foogallery/',
+                    'foogallery-import-export'        => 'https://fooplugins.com/documentation/foogallery/getting-started-foogallery/import-export/',
+                    'foogallery-media-audit'          => 'https://fooplugins.com/documentation/foogallery/getting-started-foogallery/foogallery-media-audit/',
+                    'foogallery-custom-css'           => 'https://fooplugins.com/documentation/foogallery/developers/customize-gallery-custom-css/',
+                    'foogallery-bulk-copy'            => 'https://fooplugins.com/bulk-copy-foogallery-pro/',
+                    'foogallery-exif'                 => 'https://fooplugins.com/documentation/foogallery/pro-expert/adding-exif-data/',
+                    'foogallery-filtering'            => 'https://fooplugins.com/documentation/foogallery/pro-expert/filtering-settings/',
+                    'foogallery-gallery-blueprints'   => 'https://fooplugins.com/documentation/foogallery/pro-commerce/use-master-gallery/',
+                    'foogallery-paging'               => 'https://fooplugins.com/documentation/foogallery/appearance-foogallery/paging-settings/',
+                    'foogallery-protection'           => 'https://fooplugins.com/documentation/foogallery/pro-commerce/watermark-gallery-images/',
+                    'foogallery-video'                => 'https://fooplugins.com/documentation/foogallery/pro-expert/foogallery-pro-video/',
+                    'foogallery-woocommerce'          => 'https://fooplugins.com/documentation/foogallery/pro-commerce/getting-started-pro-commerce/',
+                    'foogallery-colors'               => 'https://fooplugins.com/documentation/foogallery/pro-starter/dominant-color-sorting/',
+                    'foogallery-whitelabelling'       => 'https://fooplugins.com/documentation/foogallery/addons/white-labeling/',
+                    'foogallery-whitelabelling-addon' => 'https://fooplugins.com/documentation/foogallery/addons/white-labeling/',
+                    'foogallery-user-uploads'         => 'https://fooplugins.com/documentation/foogallery/addons/user-uploads/',
+                    'foogallery-social'               => 'https://fooplugins.com/documentation/foogallery/addons/social-getting-started/',
+                    'foogallery-proofing'             => 'https://fooplugins.com/documentation/foogallery/client-proofing/client-proofing-workflow/',
+                );
+                $addon_features = array(
+                    'albums',
+                    'foogallery-exif',
+                    'foogallery-filtering',
+                    'foogallery-paging',
+                    'foogallery-protection',
+                    'foogallery-video',
+                    'foogallery-woocommerce',
+                    'foogallery-colors',
+                    'foogallery-user-uploads',
+                    'foogallery-social',
+                    'foogallery-proofing'
+                );
+                $addon_links = array(
+                    'albums'                          => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/wordpress-album-gallery/',
+                    'foogallery-whitelabelling'       => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/whitelabel/',
+                    'foogallery-whitelabelling-addon' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/whitelabel/',
+                );
+                foreach ( $extensions as &$extension ) {
+                    if ( !isset( $extension['slug'], $documentation_links[$extension['slug']] ) ) {
+                        continue;
+                    }
+                    $documentation_url = $documentation_links[$extension['slug']];
+                    $extension['documentation_link_text'] = foogallery__( 'Read documentation', 'foogallery' );
+                    $extension['documentation_link_url'] = $documentation_url;
+                    if ( isset( $addon_links[$extension['slug']] ) ) {
+                        $extension['external_link_text'] = foogallery__( 'Visit add-on', 'foogallery' );
+                        $extension['external_link_url'] = $addon_links[$extension['slug']];
+                    } elseif ( isset( $extension['external_link_url'] ) && $documentation_url === $extension['external_link_url'] ) {
+                        unset($extension['external_link_text'], $extension['external_link_url']);
+                    } elseif ( 'foogallery-migrate' === $extension['slug'] && !empty( $extension['external_link_url'] ) ) {
+                        $extension['external_link_text'] = foogallery__( 'View details', 'foogallery' );
+                    } elseif ( in_array( $extension['slug'], $addon_features, true ) && !empty( $extension['external_link_url'] ) ) {
+                        $extension['external_link_text'] = foogallery__( 'Visit add-on', 'foogallery' );
+                    }
+                }
+                unset($extension);
                 return $extensions;
             }
 

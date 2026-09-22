@@ -330,9 +330,16 @@ public function column_default( $item, $column_name ) {
 				//Do nothing - there should be no actions.
 			} elseif ( $addon ) {
 				$addon_url = isset( $item['addon_link_url'] ) ? $item['addon_link_url'] : foogallery_admin_addon_url();
-				$actions  .= '<a href="' . esc_url( $addon_url ) . '">' . esc_html__( 'View Addon', 'foogallery' ) . '</a>';
-            } elseif ( $upgrade ) {
-				$actions     .= '<a href="' . esc_url( foogallery_fs()->checkout_url( WP_FS__PERIOD_ANNUALLY, true ) ) . '">' . __( 'Start FREE Trial', 'foogallery' ) . '</a>';
+				if ( ! is_string( $addon_url ) || '' === trim( $addon_url ) ) {
+					$addon_url = foogallery_admin_addon_url();
+				}
+				$actions  .= '<a href="' . esc_url( $addon_url ) . '">' . esc_html__( 'View details', 'foogallery' ) . '</a>';
+			} elseif ( $upgrade ) {
+				$checkout_url = foogallery_fs()->checkout_url( WP_FS__PERIOD_ANNUALLY, true );
+				if ( ! is_string( $checkout_url ) || '' === trim( $checkout_url ) ) {
+					$checkout_url = foogallery_admin_freetrial_url();
+				}
+				$actions .= '<a href="' . esc_url( $checkout_url ) . '">' . esc_html__( 'Start FREE Trial', 'foogallery' ) . '</a>';
 			} elseif ( !$downloaded && FooGallery_Admin_Extensions::can_manage_extension_action( 'download', $item['slug'] ) ) {
                 $base_url     = add_query_arg( array( 'extension' => $item['slug'], '_wpnonce' => wp_create_nonce( 'foogallery_extension_action' ) ) );
                 $download_url = add_query_arg( 'action', 'download', $base_url );
@@ -352,13 +359,19 @@ public function column_default( $item, $column_name ) {
 
             return $icon . ' <strong>' . $item['title'] . '</strong><br>' . ' <div style="margin-left: 35px;">' . $actions .'</div>';
 
-        case 'description':
-			$external_link = '';
-			if ( array_key_exists( 'external_link_url', $item ) && array_key_exists( 'external_link_text', $item ) ) {
-				$external_link = '<br><a href="' . esc_url( $item['external_link_url'] ) . '" target="_blank">' . esc_html( $item['external_link_text'] ) . '</a>';
-			}
+			case 'description':
+				$links = array();
+				if ( ! empty( $item['external_link_url'] ) && ! empty( $item['external_link_text'] ) ) {
+					$links[] = '<a href="' . esc_url( $item['external_link_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $item['external_link_text'] ) . '</a>';
+				}
 
-            return $item['description'] . $external_link;
+				if ( ! empty( $item['documentation_link_url'] ) && ! empty( $item['documentation_link_text'] ) ) {
+					$links[] = '<a href="' . esc_url( $item['documentation_link_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $item['documentation_link_text'] ) . '</a>';
+				}
+
+				$feature_links = empty( $links ) ? '' : '<br>' . implode( ' | ', $links );
+
+				return $item['description'] . $feature_links;
 
         default:
             return isset( $item[ $column_name ] ) ? $item[ $column_name ] : '';

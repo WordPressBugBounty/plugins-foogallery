@@ -87,10 +87,15 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 
 			$current_size = $this->editor->get_size();
 
-			$size = array( 'width' => $this->args['width'], 'height' => $this->args['height'] );
+			$size = array(
+				'width'  => (int) $this->args['width'],
+				'height' => (int) $this->args['height'],
+			);
 
-			$offsetLeft = ( $size['width'] - $current_size['width'] ) / 2;
-			$offsetTop = ( $size['height'] - $current_size['height'] ) / 2;
+			// GD requires integer coordinates. Keep odd remainder pixels on the
+			// right and bottom, matching the Imagick background-fill path.
+			$offset_left = max( 0, intdiv( $size['width'] - $current_size['width'], 2 ) );
+			$offset_top  = max( 0, intdiv( $size['height'] - $current_size['height'], 2 ) );
 
 			$new_image = imagecreatetruecolor( $size['width'], $size['height'] );
 
@@ -108,7 +113,7 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 					substr( $colors['left'], 9, 3 ) );
 
 				// Fill left color
-				imagefilledrectangle( $new_image, 0, 0, $offsetLeft, $size['height'], $colorToPaint );
+				imagefilledrectangle( $new_image, 0, 0, $offset_left, $size['height'], $colorToPaint );
 
 				$colorToPaint = imagecolorallocatealpha( $new_image,
 					substr( $colors['right'], 0, 3 ),
@@ -117,7 +122,7 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 					substr( $colors['left'], 9, 3 ) );
 
 				// Fill right color
-				imagefilledrectangle( $new_image, $offsetLeft + $current_size['width'], 0, $size['width'], $size['height'], $colorToPaint );
+				imagefilledrectangle( $new_image, $offset_left + $current_size['width'], 0, $size['width'], $size['height'], $colorToPaint );
 			}
 
 			if ( $current_size['height'] != $size['height'] ) {
@@ -129,7 +134,7 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 					substr( $colors['top'], 9, 3 ) );
 
 				// Fill top color
-				imagefilledrectangle( $new_image, 0, 0, $size['width'], $offsetTop - 1, $colorToPaint );
+				imagefilledrectangle( $new_image, 0, 0, $size['width'], $offset_top - 1, $colorToPaint );
 
 				$colorToPaint = imagecolorallocatealpha( $new_image,
 					substr( $colors['bottom'], 0, 3 ),
@@ -138,10 +143,10 @@ if ( ! class_exists( 'FooGallery_Thumb_Generator_Background_Fill' ) ) {
 					substr( $colors['bottom'], 9, 3 ) );
 
 				// Fill bottom color
-				imagefilledrectangle( $new_image, 0, $offsetTop + $current_size['height'], $size['width'], $size['height'], $colorToPaint );
+				imagefilledrectangle( $new_image, 0, $offset_top + $current_size['height'], $size['width'], $size['height'], $colorToPaint );
 			}
 
-			imagecopy( $new_image, $this->editor->get_image(), $offsetLeft, $offsetTop, 0, 0, $current_size['width'], $current_size['height'] );
+			imagecopy( $new_image, $this->editor->get_image(), $offset_left, $offset_top, 0, 0, $current_size['width'], $current_size['height'] );
 
 			$this->editor->update_image( $new_image );
 			$this->editor->update_size();

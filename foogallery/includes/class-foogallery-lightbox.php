@@ -26,6 +26,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 
 			// add the data options needed for lightbox.
 			add_filter( 'foogallery_build_container_data_options', array( $this, 'add_data_options' ), 10, 3 );
+			add_filter( 'foogallery_build_container_mobile_data_options', array( $this, 'add_mobile_data_options' ), 10, 3 );
 
 			// set the settings icon for lightbox.
 			add_filter( 'foogallery_gallery_settings_metabox_section_icon', array( $this, 'add_section_icons' ) );
@@ -363,7 +364,7 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 
 			$field[] = array(
 				'id'       => 'lightbox_thumbs',
-				'title'    => __( 'Thumbnail Strip', 'foogallery' ),
+				'title'    => __( 'Thumbnail Position', 'foogallery' ),
 				'desc'     => __( 'You can change the position of the thumbnails, or hide them completely.', 'foogallery' ),
 				'section_id' => $section_id,
 				'subsection_id' => 'lightbox-thumbnails',
@@ -1049,12 +1050,70 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 				)
 			);
 
+			$mobile_panel_settings = $this->mobile_panel_settings();
+			foreach ( $field as &$panel_field ) {
+				if ( isset( $mobile_panel_settings[ $panel_field['id'] ] ) ) {
+					$panel_field['mobile'] = true;
+				}
+			}
+			unset( $panel_field );
+
 			//find the index of the first Hover Effect field
 			$index = foogallery_admin_fields_find_index_of_section( $fields, 'hover-effects' );
 
 			array_splice( $fields, $index, 0, $field );
 
 			return $fields;
+		}
+
+		/**
+		 * Map responsive panel fields to their option names and accepted values.
+		 *
+		 * @return array
+		 */
+		private function mobile_panel_settings() {
+			$boolean = array( 'yes' => true, 'no' => false );
+			return array(
+				'lightbox_thumbs'                 => array( 'thumbs', array( 'bottom' => 'bottom', 'top' => 'top', 'left' => 'left', 'right' => 'right', 'none' => 'none' ) ),
+				'lightbox_thumbs_captions'        => array( 'thumbsCaptions', $boolean ),
+				'lightbox_thumbs_size'            => array( 'thumbsSmall', array( '' => false, 'small' => true ) ),
+				'lightbox_hover_buttons'         => array( 'hoverButtons', $boolean ),
+				'lightbox_show_fullscreen_button' => array( 'fullscreen', $boolean ),
+				'lightbox_show_maximize_button'   => array( 'maximize', $boolean ),
+				'lightbox_show_caption_button'    => array( 'info', $boolean ),
+				'lightbox_show_thumbstrip_button' => array( 'thumbs', $boolean ),
+				'lightbox_show_download_button'  => array( 'download', $boolean ),
+				'lightbox_show_nav_buttons'       => array( 'prev', $boolean ),
+			);
+		}
+
+		/**
+		 * Apply explicit mobile panel overrides, leaving absent values inherited.
+		 *
+		 * @param array      $options     Mobile gallery options.
+		 * @param FooGallery $gallery     Gallery instance.
+		 * @param array      $_attributes Container attributes.
+		 * @return array
+		 */
+		function add_mobile_data_options( $options, $gallery, $_attributes ) {
+			$template = foogallery_get_gallery_template( $gallery->gallery_template );
+			$target   = ! empty( $template['panel_support'] ) ? 'template' : 'mobileLightbox';
+			foreach ( $this->mobile_panel_settings() as $field_id => $mapping ) {
+				$value = foogallery_gallery_template_mobile_setting( 'mobile_' . $field_id, null );
+				if ( ! is_scalar( $value ) || ! array_key_exists( (string) $value, $mapping[1] ) ) {
+					continue;
+				}
+				$value = $mapping[1][ (string) $value ];
+				if ( 0 === strpos( $field_id, 'lightbox_show_' ) ) {
+					$options[ $target ]['buttons'][ $mapping[0] ] = $value;
+					if ( 'lightbox_show_nav_buttons' === $field_id ) {
+						$options[ $target ]['buttons']['next'] = $value;
+					}
+				} else {
+					$options[ $target ][ $mapping[0] ] = $value;
+				}
+			}
+			return $options;
 		}
 
 		/**
@@ -1186,12 +1245,11 @@ if ( ! class_exists( 'FooGallery_Lightbox' ) ) {
 
 			$thumbs = foogallery_gallery_template_setting( 'lightbox_thumbs', $hide_thumbs_by_default ? 'none' : 'bottom' );
 			$options['thumbs'] = $thumbs;
-			if ( 'none' !== $thumbs ) {
-				$options['thumbsCaptions'] = foogallery_gallery_template_setting( 'lightbox_thumbs_captions', 'no' ) === 'yes';
-				$options['thumbsBestFit'] = foogallery_gallery_template_setting( 'lightbox_thumbs_bestfit', '' ) === 'yes';
-				$options['thumbsSmall'] = foogallery_gallery_template_setting( 'lightbox_thumbs_size', '' ) === 'small';
-				$options['thumbsCaptionsAlign'] = foogallery_gallery_template_setting( 'lightbox_thumbs_captions_alignment', 'default' );
-			}
+			// Retain child options when mobile settings reveal a hidden desktop strip.
+			$options['thumbsCaptions'] = foogallery_gallery_template_setting( 'lightbox_thumbs_captions', 'no' ) === 'yes';
+			$options['thumbsBestFit'] = foogallery_gallery_template_setting( 'lightbox_thumbs_bestfit', '' ) === 'yes';
+			$options['thumbsSmall'] = foogallery_gallery_template_setting( 'lightbox_thumbs_size', '' ) === 'small';
+			$options['thumbsCaptionsAlign'] = foogallery_gallery_template_setting( 'lightbox_thumbs_captions_alignment', 'default' );
 
 			$info_enabled = foogallery_gallery_template_setting( 'lightbox_info_enabled', '' );
 			$info_position = foogallery_gallery_template_setting( 'lightbox_info_position', 'bottom' );

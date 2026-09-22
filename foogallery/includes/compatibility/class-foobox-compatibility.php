@@ -80,88 +80,121 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
 		function add_caption_attributes( $attr, $args, $foogallery_attachment ) {
 			global $current_foogallery;
 
-			$force_same = false;
-
-			//check if lightbox set to foobox
-			//Note that the $current_foogallery->lightbox property is only set if FooGallery PRO is running
-			if ( isset( $current_foogallery->lightbox ) && 'foobox' === $current_foogallery->lightbox ) {
-
-				//check lightbox caption source field that is added in FooGallery PRO
-				$lightbox_caption_source = foogallery_gallery_template_setting( 'lightbox_caption_override', false );
-
-				if ( 'override' === $lightbox_caption_source ) {
-					$caption_title_source = foogallery_gallery_template_setting( 'lightbox_caption_override_title', '' );
-					if ( 'none' === $caption_title_source ) {
-						$attr['data-caption-title'] = ' ';
-					} else if ( '' !== $caption_title_source ) {
-						$attr['data-caption-title'] = foogallery_sanitize_full( foogallery_get_caption_by_source( $foogallery_attachment, $caption_title_source, 'title' ) );
-					}
-
-					$caption_desc_source = foogallery_gallery_template_setting( 'lightbox_caption_override_desc', '' );
-					if ( 'none' === $caption_desc_source ) {
-						$attr['data-caption-desc'] = ' ';
-					} else if ( '' !== $caption_desc_source ) {
-						$attr['data-caption-desc'] = foogallery_sanitize_full( foogallery_get_caption_by_source( $foogallery_attachment, $caption_desc_source, 'description' ) );
-					}
-				} else if ( 'custom' === $lightbox_caption_source ) {
-
-					$template = foogallery_gallery_template_setting( 'lightbox_caption_custom_template', '' );
-					if ( ! empty( $template ) ) {
-						$attr['data-caption-title'] = ' ';
-						$attr['data-caption-desc']  = foogallery_sanitize_full( FooGallery_Pro_Advanced_Captions::build_custom_caption( $template, $foogallery_attachment ) );
-					}
-				} else if ( '' === $lightbox_caption_source ) {
-					//same as thumbnail
-					//either way, we need to force the lightbox captions to match the thumb captions
-					$force_same = true;
-				}
-
-			} else {
-				//we will get here if FooGallery FREE is running
-				$lightbox = foogallery_gallery_template_setting_lightbox();
-
-				//we only want to make changes if the lightbox is set to foobox
-				if ( 'foobox' === $lightbox ) {
-					//check foobox caption source field that is only added if FooBox free is installed
-					$foobox_caption_source = foogallery_gallery_template_setting( 'foobox_caption_source', false );
-
-					if ( 'override' === $foobox_caption_source ) {
-						$caption_title_source = foogallery_gallery_template_setting( 'foobox_caption_override_title', '' );
-						if ( 'none' === $caption_title_source ) {
-							$attr['data-caption-title'] = ' ';
-						} else if ( '' !== $caption_title_source ) {
-							$attr['data-caption-title'] = foogallery_sanitize_full( foogallery_get_caption_by_source( $foogallery_attachment, $caption_title_source, 'title' ) );
-						}
-
-						$caption_desc_source = foogallery_gallery_template_setting( 'foobox_caption_override_desc', '' );
-						if ( 'none' === $caption_desc_source ) {
-							$attr['data-caption-desc'] = ' ';
-						} else if ( '' !== $caption_desc_source ) {
-							$attr['data-caption-desc'] = foogallery_sanitize_full( foogallery_get_caption_by_source( $foogallery_attachment, $caption_desc_source, 'description' ) );
-						}
-					} else if ( 'same' === $foobox_caption_source ) {
-						//same as thumbnail, or FooGallery FREE
-						$force_same = true;
-					}
-				}
+			if ( ! isset( $current_foogallery->lightbox ) || 'foobox' !== $current_foogallery->lightbox ) {
+				return $attr;
 			}
 
-			//force the same captions as the thumbnail
-			if ( $force_same ) {
-				if ( isset( $foogallery_attachment->caption_title ) ) {
-					$attr['data-caption-title'] = foogallery_sanitize_full( $foogallery_attachment->caption_title );
-				} else {
+			$schema         = $this->caption_settings_schema();
+			$caption_source = foogallery_gallery_template_setting( $schema['source'], '' );
+
+			if ( 'override' === $caption_source ) {
+				$caption_title_source = foogallery_gallery_template_setting( $schema['title'], '' );
+				if ( 'none' === $caption_title_source ) {
 					$attr['data-caption-title'] = ' ';
+				} elseif ( '' === $caption_title_source ) {
+					$attr['data-caption-title'] = $this->thumbnail_caption_value( $foogallery_attachment, 'caption_title' );
+				} else {
+					$attr['data-caption-title'] = foogallery_sanitize_full( foogallery_get_caption_by_source( $foogallery_attachment, $caption_title_source, 'title' ) );
 				}
 
-				if ( isset( $foogallery_attachment->caption_desc ) ) {
-					$attr['data-caption-desc'] = foogallery_sanitize_full( $foogallery_attachment->caption_desc );
-				} else {
+				$caption_desc_source = foogallery_gallery_template_setting( $schema['desc'], '' );
+				if ( 'none' === $caption_desc_source ) {
 					$attr['data-caption-desc'] = ' ';
+				} elseif ( '' === $caption_desc_source ) {
+					$attr['data-caption-desc'] = $this->thumbnail_caption_value( $foogallery_attachment, 'caption_desc' );
+				} else {
+					$attr['data-caption-desc'] = foogallery_sanitize_full( foogallery_get_caption_by_source( $foogallery_attachment, $caption_desc_source, 'description' ) );
 				}
+			} elseif ( 'custom' === $caption_source && isset( $schema['custom'] ) ) {
+				$template = foogallery_gallery_template_setting( $schema['custom'], '' );
+				if ( $this->has_custom_caption_builder() ) {
+					$attr['data-caption-title'] = ' ';
+					$attr['data-caption-desc']  = foogallery_sanitize_full( FooGallery_Pro_Advanced_Captions::build_custom_caption( $template, $foogallery_attachment ) );
+				} else {
+					// A downgraded gallery cannot render a PRO custom template, so retain only a usable title.
+					$attr['data-caption-title'] = ! empty( $foogallery_attachment->title ) ? foogallery_sanitize_full( $foogallery_attachment->title ) : ' ';
+					$attr['data-caption-desc']  = ' ';
+				}
+			} elseif ( 'same' === $caption_source || ( '' === $caption_source && empty( $schema['smart'] ) ) ) {
+				// Keep the FooBox caption the same as the resolved thumbnail caption.
+				$attr['data-caption-title'] = $this->thumbnail_caption_value( $foogallery_attachment, 'caption_title' );
+				$attr['data-caption-desc']  = $this->thumbnail_caption_value( $foogallery_attachment, 'caption_desc' );
+			} elseif ( ( ! isset( $attr['data-caption-title'] ) || '' === $attr['data-caption-title'] ) && ! empty( $foogallery_attachment->title ) ) {
+				// Smart mode falls back to the attachment title without changing alt text.
+				$attr['data-caption-title'] = foogallery_sanitize_full( $foogallery_attachment->title );
 			}
 
 			return $attr;
+		}
+
+		/**
+		 * Whether the Pro custom-caption builder is available.
+		 *
+		 * @return bool
+		 */
+		protected function has_custom_caption_builder() {
+			return class_exists( 'FooGallery_Pro_Advanced_Captions' );
+		}
+
+		/**
+		 * Resolve the persisted caption settings schema for the current gallery.
+		 *
+		 * The persisted FooBox-specific schema remains authoritative when its
+		 * source key exists, including after an entitlement change. The generic
+		 * lightbox schema is used only when the FooBox-specific key is absent;
+		 * galleries without either key retain the legacy Smart default.
+		 *
+		 * @return array
+		 */
+		private function caption_settings_schema() {
+			$free_schema = array(
+				'source' => 'foobox_caption_source',
+				'title'  => 'foobox_caption_override_title',
+				'desc'   => 'foobox_caption_override_desc',
+				'smart'  => true,
+			);
+			$pro_schema  = array(
+				'source' => 'lightbox_caption_override',
+				'title'  => 'lightbox_caption_override_title',
+				'desc'   => 'lightbox_caption_override_desc',
+				'custom' => 'lightbox_caption_custom_template',
+			);
+
+			if ( $this->gallery_template_setting_exists( $free_schema['source'] ) ) {
+				return $free_schema;
+			}
+
+			if ( $this->gallery_template_setting_exists( $pro_schema['source'] ) ) {
+				return $pro_schema;
+			}
+
+			return $free_schema;
+		}
+
+		/**
+		 * Return a resolved thumbnail caption value for FooBox.
+		 *
+		 * @param object $foogallery_attachment Gallery attachment.
+		 * @param string $property              Resolved caption property.
+		 * @return string
+		 */
+		private function thumbnail_caption_value( $foogallery_attachment, $property ) {
+			return isset( $foogallery_attachment->{$property} ) ? foogallery_sanitize_full( $foogallery_attachment->{$property} ) : ' ';
+		}
+
+		/**
+		 * Check whether a setting was supplied or persisted, including empty values.
+		 *
+		 * @param string $key Setting key without the template prefix.
+		 * @return bool
+		 */
+		private function gallery_template_setting_exists( $key ) {
+			global $current_foogallery;
+			global $current_foogallery_template;
+
+			$settings_key = "{$current_foogallery_template}_{$key}";
+
+			return ! empty( $current_foogallery ) && is_array( $current_foogallery->settings ) && array_key_exists( $settings_key, $current_foogallery->settings );
 		}
 
 		/**

@@ -170,6 +170,7 @@ if ( ! class_exists( 'FooGallery_Ability_Create_Gallery' ) ) {
 			}
 
 			$settings = foogallery_abilities_build_template_settings_base( $template['slug'] );
+			$settings = array_merge( $settings, foogallery_build_initial_mobile_settings( $template['slug'] ) );
 			$settings = foogallery_abilities_normalize_template_settings(
 				$template['slug'],
 				$request_context['settings'],

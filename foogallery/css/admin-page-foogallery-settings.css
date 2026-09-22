@@ -57,6 +57,11 @@ tr.foogallery_settings_radio td input[type="radio"] + label {
 	margin-left: 5px;
 }
 
+#foogallery-settings-main .form-table > tbody > .foo-settings-full-width > td {
+	padding-left: 0;
+	padding-right: 0;
+}
+
 #foogallery_uninstall_container {
 	position: relative;
 }

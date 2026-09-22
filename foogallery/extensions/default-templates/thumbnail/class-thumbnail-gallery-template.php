@@ -72,8 +72,26 @@ if ( !class_exists( 'FooGallery_Thumbnail_Gallery_Template' ) ) {
 	        global $current_foogallery;
 	        if ( isset( $current_foogallery ) && self::template_id === $current_foogallery->gallery_template ) {
 
-	        	//always set the rel so that lightboxes will group the images
+				//always set the rel so that lightboxes will group the images
 		        $attr['rel'] = 'lightbox[' . $current_foogallery->ID . ']';
+
+				// Preserve the template's caption DOM on mobile, including blank overrides.
+				// Canonical attachment captions must remain available to the lightbox.
+				if ( isset( $attr['data-mobile-captions'] ) ) {
+					$mobile_captions = json_decode( $attr['data-mobile-captions'], true );
+					if ( is_array( $mobile_captions ) ) {
+						foreach ( array( 'override_caption_title' => 'title', 'override_caption_desc' => 'description' ) as $argument => $key ) {
+							if ( isset( $args[ $argument ] ) ) {
+								unset( $mobile_captions[ $key ] );
+							}
+						}
+						if ( empty( $mobile_captions ) ) {
+							unset( $attr['data-mobile-captions'] );
+						} else {
+							$attr['data-mobile-captions'] = wp_json_encode( $mobile_captions );
+						}
+					}
+				}
 
 		        //check if we must hide the featured image within the lightbox
 		        if ( isset( $foogallery_attachment->featured ) && foogallery_gallery_template_setting( 'exclude_featured_image', '' ) === 'on' ) {

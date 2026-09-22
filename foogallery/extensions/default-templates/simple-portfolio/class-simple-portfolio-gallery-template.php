@@ -100,7 +100,7 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                     array(
                         'id'      => 'thumbnail_dimensions',
                         'title'   => __( 'Thumbnail Size', 'foogallery' ),
-	                        'desc'    => __( 'Choose the size of your thumbnails.', 'foogallery' ),
+	                        'desc'    => __( 'Choose the size of your thumbnails. On mobile, set the display width in pixels, or use 0 for the desktop width. Height scales proportionally.', 'foogallery' ),
 	                        'section_id' => 'general',
 	                        'alias'   => 'thumbnail_size',
 	                        'type'    => 'thumb_size_no_crop',
@@ -109,6 +109,11 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                             'width' => 250,
                             'height' => 200
                         ),
+						'mobile' => array(
+							'width_only' => true,
+							'for'        => 'mobile_thumbnail_dimensions_width',
+							'default'    => array( 'width' => 0 ),
+						),
 						'row_data'=> array(
 							'data-foogallery-change-selector' => 'input',
 							'data-foogallery-preview' => 'shortcode'
@@ -124,6 +129,7 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
                     array(
                         'id'      => 'lightbox',
                         'type'    => 'lightbox',
+                        'section_id' => 'lightbox',
                     ),
                     array(
                         'id'      => 'gutter',
@@ -376,6 +382,14 @@ if ( !class_exists( 'FooGallery_Simple_Portfolio_Gallery_Template' ) ) {
 			}
 			$css[] = '#' . $id . '.fg-simple_portfolio { justify-content: ' . $alignment . '; --fg-gutter: ' . $gutter . 'px; }';
 			$css[] = '#' . $id . '.fg-simple_portfolio .fg-item { flex-basis: ' . $thumb_width . 'px; }';
+
+			$mobile_dimensions = foogallery_gallery_template_mobile_setting( 'mobile_thumbnail_dimensions', null );
+			$mobile_width      = is_array( $mobile_dimensions ) ? ( $mobile_dimensions['width'] ?? null ) : null;
+			if ( is_scalar( $mobile_width ) && is_numeric( trim( (string) $mobile_width ) ) && intval( $mobile_width ) > 0 ) {
+				$mobile_rule = '#' . $id . '.fg-simple_portfolio .fg-item { flex-basis: ' . intval( $mobile_width ) . 'px; }';
+				$css[]       = '@media only screen and (max-width: ' . foogallery_get_mobile_size() . 'px) { ' . $mobile_rule . ' }';
+				$css[]       = '.foogallery-preview-wrapper.viewport-mobile ' . $mobile_rule;
+			}
 
 			$mobile_gutter = foogallery_gallery_template_mobile_setting( 'mobile_gutter', null );
 			if ( is_scalar( $mobile_gutter ) && is_numeric( trim( (string) $mobile_gutter ) ) ) {

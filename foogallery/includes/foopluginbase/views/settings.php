@@ -19,6 +19,39 @@ $plugin_info = $this->get_plugin_info();
 $plugin_slug = $plugin_info['slug'];
 $summary = $this->apply_filters( $plugin_slug . '_admin_settings_page_summary', '' );
 
+/**
+ * Render Settings API rows, letting untitled fields span both columns.
+ *
+ * @param string $section Registered section ID.
+ */
+$render_fields = function ( $section ) use ( $plugin_slug ) {
+	global $wp_settings_fields;
+	if ( ! isset( $wp_settings_fields[ $plugin_slug ][ $section ] ) ) {
+		return;
+	}
+	foreach ( $wp_settings_fields[ $plugin_slug ][ $section ] as $field ) {
+		$has_label = isset( $field['title'] ) && '' !== trim( (string) $field['title'] );
+		$class = isset( $field['args']['class'] ) ? $field['args']['class'] : '';
+		if ( ! $has_label ) {
+			$class = trim( $class . ' foo-settings-full-width' );
+		}
+		echo '<tr' . ( '' !== $class ? ' class="' . esc_attr( $class ) . '"' : '' ) . '>';
+		if ( $has_label ) {
+			echo '<th scope="row">';
+			if ( ! empty( $field['args']['label_for'] ) ) {
+				echo '<label for="' . esc_attr( $field['args']['label_for'] ) . '">' . wp_kses_post( $field['title'] ) . '</label>';
+			} else {
+				echo wp_kses_post( $field['title'] );
+			}
+			echo '</th><td>';
+		} else {
+			echo '<td colspan="2">';
+		}
+		call_user_func( $field['callback'], $field['args'] );
+		echo '</td></tr>';
+	}
+};
+
 ?>
 <div class="wrap" id="<?php echo esc_attr( $plugin_slug ); ?>-settings">
 	<h2><?php echo esc_html( get_admin_page_title() ); ?></h2>
@@ -74,7 +107,7 @@ $summary = $this->apply_filters( $plugin_slug . '_admin_settings_page_summary', 
 									continue;
 								}
 								echo '<table class="form-table">';
-								do_settings_fields($plugin_slug, $section['id']);
+								$render_fields( $section['id'] );
 								echo '</table>';
 							}
 						}
@@ -88,7 +121,25 @@ $summary = $this->apply_filters( $plugin_slug . '_admin_settings_page_summary', 
                 <?php
                 } else {
                     //no tabs so just render the sections
-                    do_settings_sections($plugin_slug);
+                    foreach ( (array) $wp_settings_sections[ $plugin_slug ] as $section ) {
+                        if ( ! empty( $section['before_section'] ) ) {
+                            echo wp_kses_post( ! empty( $section['section_class'] ) ? sprintf( $section['before_section'], esc_attr( $section['section_class'] ) ) : $section['before_section'] );
+                        }
+                        if ( $section['title'] ) {
+                            echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+                        }
+                        if ( $section['callback'] ) {
+                            call_user_func( $section['callback'], $section );
+                        }
+                        if ( isset( $wp_settings_fields[ $plugin_slug ][ $section['id'] ] ) ) {
+                            echo '<table class="form-table" role="presentation">';
+                            $render_fields( $section['id'] );
+                            echo '</table>';
+                        }
+                        if ( ! empty( $section['after_section'] ) ) {
+                            echo wp_kses_post( $section['after_section'] );
+                        }
+                    }
                 }
                 ?>
 		<p class="submit">

@@ -304,6 +304,22 @@
 	display: block;
 }
 
+.foogallery-shortcode-argument-helper code,
+.foogallery-shortcode-choice-helper code,
+.foogallery-shortcode-select-helper code {
+	cursor: pointer;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.foogallery-shortcode-helper-copied code::after {
+	content: "\2713";
+	display: inline-block;
+	margin-left: 4px;
+	color: #008a20;
+	font-weight: 700;
+}
+
 .foogallery-shortcode-argument-helper {
 	display: none;
 	margin-top: 4px;

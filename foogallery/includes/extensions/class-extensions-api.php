@@ -80,7 +80,7 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
                 'file' => 'migrate.php',
 				'description' => foogallery__( 'Migrate to FooGallery from other gallery plugins', 'foogallery' ),
 				'external_link_text' => foogallery__( 'Read about FooGallery Migrate', 'foogallery' ),
-                'external_link_url' => 'https://fooplugins.com/foogallery-migrate-for-wordpress-galleries/',
+				'external_link_url' => 'https://fooplugins.com/foogallery-wordpress-gallery-plugin/migrate/',
 				'dashicon'          => 'dashicons-migrate',
 				'tags' => array( 'tools', 'free', ),
 				'source' => 'repo',
@@ -193,6 +193,11 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 * @return bool
 		 */
 		public function is_active( $slug ) {
+			if ( FooGallery_Whitelabelling_Compatibility::SLUG === $slug ) {
+				return FooGallery_Whitelabelling_Compatibility::can_use_bundled_feature() &&
+					FooGallery_Whitelabelling_Compatibility::legacy_extension_is_active();
+			}
+
 			$overrides = $this->get_overrides();
             if ( array_key_exists( $slug, $overrides ) ) {
                 return $overrides[$slug] === 'active';
@@ -343,8 +348,9 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 					$this->add_to_error_extensions( $slug );
 				}
 
-				//we are done, allow for extensions to do something after an extension is activated
+				// Allow extensions to react after successful deactivation.
 				do_action( 'foogallery_extension_deactivated-' . $slug );
+				do_action( 'foogallery_extension_deactivated', $slug, $extension );
 
 				return apply_filters( 'foogallery_extensions_deactivated_message-' . $slug, array(
 					/* translators: %s: Value inserted at runtime. */
@@ -429,8 +435,9 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 
                 $this->set_override( $slug, 'active' );
 
-				//we are done, allow for extensions to do something after an extension is activated
+				// Allow extensions to react after successful activation.
 				do_action( 'foogallery_extension_activated-' . $slug );
+				do_action( 'foogallery_extension_activated', $slug, $extension );
 
 				//return our result
 				return apply_filters( 'foogallery_extension_activated_message-' . $slug, array(
@@ -601,7 +608,8 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 		 * @return mixed|void
 		 */
 		public function get_active_extensions() {
-			return get_option( FOOGALLERY_EXTENSIONS_ACTIVATED_OPTIONS_KEY, array() );
+			$extensions = get_option( FOOGALLERY_EXTENSIONS_ACTIVATED_OPTIONS_KEY, array() );
+			return is_array( $extensions ) ? $extensions : array();
 		}
 
 		/**
@@ -617,6 +625,9 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
 			if ( ! is_array( $loadable_extensions ) ) {
 				$loadable_extensions = array();
 			}
+
+			// Always rebuild the legacy entry through the strict runtime-state check below.
+			unset( $loadable_extensions[ FooGallery_Whitelabelling_Compatibility::SLUG ] );
 
 			$overrides = $this->get_overrides();
 			if ( ! is_array( $overrides ) ) {
@@ -650,7 +661,8 @@ if ( ! class_exists( 'FooGallery_Extensions_API' ) ) {
          * @return mixed|void
          */
         public function get_overrides() {
-            return get_option( FOOGALLERY_EXTENSIONS_OVERRIDES_OPTIONS_KEY, array() );
+			$overrides = get_option( FOOGALLERY_EXTENSIONS_OVERRIDES_OPTIONS_KEY, array() );
+			return is_array( $overrides ) ? $overrides : array();
         }
 
 		/**

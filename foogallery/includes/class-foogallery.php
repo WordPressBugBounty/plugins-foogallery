@@ -539,6 +539,12 @@ class FooGallery extends stdClass {
 			$default_gallery_id = foogallery_get_setting( 'default_gallery_settings' );
 			//loads all meta data from the default gallery
 			$this->load_meta( $default_gallery_id );
+			if ( ! $default_gallery_id ) {
+				$this->settings = is_array( $this->settings ) ? $this->settings : array();
+				foreach ( foogallery_gallery_templates() as $template ) {
+					$this->settings += foogallery_build_initial_mobile_settings( $template['slug'] );
+				}
+			}
 		}
 	}
 

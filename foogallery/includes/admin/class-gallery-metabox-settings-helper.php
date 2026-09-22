@@ -177,20 +177,6 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 							&& array_key_exists( $mobile_storage_key, $this->gallery->settings )
 							&& ! foogallery_mobile_setting_values_match( $this->gallery->settings[ $mobile_storage_key ], $mobile_fallback_value );
 						$mobile_mode           = $mobile_is_custom ? 'custom' : $mobile_fallback_mode;
-
-						if ( ! $mobile_has_default && ( is_scalar( $mobile_fallback_value ) || null === $mobile_fallback_value ) && isset( $mobile_field['choices'] ) && is_array( $mobile_field['choices'] ) && array_key_exists( $mobile_fallback_value, $mobile_field['choices'] ) ) {
-							$choice       = $mobile_field['choices'][ $mobile_fallback_value ];
-							$choice_label = is_array( $choice ) && isset( $choice['label'] ) ? $choice['label'] : $choice;
-							/* translators: %s: desktop setting choice label. */
-							$choice_label = sprintf( __( '%s (Same as desktop)', 'foogallery' ), $choice_label );
-
-							if ( is_array( $choice ) ) {
-								$choice['label'] = $choice_label;
-								$mobile_field['choices'][ $mobile_fallback_value ] = $choice;
-							} else {
-								$mobile_field['choices'][ $mobile_fallback_value ] = $choice_label;
-							}
-						}
 					}
 					$is_promo           = array_key_exists( 'promo', $field );
 					if ( $is_promo ) {
@@ -272,7 +258,7 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBox_Settings_Helper' ) ) {
 							}
 							?>
 							<th>
-								<label class="foogallery-setting-label" data-setting="<?php echo esc_attr( $setting_helper ); ?>" data-desktop-for="<?php echo esc_attr( $for_attribute ); ?>"<?php if ( $is_mobile_friendly ) { ?> data-mobile-for="<?php echo esc_attr( $this->field_for_attribute( $template, $mobile_field ) ); ?>"<?php } ?><?php echo $for_html; ?>><?php esc_html_e( $field['title'] ); ?></label>
+								<label class="foogallery-setting-label" data-setting="<?php echo esc_attr( $setting_helper ); ?>" data-desktop-for="<?php echo esc_attr( $for_attribute ); ?>"<?php if ( $is_mobile_friendly ) { ?> data-mobile-setting="<?php echo esc_attr( ! empty( $mobile_field['alias'] ) ? $mobile_field['alias'] : $mobile_field['id'] ); ?>" data-mobile-for="<?php echo esc_attr( $this->field_for_attribute( $template, $mobile_field ) ); ?>"<?php } ?><?php echo $for_html; ?>><?php esc_html_e( $field['title'] ); ?></label>
 								<?php if ( $is_promo ) { ?>
                                     <span data-balloon-length="large" data-balloon-pos="right" data-balloon="<?php echo esc_attr($field['promo']); ?>"><i class="dashicons dashicons-star-filled"></i></span>
 								<?php } ?>

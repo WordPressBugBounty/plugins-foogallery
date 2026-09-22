@@ -274,6 +274,10 @@ function foogallery_insert_gallery( $args = array(), $context = array() ) {
 		);
 	}
 
+	if ( ! $explicit_settings && ! $source_gallery_id ) {
+		$settings = foogallery_build_initial_mobile_settings( $template );
+	}
+
 	$gallery_id = wp_insert_post(
 		array(
 			'post_type'   => FOOGALLERY_CPT_GALLERY,

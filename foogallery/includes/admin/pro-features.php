@@ -225,16 +225,7 @@ return array(
         'plan' => FOOGALLERY_PRO_PLAN_COMMERCE,
         'plans' => array( FOOGALLERY_PRO_PLAN_COMMERCE ),
     ),
-    'whitelabeling' => array(
-        'title' => foogallery__( 'White Labeling','foogallery' ),
-        'desc' => foogallery__( 'Rebrand FooGallery to whatever you like for your clients. Move or hide menu items too. Ideal for freelancers and agencies. Also available as a stand-alone add-on.', 'foogallery' ),
-        'link' => 'https://fooplugins.com/documentation/foogallery/pro-commerce/white-labeling/',
-        'utm_content' => 'cta_white_labeling',
-        'link_text' => foogallery__( 'Learn More','foogallery' ),
-        'image' => 'https://assets.fooplugins.com/foogallery/plugin/foogallery-admin-help-pro-white-labeling.png',
-        'plan' => FOOGALLERY_PRO_PLAN_COMMERCE,
-        'plans' => array( FOOGALLERY_PRO_PLAN_COMMERCE ),
-    ),
+
     'ecommerce' => array(
         'title' => foogallery__( 'Ecommerce','foogallery' ),
         'desc' => foogallery__( 'Extend the functionality of your gallery with seamless WooCommerce integration. Load all your products into a product gallery with call-to-action buttons and sales ribbons. Or create a single "master product" and make money selling your gallery images!', 'foogallery' ),
