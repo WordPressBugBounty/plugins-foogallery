@@ -21,7 +21,10 @@ abstract class ActionScheduler_Logger {
 	 */
 	public static function instance() {
 		if ( empty( self::$logger ) ) {
-			$class        = apply_filters( 'action_scheduler_logger_class', 'ActionScheduler_wpCommentLogger' );
+			$class = apply_filters( 'action_scheduler_logger_class', 'ActionScheduler_wpCommentLogger' );
+			if ( ! is_string( $class ) || ! class_exists( $class ) || ! is_subclass_of( $class, __CLASS__ ) ) {
+				$class = 'ActionScheduler_wpCommentLogger';
+			}
 			self::$logger = new $class();
 		}
 		return self::$logger;

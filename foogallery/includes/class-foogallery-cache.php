@@ -11,6 +11,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'FooGallery_Cache' ) ) {
 
 	class FooGallery_Cache {
+		/**
+		 * Version of the complete rendered-output cache boundary.
+		 */
+		const BOUNDARY_VERSION = '2';
+
+		/**
+		 * Request-local cache state, keyed by gallery object hash.
+		 *
+		 * @var array
+		 */
+		private $render_states = array();
 
 		function __construct() {
 			if ( is_admin() ) {
@@ -34,10 +45,20 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 			}
 
 			add_filter( 'foogallery_load_gallery_template', array( $this, 'fetch_gallery_html_from_cache' ), 10, 3 );
+			add_filter( 'foogallery_rendered_gallery_output', array( $this, 'filter_rendered_gallery_output' ), 10, 2 );
+			add_filter( 'foogallery_rendering_cached_output', array( $this, 'is_rendering_cached_output' ), 10, 2 );
 
 			add_filter( 'foogallery_html_cache_disabled', array( $this, 'disable_html_cache' ), 10, 3 );
 
 			add_filter( 'foogallery_render_template_clear_globals' , array( $this, 'render_template_clear_globals' ) );
+
+			// Complete output can include extension-provided markup, so extension changes invalidate it.
+			add_action( 'foogallery_extension_activated', array( $this, 'clear_all_gallery_caches' ) );
+			add_action( 'foogallery_extension_deactivated', array( $this, 'clear_all_gallery_caches' ) );
+			add_action( 'activated_plugin', array( $this, 'clear_all_gallery_caches' ) );
+			add_action( 'deactivated_plugin', array( $this, 'clear_all_gallery_caches' ) );
+			add_action( 'switch_theme', array( $this, 'clear_all_gallery_caches' ) );
+			add_action( 'upgrader_process_complete', array( $this, 'clear_all_gallery_caches' ) );
 		}
 
 		/**
@@ -54,6 +75,33 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 				$disabled = true;
 			}
 
+			// FooGallery User Uploads renders a capability-sensitive form with a
+			// request nonce inside the gallery boundary. A shared gallery cache
+			// would either hide the form from eligible users or expose one user's
+			// form and nonce to visitors who cannot upload.
+			if (
+				defined( 'FGFUU_FILE' ) &&
+				'feu-after-gallery' === foogallery_gallery_template_setting( 'show_upload_form', 'feu-no' )
+			) {
+				$disabled = true;
+			}
+
+			if ( defined( 'FG_SOCIAL_FILE' ) ) {
+				$social_enabled   = 'yes' === foogallery_gallery_template_setting( 'social_enabled', 'no' );
+				$likes_enabled    = $social_enabled && 'yes' === foogallery_gallery_template_setting( 'likes_enabled', 'no' );
+				$comments_enabled = $social_enabled && 'yes' === foogallery_gallery_template_setting( 'comments_enabled', 'no' );
+				$current_page     = 'yes' === foogallery_gallery_template_setting( 'share_enabled', 'no' ) &&
+					'current_page' === foogallery_gallery_template_setting( 'share_target', 'attachment_page' );
+
+				// Likes/comments include mutable counts and visitor state in the
+				// server-rendered data. Current-page sharing varies by embedding URL
+				// and is active independently of the Social master toggle. Static
+				// attachment-page sharing remains safe to cache.
+				if ( $likes_enabled || $comments_enabled || $current_page ) {
+					$disabled = true;
+				}
+			}
+
 			return $disabled;
 		}
 
@@ -68,35 +116,15 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 		}
 
 		/**
-		 * Save the HTML output of the gallery to post meta so that it can be used in future requests
+		 * Invalidate saved HTML so a frontend request rebuilds it in the correct context.
 		 *
 		 * @param $foogallery_id
 		 */
 		function cache_gallery_html_output( $foogallery_id ) {
-			$caching_enabled = $this->is_caching_enabled();
-
-			//check if caching is disabled and quit early
-			if ( !$caching_enabled ) {
-				return;
-			}
-
-			//we need a way to force the gallery to render it's output every time it is saved
-			global $foogallery_force_gallery_cache;
-			$foogallery_force_gallery_cache = true;
-
-			//capture the html output
-			ob_start();
-			foogallery_render_gallery( $foogallery_id );
-			$gallery_html = ob_get_contents();
-			ob_end_clean();
-
-			if ( $caching_enabled ) {
-				//save the output to post meta for later use
-				update_post_meta( $foogallery_id, FOOGALLERY_META_CACHE, $gallery_html );
-				update_post_meta( $foogallery_id, FOOGALLERY_META_CACHE . '_mobile_access', foogallery_mobile_settings_is_entitled() ? '1' : '0' );
-			}
-
-			$foogallery_force_gallery_cache = false;
+			delete_post_meta( $foogallery_id, FOOGALLERY_META_CACHE );
+			delete_post_meta( $foogallery_id, FOOGALLERY_META_CACHE . '_mobile_access' );
+			delete_post_meta( $foogallery_id, FOOGALLERY_META_CACHE . '_boundary_version' );
+			delete_post_meta( $foogallery_id, FOOGALLERY_META_CACHE . '_container_id' );
 		}
 
 		function is_caching_enabled() {
@@ -137,43 +165,94 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 		 */
 		function fetch_gallery_html_from_cache( $override, $gallery, $template_location ) {
 			global $foogallery_force_gallery_cache;
-			if ( $foogallery_force_gallery_cache ) {
-				return false;
+			if ( isset( $foogallery_force_gallery_cache ) && $foogallery_force_gallery_cache ) {
+				return $override;
 			}
 
 			//check if caching is disabled and quit early
 			if ( !$this->is_caching_enabled() ) {
-				return false;
+				return $override;
 			}
 
 			//allow extensions of others disable the html cache
 			if ( apply_filters( 'foogallery_html_cache_disabled', false, $gallery ) ) {
-				return false;
+				return $override;
 			}
 
 			$gallery_cache         = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE, true );
 			$mobile_access         = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_mobile_access', true );
+			$boundary_version      = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_boundary_version', true );
+			$cached_container_id   = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_container_id', true );
 			$current_mobile_access = foogallery_mobile_settings_is_entitled() ? '1' : '0';
-			if ( $current_mobile_access !== (string) $mobile_access ) {
+			if ( $current_mobile_access !== (string) $mobile_access || self::BOUNDARY_VERSION !== (string) $boundary_version || empty( $cached_container_id ) ) {
 				// Older caches lack an entitlement marker, while upgraded and
 				// downgraded installs carry the opposite marker. Rebuild once even
 				// if a declaration was removed during that same transition.
 				delete_post_meta( $gallery->ID, FOOGALLERY_META_CACHE );
 				delete_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_mobile_access' );
-				$this->cache_gallery_html_output( $gallery->ID );
-				$gallery_cache = get_post_meta( $gallery->ID, FOOGALLERY_META_CACHE, true );
+				delete_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_boundary_version' );
+				delete_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_container_id' );
+				$gallery_cache = '';
 			}
 
 			if ( !empty( $gallery_cache ) && is_string( $gallery_cache ) ) {
-				//output the cached gallery html
-				echo $gallery_cache; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Cached HTML output
+				$this->render_states[ spl_object_hash( $gallery ) ] = array(
+					'cached_html'         => $gallery_cache,
+					'cached_container_id' => $cached_container_id,
+				);
 				return true; //return that we will override
 			} else {
-				//we should cache the result for next time
-				$this->cache_gallery_html_output( $gallery->ID );
+				$this->render_states[ spl_object_hash( $gallery ) ] = array( 'cache_miss' => true );
 			}
 
-			return false;
+			return $override;
+		}
+
+		/**
+		 * Tell output-producing extensions that the complete response will be
+		 * replaced by a cache hit. Public lifecycle hooks still run, but expensive
+		 * request output can be skipped safely because it already exists in cache.
+		 *
+		 * @param bool       $cached  Existing cached-render state.
+		 * @param FooGallery $gallery Gallery being rendered.
+		 * @return bool
+		 */
+		function is_rendering_cached_output( $cached, $gallery ) {
+			if ( ! $gallery instanceof FooGallery ) {
+				return $cached;
+			}
+
+			$state_key = spl_object_hash( $gallery );
+			return $cached || ( isset( $this->render_states[ $state_key ]['cached_html'] ) );
+		}
+
+		/**
+		 * Replace the complete live render with a cache hit, or persist a complete
+		 * cache miss after all public render hooks have run.
+		 *
+		 * @param string     $output  Complete rendered gallery output.
+		 * @param FooGallery $gallery Gallery being rendered.
+		 * @return string
+		 */
+		function filter_rendered_gallery_output( $output, $gallery ) {
+			$state_key = spl_object_hash( $gallery );
+			if ( ! isset( $this->render_states[ $state_key ] ) ) {
+				return $output;
+			}
+
+			$state = $this->render_states[ $state_key ];
+			unset( $this->render_states[ $state_key ] );
+
+			if ( isset( $state['cached_html'] ) ) {
+				return str_replace( $state['cached_container_id'], $gallery->container_id(), $state['cached_html'] );
+			}
+
+			update_post_meta( $gallery->ID, FOOGALLERY_META_CACHE, wp_slash( $output ) );
+			update_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_mobile_access', foogallery_mobile_settings_is_entitled() ? '1' : '0' );
+			update_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_boundary_version', self::BOUNDARY_VERSION );
+			update_post_meta( $gallery->ID, FOOGALLERY_META_CACHE . '_container_id', $gallery->container_id() );
+
+			return $output;
 		}
 
 		/**
@@ -246,6 +325,8 @@ if ( ! class_exists( 'FooGallery_Cache' ) ) {
 		function clear_all_gallery_caches() {
 			delete_post_meta_by_key( FOOGALLERY_META_CACHE );
 			delete_post_meta_by_key( FOOGALLERY_META_CACHE . '_mobile_access' );
+			delete_post_meta_by_key( FOOGALLERY_META_CACHE . '_boundary_version' );
+			delete_post_meta_by_key( FOOGALLERY_META_CACHE . '_container_id' );
 		}
 
 		/**

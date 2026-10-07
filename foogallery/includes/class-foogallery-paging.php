@@ -527,6 +527,10 @@ if ( ! class_exists( 'FooGallery_Paging' ) ) {
 		 * @param FooGallery $gallery
 		 */
 		function output_paging_script_block( $gallery ) {
+			if ( apply_filters( 'foogallery_rendering_cached_output', false, $gallery ) ) {
+				return;
+			}
+
 			if ( foogallery_current_gallery_has_cached_value('paging' ) ) {
 				$paging_options = foogallery_current_gallery_get_cached_value( 'paging' );
 				$page_size = intval( $paging_options['size'] );

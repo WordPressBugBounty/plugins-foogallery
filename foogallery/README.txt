@@ -5,7 +5,7 @@ Tags: gallery plugin, photo gallery, image gallery, masonry gallery, wordpress g
 Requires at least: 6.8
 Requires PHP: 7.2
 Tested up to: 7.1
-Stable tag: 3.3.3
+Stable tag: 3.3.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,22 @@ Design galleries with live previews, a visual layout selector, mobile controls, 
 *	FooGallery Migrator - easily migrate from Envira / NextGen / Modula
 *	Multisite Support
 *	Password protected image galleries
+
+= Create a Masonry Gallery =
+
+FooGallery Free includes the Masonry Gallery layout for arranging portrait and landscape images together in a responsive, staggered grid without cropping them to one shape. Choose the thumbnail width and spacing to suit your photos. [View the Masonry Gallery demo](https://fooplugins.com/foogallery-wordpress-gallery-plugin/masonry-gallery/).
+
+= Create a Video Gallery =
+
+FooGallery PRO Expert and PRO Commerce let you mix images and videos in the same gallery. Import videos from YouTube, YouTube Shorts, Vimeo, or use self-hosted videos from your Media Library. [View video gallery demos](https://fooplugins.com/foogallery-wordpress-gallery-plugin/video-gallery/).
+
+= Add Image Watermarking and Protection =
+
+FooGallery PRO Commerce includes image watermarking and per-gallery right-click protection. Add built-in repeating watermarks or your own custom watermark image to help identify and protect gallery images. [View the watermarking demo](https://fooplugins.com/foogallery-wordpress-gallery-plugin/photo-watermark/).
+
+= Build WooCommerce Galleries and Sell Images =
+
+FooGallery PRO Commerce connects FooGallery galleries with WooCommerce. Build galleries from WooCommerce products, link gallery images to individual products, or use one master product with variations for every image in a gallery, including add-to-cart and purchased-image download workflows. [Explore the WooCommerce integration](https://fooplugins.com/foogallery-wordpress-gallery-plugin/woocommerce-integration/).
 
 = Media Audit: Find Image Issues Before Your Visitors Do =
 
@@ -340,6 +356,14 @@ The Patchstack team will assist you with verification, CVE assignment, and notif
 Please update in order for FooGallery to work effectively.
 
 == Changelog ==
+
+= 3.3.8 =
+
+* Date Updated : 2 Oct 2026
+* Fix : Prevented a startup fatal when an invalid Action Scheduler logger class is supplied; valid custom loggers still work (PR #417).
+* Fix : Improved HTML cache performance for large and paginated galleries by caching complete gallery output, including pagination data and noscript markup (PR #425).
+* Fix : Preserved quotes and backslashes in cached captions and gallery data, and kept repeated gallery embeds working correctly.
+* Fix : Refreshed gallery caches after plugin, extension, and theme changes, while keeping Social interactions and User Uploads forms current.
 
 = 3.3.7 =
 
