@@ -333,14 +333,13 @@ if ( !class_exists( 'FooGallery_FooBox_Compatibility' ) ) {
          * @return mixed
          */
 		function make_foobox_default_lightbox( $field, $gallery_template ) {
-		    if ( $this->is_foobox_installed() ) {
-                if (isset($field['lightbox']) && true === $field['lightbox']) {
-                    $field['default'] = 'foobox';
-                }
-            }
+			// Avoid probing absent FooBox classes for unrelated template fields.
+			if ( isset( $field['lightbox'] ) && true === $field['lightbox'] && $this->is_foobox_installed() ) {
+				$field['default'] = 'foobox';
+			}
 
-		    return $field;
-        }
+			return $field;
+		}
 
 		function is_foobox_installed() {
 		    return $this->is_foobox_free_installed() || $this->is_foobox_pro_installed();

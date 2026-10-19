@@ -243,6 +243,11 @@ if ( ! class_exists( 'FooGallery_Admin_Gallery_MetaBoxes' ) ) {
 		}
 
 		public function save_gallery( $post_id ) {
+			// The public gallery management API owns its post/meta lifecycle.
+			if ( ! empty( $GLOBALS['foogallery_gallery_management_update'] ) ) {
+				return $post_id;
+			}
+
 			// check autosave
 			if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 				return $post_id;

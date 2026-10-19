@@ -10901,6 +10901,8 @@ FooGallery.utils.$, FooGallery.utils, FooGallery.utils.is, FooGallery.utils.fn);
 (function($, _, _is){
 
     var root = document.documentElement;
+    // Skip scroll locking when its fixed full-page layout could exhaust mobile paint memory.
+    var maximumScrollLockViewports = 50;
     var scrollKeys = {
         " ": true,
         ArrowDown: true,
@@ -10970,6 +10972,8 @@ FooGallery.utils.$, FooGallery.utils, FooGallery.utils.is, FooGallery.utils.fn);
             if (!body || this._scrollState) return;
 
             var pageHeight = Math.max(root.scrollHeight, body.scrollHeight, root.clientHeight);
+            var viewportHeight = window.innerHeight || root.clientHeight;
+            if (viewportHeight && pageHeight > viewportHeight * maximumScrollLockViewports) return;
             var panel = this.panel.$el.get(0);
             var state = this._scrollState = {
                 x: window.scrollX,

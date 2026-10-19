@@ -28,6 +28,44 @@ function foogallery_attachment_html_image_src( $foogallery_attachment, $args = a
 }
 
 /**
+ * Get processed metadata for mobile captions in the current render context.
+ *
+ * The loader opens a fresh scope for each render. Calls outside that lifecycle
+ * deliberately do not retain a snapshot. No settings or attachment values are
+ * cached, and fields are first processed after template/argument override hooks.
+ *
+ * @return array
+ */
+function foogallery_get_mobile_caption_fields() {
+	global $current_foogallery;
+	global $current_foogallery_template;
+	global $foogallery_mobile_caption_field_snapshot;
+
+	if ( empty( $current_foogallery_template ) ) {
+		return array();
+	}
+
+	$scoped = is_array( $foogallery_mobile_caption_field_snapshot );
+	if ( $scoped && isset( $foogallery_mobile_caption_field_snapshot['fields'] ) &&
+		$foogallery_mobile_caption_field_snapshot['gallery'] === $current_foogallery &&
+		$foogallery_mobile_caption_field_snapshot['template'] === $current_foogallery_template ) {
+		return $foogallery_mobile_caption_field_snapshot['fields'];
+	}
+
+	$template = foogallery_get_gallery_template( $current_foogallery_template );
+	$fields   = is_array( $template ) && isset( $template['fields'] ) ? foogallery_get_fields_for_template( $template ) : array();
+	if ( $scoped ) {
+		$foogallery_mobile_caption_field_snapshot = array(
+			'gallery'  => $current_foogallery,
+			'template' => $current_foogallery_template,
+			'fields'   => $fields,
+		);
+	}
+
+	return $fields;
+}
+
+/**
  * Return explicitly selected, valid mobile caption source settings.
  *
  * Missing and empty settings inherit the desktop DOM (Same as desktop).
@@ -40,20 +78,15 @@ function foogallery_get_mobile_caption_sources() {
 		return array();
 	}
 
-	$template = foogallery_get_gallery_template( $current_foogallery_template );
-	if ( ! is_array( $template ) || ! isset( $template['fields'] ) ) {
-		return array();
-	}
-
 	$sources = array();
-	$fields  = foogallery_get_fields_for_template( $template );
+	$fields  = foogallery_get_mobile_caption_fields();
 	foreach ( array( 'title' => 'caption_title_source', 'description' => 'caption_desc_source' ) as $key => $field_id ) {
 		foreach ( $fields as $field ) {
 			if ( ! is_array( $field ) || $field_id !== ( $field['id'] ?? '' ) || ! is_array( $field['choices'] ?? null ) ) {
 				continue;
 			}
 
-			$source = foogallery_gallery_template_mobile_setting( 'mobile_' . $field_id, '__foogallery_mobile_inherit__' );
+			$source = foogallery_gallery_template_mobile_setting_from_fields( 'mobile_' . $field_id, '__foogallery_mobile_inherit__', $fields, $current_foogallery_template );
 			if ( is_scalar( $source ) && '' !== (string) $source && array_key_exists( (string) $source, $field['choices'] ) ) {
 				$sources[ $key ] = (string) $source;
 			}

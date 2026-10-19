@@ -18,6 +18,25 @@ class FooGallery_Template_Loader {
 	 * @param      $args array       Arguments passed in from the shortcode
 	 */
 	public function render_template( $args ) {
+		global $foogallery_mobile_caption_field_snapshot;
+
+		// A render-scoped metadata snapshot, independent of retained gallery globals.
+		// Restore an outer scope if a template triggers a nested render.
+		$previous_snapshot                        = $foogallery_mobile_caption_field_snapshot;
+		$foogallery_mobile_caption_field_snapshot = array();
+		try {
+			$this->render_template_in_context( $args );
+		} finally {
+			$foogallery_mobile_caption_field_snapshot = $previous_snapshot;
+		}
+	}
+
+	/**
+	 * Render inside the mobile caption metadata scope.
+	 *
+	 * @param array $args Gallery arguments.
+	 */
+	protected function render_template_in_context( $args ) {
 		//do some work before we locate the template
 		global $current_foogallery;
 		global $current_foogallery_arguments;

@@ -5,7 +5,7 @@ Tags: gallery plugin, photo gallery, image gallery, masonry gallery, wordpress g
 Requires at least: 6.8
 Requires PHP: 7.2
 Tested up to: 7.1
-Stable tag: 3.3.8
+Stable tag: 3.3.17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -356,6 +356,21 @@ The Patchstack team will assist you with verification, CVE assignment, and notif
 Please update in order for FooGallery to work effectively.
 
 == Changelog ==
+
+= 3.3.17 =
+
+* Date Updated : 18 Oct 2026
+* Fix : Prevented stale gallery picker requests from updating removed block editor components.
+* Fix : Removed React rendering deprecation warnings from feature-sharing settings and onboarding.
+* Update : Resolved Plugin Check naming warnings in gallery management and settings filters.
+* Fix : Prevented an unnecessary image-optimization request on the settings screen.
+* Fix : Preserved literal backslashes and escaped quotes in gallery titles updated through the gallery API.
+* Update : Updated to Freemius SDK v2.13.5 (includes security fixes).
+* Fix : Verified the security nonce before processing Freemius account activation callbacks.
+* New : Added a public gallery update API with validation and rollback support (PR #419).
+* Fix : Avoided lightbox scroll locking on extremely long pages to reduce mobile browser memory pressure and tab crashes (client PR #29).
+* Fix : Improved gallery rendering performance by avoiding unnecessary FooBox checks for unrelated gallery fields (PR #428).
+* Fix : Improved gallery rendering performance by avoiding repeated mobile-caption setup for each image (PR #429).
 
 = 3.3.8 =
 

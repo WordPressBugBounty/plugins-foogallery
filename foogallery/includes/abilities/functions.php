@@ -409,6 +409,8 @@ function foogallery_abilities_map_gallery_management_error( $error ) {
 		'foogallery_invalid_source_gallery'         => 'foogallery_ability_invalid_source_gallery',
 		'foogallery_invalid_template'               => 'foogallery_ability_invalid_layout',
 		'foogallery_invalid_status'                 => 'foogallery_ability_invalid_status',
+		'foogallery_invalid_settings'               => 'foogallery_ability_invalid_settings',
+		'foogallery_update_failed'                  => 'foogallery_ability_update_failed',
 		'foogallery_invalid_attachments'            => 'foogallery_ability_invalid_attachments',
 		'foogallery_unsupported_datasource'         => 'foogallery_ability_unsupported_datasource',
 		'foogallery_no_attachment_changes'          => 'foogallery_ability_no_attachment_changes',
@@ -545,10 +547,11 @@ function foogallery_abilities_sanitize_template_field_value( $field, $value ) {
  * @param array  $base_settings Existing settings.
  * @param int    $gallery_id    Gallery ID for filter compatibility.
  * @param array  $context       Context passed through save filters.
+ * @param bool   $strict        Whether each public save-filter boundary must return a safe array.
  *
- * @return array
+ * @return array|WP_Error
  */
-function foogallery_abilities_normalize_template_settings( $template, $settings, $base_settings = array(), $gallery_id = 0, $context = array() ) {
+function foogallery_abilities_normalize_template_settings( $template, $settings, $base_settings = array(), $gallery_id = 0, $context = array(), $strict = false ) {
 	$template      = sanitize_key( $template );
 	$settings      = is_array( $settings ) ? $settings : array();
 	$merged        = is_array( $base_settings ) ? $base_settings : array();
@@ -569,8 +572,21 @@ function foogallery_abilities_normalize_template_settings( $template, $settings,
 		$merged[ $template . '_' . $field_map[ $field_id ]['id'] ] = foogallery_abilities_sanitize_template_field_value( $field_map[ $field_id ], $value );
 	}
 
-	$merged = apply_filters( 'foogallery_save_gallery_settings', $merged, $gallery_id, $context );
-	$merged = apply_filters( 'foogallery_save_gallery_settings-' . $template, $merged, $gallery_id, $context );
+	if ( $strict ) {
+		$merged = foogallery_abilities_apply_strict_settings_filter( 'foogallery_save_gallery_settings', $merged, $gallery_id, $context );
+		if ( is_wp_error( $merged ) ) {
+			return $merged;
+		}
+
+		$merged = foogallery_abilities_apply_strict_settings_filter( 'foogallery_save_gallery_settings-' . $template, $merged, $gallery_id, $context );
+		if ( is_wp_error( $merged ) ) {
+			return $merged;
+		}
+	} else {
+		$merged = apply_filters( 'foogallery_save_gallery_settings', $merged, $gallery_id, $context );
+		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- Existing template-specific hook uses a hyphen before the slug.
+		$merged = apply_filters( 'foogallery_save_gallery_settings-' . $template, $merged, $gallery_id, $context );
+	}
 
 	foreach ( $merged as $key => $value ) {
 		$field                     = $field_indexes['storage'][ sanitize_key( (string) $key ) ] ?? null;
@@ -592,27 +608,183 @@ function foogallery_abilities_normalize_template_settings( $template, $settings,
 }
 
 /**
+ * Apply a settings filter and reject an unsafe return immediately after any callback.
+ *
+ * A later callback may coerce an invalid value back to an array. Temporarily wrapping
+ * the registered callbacks lets the public API stop at the callback that violated the
+ * contract while retaining WordPress's normal filter bookkeeping and argument handling.
+ * Legacy callers continue to use the unwrapped filter chain.
+ *
+ * @param string $hook_name  Filter name.
+ * @param array  $settings   Settings passed to the filter.
+ * @param int    $gallery_id Gallery ID.
+ * @param array  $context    Save context.
+ *
+ * @return array|WP_Error
+ */
+function foogallery_abilities_apply_strict_settings_filter( $hook_name, $settings, $gallery_id, $context ) {
+	global $wp_filter;
+
+	if ( ! is_array( $settings ) || ! foogallery_abilities_is_supported_setting_value( $settings ) ) {
+		return new WP_Error(
+			'foogallery_invalid_settings',
+			__( 'Gallery settings filters must return a safely serializable array.', 'foogallery' )
+		);
+	}
+
+	if ( ! isset( $wp_filter[ $hook_name ] ) || ! $wp_filter[ $hook_name ] instanceof WP_Hook ) {
+		return $settings;
+	}
+
+	$hook           = $wp_filter[ $hook_name ];
+	$wrapped        = array();
+	$invalid_return = false;
+	$wrap_callbacks = null;
+	$wrap_callbacks = static function () use ( $hook, &$wrapped, &$invalid_return, &$wrap_callbacks ) {
+		foreach ( $hook->callbacks as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback_id => $callback ) {
+				if (
+					isset( $wrapped[ $priority ][ $callback_id ]['wrapper'] )
+					&& $callback['function'] === $wrapped[ $priority ][ $callback_id ]['wrapper']
+				) {
+					continue;
+				}
+
+				$original = $callback['function'];
+				$wrapper  = static function () use ( $original, &$invalid_return, &$wrap_callbacks ) {
+					$arguments = func_get_args();
+
+					if ( $invalid_return ) {
+						return isset( $arguments[0] ) ? $arguments[0] : null;
+					}
+
+					$value = call_user_func_array( $original, $arguments );
+					$wrap_callbacks();
+
+					if ( ! is_array( $value ) || ! foogallery_abilities_is_supported_setting_value( $value ) ) {
+						$invalid_return = true;
+					}
+
+					return $value;
+				};
+
+				$wrapped[ $priority ][ $callback_id ] = array(
+					'original' => $original,
+					'wrapper'  => $wrapper,
+				);
+
+				$hook->callbacks[ $priority ][ $callback_id ]['function'] = $wrapper;
+			}
+		}
+	};
+	$wrap_callbacks();
+
+	try {
+		// Current strict-save callers pass FooGallery-prefixed hooks with an optional template suffix.
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Current callers use the FooGallery-prefixed base or template-specific hook.
+		$settings = apply_filters( $hook_name, $settings, $gallery_id, $context );
+	} finally {
+		foreach ( $wrapped as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback_id => $callback ) {
+				if (
+					isset( $hook->callbacks[ $priority ][ $callback_id ]['function'] )
+					&& $hook->callbacks[ $priority ][ $callback_id ]['function'] === $callback['wrapper']
+				) {
+					$hook->callbacks[ $priority ][ $callback_id ]['function'] = $callback['original'];
+				}
+			}
+		}
+	}
+
+	if ( $invalid_return || ! is_array( $settings ) || ! foogallery_abilities_is_supported_setting_value( $settings ) ) {
+		return new WP_Error(
+			'foogallery_invalid_settings',
+			__( 'Gallery settings filters must return a safely serializable array.', 'foogallery' )
+		);
+	}
+
+	return $settings;
+}
+
+/**
+ * Determine whether a setting value can be normalized without lossy object coercion.
+ *
+ * Registered custom field types may use nested arrays, while objects and resources are
+ * unsupported by the settings normalizer.
+ *
+ * @param mixed $value Setting value.
+ *
+ * @return bool
+ */
+function foogallery_abilities_is_supported_setting_value( $value ) {
+	$item_count = 0;
+
+	return foogallery_abilities_is_supported_setting_value_recursive( $value, 0, $item_count );
+}
+
+/**
+ * Recursively validate a settings value within conservative processing bounds.
+ *
+ * @param mixed $value      Setting value.
+ * @param int   $depth      Current array depth.
+ * @param int   $item_count Number of array items inspected.
+ *
+ * @return bool
+ */
+function foogallery_abilities_is_supported_setting_value_recursive( $value, $depth, &$item_count ) {
+	if ( null === $value || is_scalar( $value ) ) {
+		return true;
+	}
+
+	if ( ! is_array( $value ) || $depth >= 20 ) {
+		return false;
+	}
+
+	foreach ( $value as $key => $item ) {
+		++$item_count;
+		if ( $item_count > 10000 || ( ! is_int( $key ) && ! is_string( $key ) ) ) {
+			return false;
+		}
+
+		if ( ! foogallery_abilities_is_supported_setting_value_recursive( $item, $depth + 1, $item_count ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
  * Normalize a list of template setting update objects into a keyed settings array.
  *
  * @param string $template Template slug.
- * @param array  $settings Incoming setting update objects.
+ * @param mixed  $settings Incoming setting update objects.
  *
  * @return array|WP_Error
  */
 function foogallery_abilities_prepare_template_setting_updates( $template, $settings ) {
 	$template      = sanitize_key( $template );
-	$settings      = is_array( $settings ) ? $settings : array();
 	$field_indexes = foogallery_abilities_get_template_field_indexes( $template );
 	$field_map     = $field_indexes['lookup'];
 	$normalized    = array();
 	$invalid_ids   = array();
+	$invalid_items = array();
 
-	foreach ( $settings as $setting ) {
-		if ( ! is_array( $setting ) || empty( $setting['id'] ) ) {
+	if ( ! is_array( $settings ) ) {
+		return new WP_Error(
+			'foogallery_ability_invalid_settings',
+			__( 'Gallery settings must be an array of setting update objects.', 'foogallery' ),
+			array( 'layout' => $template )
+		);
+	}
+
+	foreach ( $settings as $index => $setting ) {
+		if ( ! is_array( $setting ) || ! array_key_exists( 'id', $setting ) || ! is_string( $setting['id'] ) || '' === sanitize_key( $setting['id'] ) ) {
+			$invalid_items[] = $index;
 			continue;
 		}
 
-		$field_id = sanitize_key( (string) $setting['id'] );
+		$field_id = sanitize_key( $setting['id'] );
 
 		if ( 0 === strpos( $field_id, $template . '_' ) ) {
 			$field_id = substr( $field_id, strlen( $template ) + 1 );
@@ -623,51 +795,68 @@ function foogallery_abilities_prepare_template_setting_updates( $template, $sett
 			continue;
 		}
 
-		$field     = $field_map[ $field_id ];
+		$field      = $field_map[ $field_id ];
 		$field_type = isset( $field['type'] ) ? $field['type'] : '';
-		$has_value = false;
-		$value     = null;
+		$value      = null;
+		$valid      = true;
 
 		if ( 'thumb_size' === $field_type || 'thumb_size_no_crop' === $field_type ) {
-			$value = array();
+			$allowed_keys = 'thumb_size' === $field_type ? array( 'id', 'width', 'height', 'crop' ) : array( 'id', 'width', 'height' );
+			$value        = array();
+			$valid        = empty( array_diff( array_keys( $setting ), $allowed_keys ) );
+			$valid        = $valid && ( array_key_exists( 'width', $setting ) || array_key_exists( 'height', $setting ) || ( 'thumb_size' === $field_type && array_key_exists( 'crop', $setting ) ) );
 
 			if ( array_key_exists( 'width', $setting ) ) {
+				$valid          = $valid && is_int( $setting['width'] );
 				$value['width'] = absint( $setting['width'] );
-				$has_value      = true;
 			}
 
 			if ( array_key_exists( 'height', $setting ) ) {
+				$valid           = $valid && is_int( $setting['height'] );
 				$value['height'] = absint( $setting['height'] );
-				$has_value       = true;
 			}
 
 			if ( array_key_exists( 'crop', $setting ) ) {
-				$value['crop'] = ! empty( $setting['crop'] );
-				$has_value     = true;
+				$valid         = $valid && is_bool( $setting['crop'] );
+				$value['crop'] = $setting['crop'];
+			}
+		} else {
+			$valid = empty( array_diff( array_keys( $setting ), array( 'id', 'value' ) ) ) && array_key_exists( 'value', $setting );
+			$valid = $valid && foogallery_abilities_is_supported_setting_value( $setting['value'] ?? null );
+
+			if ( $valid && is_array( $setting['value'] ) ) {
+				$allows_structured_value = is_array( $field['default'] ?? null ) || ! empty( $field['allows_structured_value'] );
+				$allows_structured_value = apply_filters( 'foogallery_abilities_setting_allows_structured_value', $allows_structured_value, $field, $setting, $template );
+				$valid                   = $allows_structured_value;
+			}
+
+			if ( $valid && ! is_array( $setting['value'] ) ) {
+				$valid = is_scalar( $setting['value'] ) || null === $setting['value'];
+			}
+
+			if ( $valid ) {
+				$value = $setting['value'];
 			}
 		}
 
-		if ( ! $has_value && array_key_exists( 'value', $setting ) ) {
-			$value     = $setting['value'];
-			$has_value = true;
-		}
-
-		if ( ! $has_value ) {
+		if ( ! $valid ) {
+			$invalid_items[] = $index;
 			continue;
 		}
 
 		$normalized[ $field_id ] = $value;
 	}
 
-	if ( ! empty( $invalid_ids ) ) {
+	if ( ! empty( $invalid_ids ) || ! empty( $invalid_items ) ) {
 		$invalid_ids = array_values( array_unique( array_filter( $invalid_ids ) ) );
 
 		return new WP_Error(
 			'foogallery_ability_invalid_settings',
-			__( 'One or more gallery setting IDs are not valid for the selected layout.', 'foogallery' ),
+			__( 'One or more gallery setting updates are malformed or invalid for the selected layout.', 'foogallery' ),
 			array(
 				'layout'              => $template,
 				'invalid_setting_ids' => $invalid_ids,
+				'invalid_items'       => array_values( $invalid_items ),
 			)
 		);
 	}
@@ -752,8 +941,8 @@ function foogallery_abilities_get_setting_update_schema() {
 				'description' => __( 'The normalized gallery setting ID returned by the `foogallery/get-gallery-layout-schema` tool.', 'foogallery' ),
 			),
 			'value'  => array(
-				'type'        => array( 'string', 'number', 'boolean', 'null' ),
-				'description' => __( 'The scalar value for the setting. Use this for most field types such as radio, select, text, checkbox, slider, or number.', 'foogallery' ),
+				'type'        => array( 'string', 'number', 'boolean', 'null', 'object', 'array' ),
+				'description' => __( 'The scalar value for most settings, or a structured value supported by a registered custom field type.', 'foogallery' ),
 			),
 			'width'  => array(
 				'type'        => 'integer',

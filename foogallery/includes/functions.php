@@ -1013,12 +1013,38 @@ function foogallery_gallery_template_mobile_setting(  $key, $default_value = nul
     if ( !is_array( $template ) || !isset( $template['fields'] ) ) {
         return $default_value;
     }
-    foreach ( foogallery_get_fields_for_template( $template ) as $field ) {
-        $mobile_field = foogallery_expand_mobile_field_unchecked( $field, $default_value, $current_foogallery_template );
+    return foogallery_gallery_template_mobile_setting_from_fields(
+        $key,
+        $default_value,
+        foogallery_get_fields_for_template( $template ),
+        $current_foogallery_template
+    );
+}
+
+/**
+ * Resolve a mobile setting against already processed field metadata.
+ *
+ * Settings, filters and provider entitlement are deliberately resolved on each
+ * call; only the field preprocessing can be shared by mobile caption rendering.
+ *
+ * @param string $key           Declared mobile field ID or alias.
+ * @param mixed  $default_value Fallback when no declaration matches.
+ * @param array  $fields        Processed template fields.
+ * @param string $template_slug Current template slug.
+ * @return mixed
+ */
+function foogallery_gallery_template_mobile_setting_from_fields(
+    $key,
+    $default_value,
+    $fields,
+    $template_slug
+) {
+    foreach ( $fields as $field ) {
+        $mobile_field = foogallery_expand_mobile_field_unchecked( $field, $default_value, $template_slug );
         if ( !is_array( $mobile_field ) || !in_array( $key, array($mobile_field['id'], $mobile_field['alias'] ?? ''), true ) ) {
             continue;
         }
-        if ( foogallery_mobile_field_is_free( $field, $current_foogallery_template ) ) {
+        if ( foogallery_mobile_field_is_free( $field, $template_slug ) ) {
             $mobile_default = ( array_key_exists( 'default', $mobile_field ) ? $mobile_field['default'] : $default_value );
             return foogallery_gallery_template_setting_raw( $mobile_field['id'], $mobile_default, $mobile_field['alias'] ?? '' );
         }
@@ -4026,4 +4052,7 @@ function foogallery_is_rest_request_from_admin() {
     return false;
 }
 
+// Gallery management functions depend on the shared Ability normalization helpers,
+// even when the WordPress Abilities API itself is unavailable.
+require_once __DIR__ . '/abilities/functions.php';
 require_once __DIR__ . '/gallery-management-functions.php';

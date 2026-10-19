@@ -978,5 +978,9 @@
 				)
 		);
 	}
-	wp.element.render( h( Improve ), root );
+	if ( wp.element.createRoot ) {
+		wp.element.createRoot( root ).render( h( Improve ) );
+	} else {
+		wp.element.render( h( Improve ), root );
+	}
 } )( jQuery, window.wp, window.FooGalleryUsageConfig );

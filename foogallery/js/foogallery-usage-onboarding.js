@@ -21,29 +21,35 @@
 	let busy = false;
 	let error = '';
 	let continuing = false;
+	let reactRoot = null;
 	function render() {
-		wp.element.render(
-			h(
-				wp.element.Fragment,
-				null,
-				h( wp.components.CheckboxControl, {
-					label: __( 'Enable feature sharing', 'foogallery' ),
-					checked,
-					disabled: busy,
-					onChange: ( value ) => {
-						checked = value;
-						render();
-					},
-				} ),
-				error &&
-					h(
-						wp.components.Notice,
-						{ status: 'error', isDismissible: false },
-						error
-					)
-			),
-			root
+		const element = h(
+			wp.element.Fragment,
+			null,
+			h( wp.components.CheckboxControl, {
+				label: __( 'Enable feature sharing', 'foogallery' ),
+				checked,
+				disabled: busy,
+				onChange: ( value ) => {
+					checked = value;
+					render();
+				},
+			} ),
+			error &&
+				h(
+					wp.components.Notice,
+					{ status: 'error', isDismissible: false },
+					error
+				)
 		);
+		if ( wp.element.createRoot ) {
+			if ( ! reactRoot ) {
+				reactRoot = wp.element.createRoot( root );
+			}
+			reactRoot.render( element );
+		} else {
+			wp.element.render( element, root );
+		}
 	}
 	function save( operation, proceed ) {
 		if ( busy ) {

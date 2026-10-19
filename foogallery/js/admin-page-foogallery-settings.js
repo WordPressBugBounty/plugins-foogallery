@@ -44,8 +44,15 @@ jQuery(document).ready(function($) {
 (function(FOOGALLERY, $, undefined) {
 
     FOOGALLERY.loadImageOptimizationContent = function() {
+        var $container = $('#foogallery_settings_image_optimization_container'),
+            nonce = $('#foogallery_setting_image_optimization-nonce').val();
+
+        if (!$container.length || typeof nonce !== 'string' || !nonce.trim()) {
+            return;
+        }
+
         var data = 'action=foogallery_get_image_optimization_info' +
-            '&_wpnonce=' + $('#foogallery_setting_image_optimization-nonce').val() +
+            '&_wpnonce=' + encodeURIComponent(nonce) +
             '&_wp_http_referer=' + encodeURIComponent($('input[name="_wp_http_referer"]').val());
 
         $.ajax({
@@ -53,7 +60,7 @@ jQuery(document).ready(function($) {
             url: ajaxurl,
             data: data,
             success: function(data) {
-                $('#foogallery_settings_image_optimization_container').replaceWith(data);
+                $container.replaceWith(data);
             }
         });
     };

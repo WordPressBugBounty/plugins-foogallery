@@ -143,81 +143,35 @@ if ( ! class_exists( 'FooGallery_Ability_Update_Gallery' ) ) {
 				return $template;
 			}
 
-			if ( array_key_exists( 'title', $args ) || array_key_exists( 'status', $args ) ) {
-				$post_update = array(
-					'ID' => $gallery->ID,
-				);
-
-				if ( array_key_exists( 'title', $args ) ) {
-					$post_update['post_title'] = sanitize_text_field( $args['title'] );
-				}
-
-				if ( array_key_exists( 'status', $args ) ) {
-					$post_update['post_status'] = foogallery_abilities_sanitize_gallery_status( $args['status'], $gallery->post_status );
-				}
-
-				$result = wp_update_post( $post_update, true );
-
-				if ( is_wp_error( $result ) ) {
-					return $result;
-				}
-			}
-
-			$request_context = array(
-				'ability'    => self::ID,
-				'gallery_id' => $gallery->ID,
-				'layout'     => $template['slug'],
-				'template'   => $template['slug'],
-				'settings'   => foogallery_abilities_prepare_template_setting_updates(
-					$template['slug'],
-					isset( $args['settings'] ) ? $args['settings'] : array()
-				),
+			$update_args = array(
+				'template' => $template['slug'],
 			);
 
-			if ( is_wp_error( $request_context['settings'] ) ) {
-				return $request_context['settings'];
+			if ( array_key_exists( 'settings', $args ) ) {
+				$update_args['settings'] = $args['settings'];
 			}
 
-			if ( $gallery->gallery_template === $template['slug'] ) {
-				$settings = array_merge(
-					foogallery_abilities_build_template_settings_base( $template['slug'] ),
-					is_array( $gallery->settings ) ? $gallery->settings : array()
-				);
-			} else {
-				$settings = foogallery_abilities_build_template_settings_base( $template['slug'] );
+			foreach ( array( 'title', 'sort', 'custom_css' ) as $field ) {
+				if ( array_key_exists( $field, $args ) ) {
+					$update_args[ $field ] = $args[ $field ];
+				}
 			}
 
-			$settings = foogallery_abilities_normalize_template_settings(
-				$template['slug'],
-				$request_context['settings'],
-				$settings,
+			if ( array_key_exists( 'status', $args ) ) {
+				$update_args['status'] = foogallery_abilities_sanitize_gallery_status( $args['status'], $gallery->post_status );
+			}
+
+			$result = foogallery_update_gallery_for_ability(
 				$gallery->ID,
-				$request_context
+				$update_args,
+				array(
+					'ability' => self::ID,
+				)
 			);
 
-			update_post_meta( $gallery->ID, FOOGALLERY_META_TEMPLATE, $template['slug'] );
-			update_post_meta( $gallery->ID, FOOGALLERY_META_SETTINGS, $settings );
-
-			if ( array_key_exists( 'sort', $args ) ) {
-				$sort = foogallery_abilities_sanitize_gallery_sort( $args['sort'] );
-				if ( '' === $sort ) {
-					delete_post_meta( $gallery->ID, FOOGALLERY_META_SORT );
-				} else {
-					update_post_meta( $gallery->ID, FOOGALLERY_META_SORT, $sort );
-				}
+			if ( is_wp_error( $result ) ) {
+				return foogallery_abilities_map_gallery_management_error( $result );
 			}
-
-			if ( array_key_exists( 'custom_css', $args ) ) {
-				$custom_css = foogallery_sanitize_full( $args['custom_css'] );
-				if ( '' === $custom_css ) {
-					delete_post_meta( $gallery->ID, FOOGALLERY_META_CUSTOM_CSS );
-				} else {
-					update_post_meta( $gallery->ID, FOOGALLERY_META_CUSTOM_CSS, $custom_css );
-				}
-			}
-
-			foogallery_abilities_clear_gallery_cache( $gallery->ID );
-			do_action( 'foogallery_after_save_gallery', $gallery->ID, $request_context );
 
 			$gallery = foogallery_abilities_get_gallery( $gallery->ID );
 
