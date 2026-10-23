@@ -16,6 +16,7 @@ Create responsive photo, image and masonry galleries in WordPress with FooGaller
 = WordPress Gallery Plugin for Photo, Image & Masonry Galleries =
 
 FooGallery helps you create fast, responsive WordPress photo galleries, image galleries, masonry galleries, portfolio galleries, albums, and lightbox galleries using a drag-and-drop gallery builder. It is built for site owners, photographers, designers, bloggers, and agencies who need attractive galleries without custom code.
+
 https://www.youtube.com/watch?v=WNM6b1HUdog
 
 [FooGallery Home](https://fooplugins.com/foogallery-wordpress-gallery-plugin/)
